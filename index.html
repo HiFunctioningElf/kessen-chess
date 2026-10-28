@@ -158,6 +158,22 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 #scope .dot{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px;border-radius:50%;background:#ff2e4d;box-shadow:0 0 12px 4px rgba(255,46,77,.8)}
 #scope .lock{position:absolute;left:50%;top:calc(50% + var(--r) * .55);transform:translateX(-50%);font-family:var(--display);color:var(--blood);letter-spacing:.2em;font-size:clamp(14px,2.4vw,26px);text-shadow:0 0 8px rgba(255,46,77,.8);white-space:nowrap}
 .star{position:absolute;transform:translate(-50%,-50%);font-size:clamp(30px,5vw,56px);color:#fff7b0;text-shadow:0 0 18px #ffe25c,0 0 40px #fff}
+.movie{position:absolute;inset:0}
+.grain{position:absolute;inset:0;opacity:.55;mix-blend-mode:overlay;animation:grain .25s steps(4) infinite}
+@keyframes grain{0%{background-position:0 0}25%{background-position:-37px 21px}50%{background-position:52px -13px}75%{background-position:-11px -47px}100%{background-position:0 0}}
+.mv-skip{position:absolute;right:max(16px,3vw);top:calc(11vh + 12px);pointer-events:auto;background:rgba(0,0,0,.6);color:#fff;border:1px solid rgba(255,255,255,.5);padding:6px 12px;font:700 12px var(--body);letter-spacing:.2em;cursor:pointer}
+.mv-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding-inline:16px}
+.mv-title small{font-family:var(--display);color:var(--blood);font-size:clamp(18px,3vw,34px);letter-spacing:.5em;text-shadow:2px 2px 0 #000}
+.mv-title b{font-family:var(--display);font-weight:400;font-size:clamp(38px,10vw,120px);line-height:1;color:#fff;-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:6px 6px 0 var(--blood),12px 12px 0 #000}
+.mv-title span{font-family:var(--display);color:var(--gold);letter-spacing:.4em;font-size:clamp(13px,2.4vw,26px);text-shadow:2px 2px 0 #000}
+.mv-cap{position:absolute;left:max(16px,5vw);bottom:calc(11vh + 18px);display:flex;flex-direction:column;gap:6px;max-width:calc(100vw - 32px)}
+.mv-cap .no{font:700 clamp(11px,1.4vw,15px) var(--body);letter-spacing:.3em;color:var(--volt);text-shadow:1px 1px 0 #000}
+.mv-cap .jp{font-family:var(--display);font-size:clamp(30px,6vw,72px);line-height:1;color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:4px 4px 0 var(--blood)}
+.mv-cap .en{font-family:var(--display);font-size:clamp(13px,2.2vw,26px);background:var(--blood);color:#fff;padding:3px 12px;align-self:flex-start;box-shadow:3px 3px 0 #000;text-wrap:balance}
+.mv-cap .sub{font:italic 700 clamp(13px,1.9vw,20px)/1.35 var(--body);color:#fff;text-shadow:0 0 6px #000,2px 2px 0 #000;max-width:60ch}
+.heart{position:absolute;font-size:clamp(40px,7vw,80px);line-height:1;color:#ff8ac4;text-shadow:0 0 20px #ff8ac4,0 0 44px #fff}
+.m-count{font-family:var(--display);font-size:clamp(70px,20vw,130px);line-height:1;color:var(--gold);-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:6px 6px 0 var(--blood);font-variant-numeric:tabular-nums}
+.mv-tbc{position:absolute;right:max(16px,4vw);bottom:calc(11vh + 18px);font-family:var(--display);font-size:clamp(14px,2.4vw,28px);color:#2a1a0a;background:var(--gold);padding:6px 34px 6px 16px;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%);white-space:nowrap}
 .mini{position:absolute;font-family:var(--display);font-size:clamp(14px,2.4vw,26px);color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:3px 3px 0 var(--blood);white-space:nowrap;transform:translate(-50%,-50%)}
 
 #modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(8,5,18,.55);backdrop-filter:blur(3px);
@@ -173,7 +189,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .pcard .opts{display:flex;gap:8px}
 .pcard button{width:68px;height:68px;background:#ead9b5;border:2px solid #000;cursor:pointer;font-family:var(--chess);font-size:52px;line-height:1;display:grid;place-items:center}
 .pcard button:hover{background:var(--gold)}
-@media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before{animation:none}}
+@media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
 
 <div id="app">
@@ -270,7 +286,7 @@ const stageEl = $('#stage'), appEl = $('#app'), fxEl = $('#fx');
 
 /* ================= AUDIO (all synthesized, original) ================= */
 const A = (() => {
-  let ctx, master, musicBus, sfxBus, noiseBuf, verbIn;
+  let ctx, master, musicBus, sfxBus, noiseBuf, verbIn, outroBus = null;
   let musicOn = true, sfxOn = true, playing = false, timer = null, step = 0, nextT = 0, intensity = 0;
   const MUSIC_VOL = 0.42;
   const mtof = m => 440 * 2 ** ((m - 69) / 12);
@@ -386,6 +402,28 @@ const A = (() => {
     promote(){ if (!ok()) return; const t = now(); [74,78,81,86,90].forEach((m,i) => osc('triangle', mtof(m), t + i*.07, .35, .09, sfxBus)); },
     draw(){ if (!ok()) return; const t = now(); [50,57,60].forEach(m => osc('sawtooth', mtof(m), t, 2, .05, sfxBus, {a:.3, lp: 900})); },
     join(){ if (!ok()) return; const t = now(); [69, 74, 81].forEach((m,i) => osc('triangle', mtof(m), t + i*.09, .3, .1, sfxBus)); },
+    // --- checkmate movie: "Kessen ~ Ending Theme", D major, I–V–vi–IV, 128 bpm, 8 bars ≈ 15 s ---
+    outro(){
+      if (!ok()) return;
+      this.stopOutro();
+      const bus = ctx.createGain(); bus.gain.value = .9; bus.connect(sfxBus); outroBus = bus;
+      const t0 = now() + .05, B = 60 / 128 * 4;
+      const prog = [[62, 66, 69], [57, 61, 64], [59, 62, 66], [55, 59, 62]], bass = [38, 33, 35, 31];
+      const lead = [[78, 76, 74, 76], [76, 73, 69, 73], [74, 76, 78, 81], [79, 78, 76, 74]];
+      for (let bar = 0; bar < 8; bar++){
+        const t = t0 + bar * B, ch = prog[bar % 4];
+        ch.forEach(m => { osc('sawtooth', mtof(m), t, B * .95, .03, bus, {a: .08, lp: 2200, detune: -7}); osc('sawtooth', mtof(m), t, B * .95, .03, bus, {a: .08, lp: 2200, detune: 7}); });
+        osc('sawtooth', mtof(bass[bar % 4]), t, B * .9, .1, bus, {lp: 520});
+        for (let b = 0; b < 4; b++){ const tb = t + b * B / 4; osc('sine', 150, tb, .25, .5, bus, {to: 45, glide: .1}); if (b % 2) nz(tb, .15, .2, bus, {type: 'highpass', f0: 1600}); nz(tb + B / 8, .03, .05, bus, {type: 'highpass', f0: 8000}); }
+        for (let e = 0; e < 8; e++) osc('triangle', mtof(ch[e % 3] + 12 + (e >= 4 ? 12 : 0)), t + e * B / 8, B / 8 * .9, .035, bus);
+        if (bar >= 2) lead[bar % 4].forEach((m, i) => { osc('square', mtof(m), t + i * B / 4, B / 4 * .95, .035, bus, {lp: 3200, a: .02}); osc('sawtooth', mtof(m), t + i * B / 4, B / 4 * .95, .025, bus, {lp: 2600, a: .02, detune: 6}); });
+        if (bar === 0 || bar === 4) nz(t, 1.6, .12, bus, {type: 'highpass', f0: 4500});
+      }
+      const tf = t0 + 8 * B;
+      [50, 62, 66, 69, 74, 78].forEach(m => osc('sawtooth', mtof(m), tf, 3, .045, bus, {a: .02, lp: 2600}));
+      osc('sine', 110, tf, 2, .8, bus, {to: 30, glide: 1.5}); nz(tf, 2.5, .15, bus, {type: 'highpass', f0: 4000});
+    },
+    stopOutro(){ if (ok() && outroBus){ outroBus.gain.setTargetAtTime(0, ctx.currentTime, .15); outroBus = null; } },
     // --- special finishes ---
     suspense(){ if (!ok()) return; const t = now(); [0, .45].forEach(d => { osc('sawtooth', mtof(38), t + d, .35, .14, sfxBus, {lp: 600}); osc('sawtooth', mtof(39), t + d, .35, .12, sfxBus, {lp: 600}); }); },
     neigh(){ if (!ok()) return; const t = now(); for (let i = 0; i < 7; i++) osc('sawtooth', (i % 2 ? 1050 : 820) - i * 40, t + i * .07, .09, .07, sfxBus, {lp: 3000, to: (i % 2 ? 900 : 1000) - i * 40}); osc('sawtooth', 700, t + .5, .35, .06, sfxBus, {to: 380, lp: 2000}); },
@@ -401,6 +439,10 @@ const A = (() => {
     choir(){ if (!ok()) return; const t = now(); [62, 66, 69, 74, 78].forEach(m => { osc('sawtooth', mtof(m), t, 2.6, .04, sfxBus, {a: .5, lp: 1700, detune: -7}); osc('sawtooth', mtof(m), t, 2.6, .04, sfxBus, {a: .5, lp: 1700, detune: 7}); }); },
     clang(){ if (!ok()) return; const t = now(); [1, 2.41, 3.93, 5.37].forEach((r, i) => osc('triangle', 540 * r, t, .7 - i * .12, .14 / (i + 1), sfxBus)); nz(t, .05, .45, sfxBus, {type: 'highpass', f0: 3000}); },
     slap(){ if (!ok()) return; const t = now(); nz(t, .07, 1.3, sfxBus, {f0: 2300, q: .7}); nz(t, .025, .9, sfxBus, {type: 'highpass', f0: 4500}); osc('sine', 190, t, .1, .45, sfxBus, {to: 80}); },
+    sob(){ if (!ok()) return; const t = now(); for (let i = 0; i < 4; i++){ const s = t + i * .3; osc('sawtooth', 560 - i * 35, s, .24, .05, sfxBus, {to: 400 - i * 30, lp: 1500, q: 5}); nz(s, .18, .05, sfxBus, {f0: 950, q: 6}); } },
+    wail(){ if (!ok()) return; const t = now(); osc('sawtooth', 640, t, 1.4, .06, sfxBus, {to: 430, lp: 1700, q: 6, a: .08}); osc('sawtooth', 652, t, 1.4, .04, sfxBus, {to: 436, lp: 1700, q: 6, a: .08}); nz(t, 1.3, .04, sfxBus, {f0: 1000, q: 5, a: .1}); },
+    ascend(){ if (!ok()) return; const t = now(); [0, 4, 7, 11, 12, 16, 19, 24].forEach((iv, i) => osc('sine', mtof(74 + iv), t + i * .24, 1.3, .05, sfxBus, {a: .15})); nz(t, 2.2, .05, sfxBus, {type: 'highpass', f0: 5000, a: .6}); },
+    joy(){ if (!ok()) return; const t = now(); [74, 78, 81, 86].forEach((m, i) => osc('triangle', mtof(m), t + i * .1, .7, .07, sfxBus)); for (let i = 0; i < 8; i++) osc('sine', 2500 + Math.random() * 2500, t + .3 + Math.random() * .8, .1, .04, sfxBus); },
     whistle(){ if (!ok()) return; const t = now(); osc('sine', 1900, t, 1.2, .08, sfxBus, {to: 260}); },
     // --- mecha promotion ---
     klaxon(){ if (!ok()) return; const t = now(); for (let i = 0; i < 6; i++){ osc('square', i % 2 ? 620 : 830, t + i * .26, .24, .06, sfxBus, {lp: 2200}); osc('sawtooth', i % 2 ? 310 : 415, t + i * .26, .24, .04, sfxBus, {lp: 1200}); } },
@@ -562,12 +604,12 @@ function makePiece(type, color){
   return g;
 }
 let syncedFen = '';
-function syncPieces(force){
-  const fen = game.fen();
+function syncPieces(force, src = game){
+  const fen = src.fen();
   if (!force && fen === syncedFen) return;
   syncedFen = fen;
   for (const k in pieceAt){ scene.remove(pieceAt[k]); delete pieceAt[k]; }
-  const b = game.board();
+  const b = src.board();
   for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
     const p = b[r][f]; if (!p) continue;
     const sq = 'abcdefgh'[f] + (8 - r), g = makePiece(p.type, p.color);
@@ -623,6 +665,11 @@ function frameLoop(now){
     m.rotation.x += u.spin.x; m.rotation.y += u.spin.y; m.rotation.z += u.spin.z; u.spin.multiplyScalar(.97);
     u.life--; m.scale.setScalar(u.s * Math.min(1, u.life / 30));
     if (u.life <= 0){ scene.remove(m); shards.splice(i, 1); }
+  }
+  for (let i = tears.length - 1; i >= 0; i--){
+    const t = tears[i], u = t.userData;
+    u.v.y -= .0016; t.position.add(u.v); u.life--;
+    if (t.position.y < .11 || u.life <= 0){ scene.remove(t); tears.splice(i, 1); }
   }
   if (orbit){ orbit.a += .0035; camera.position.set(orbit.c.x + Math.cos(orbit.a)*orbit.r, orbit.c.y + orbit.h, orbit.c.z + Math.sin(orbit.a)*orbit.r); controls.target.copy(orbit.c); camera.lookAt(orbit.c); }
   else controls.update();
@@ -690,10 +737,10 @@ async function cutIn(mv){
   el.querySelector('.cut-text').animate([{transform:`translateX(${70*dir}vw)`, opacity:0}, {transform:'translateX(0)', opacity:1, offset:.26}, {transform:`translateX(${-2*dir}vw)`, opacity:1, offset:.85}, {transform:`translateX(${-60*dir}vw)`, opacity:0}], {duration: D, easing:'ease-out'});
   await sleep(D); el.remove();
 }
-function fly(from, to, dash){
+function fly(from, to, dash, durOverride){
   const g = pieceAt[from]; if (!g) return Promise.resolve();
   const a = sqPos(from), b = sqPos(to), dist = a.distanceTo(b);
-  const h = dash ? 1.1 : .4 + dist * .14, dur = dash ? 540 : 420, side = b.x > a.x ? -1 : 1;
+  const h = dash ? 1.1 : .4 + dist * .14, dur = durOverride || (dash ? 540 : 420), side = b.x > a.x ? -1 : 1;
   const ghosts = RM ? [] : ghostMats.map(mat => { const c = g.clone(true); c.traverse(o => { if (o.isMesh){ o.material = mat; o.castShadow = false; } }); c.userData = {}; scene.add(c); return c; });
   const hist = [];
   return tween(dur, k => {
@@ -756,6 +803,28 @@ function addEyes(g, toward, angry){
     if (angry){ const b = new THREE.Mesh(browGeo, eyeMat.k); b.position.set(x + .02, y + .085, s * z); b.rotation.x = -s * .45; face.add(b); }
   }
   g.add(face); return {face, whites};
+}
+// Anime waterfall tears: real 3D droplets that leave each cartoon eye sideways, arc out and fall.
+// They live in the scene, so pieces in front hide them, and they stop once the crying piece is gone.
+const tearGeo = new THREE.SphereGeometry(.03, 8, 6), tearMat = new THREE.MeshBasicMaterial({color: 0x7fd4ff});
+const tears = [];
+const rootOf = o => { while (o.parent) o = o.parent; return o; };
+function weep(eyes, ms, joy){
+  const w = new THREE.Vector3(), q = new THREE.Quaternion();
+  return tween(ms, () => {
+    if (rootOf(eyes.face) !== scene || !eyes.face.visible || Math.random() < .35) return;
+    eyes.face.getWorldQuaternion(q);
+    const fwd = V3(1, 0, 0).applyQuaternion(q);
+    eyes.whites.forEach(e => {
+      e.getWorldPosition(w);
+      const out = V3(0, 0, e.position.z > 0 ? 1 : -1).applyQuaternion(q);
+      const t = new THREE.Mesh(tearGeo, tearMat);
+      t.position.copy(w).addScaledVector(fwd, .045); t.position.y -= .03;
+      t.userData = {v: out.multiplyScalar(.016 + Math.random() * .012).addScaledVector(fwd, .006).setY(.01 + Math.random() * .01), life: 70};
+      scene.add(t); tears.push(t);
+      if (joy && Math.random() < .3){ const s = screenOf(w); parts.push({x: s.x, y: s.y, vx: (Math.random() - .5) * 4, vy: -2 - Math.random() * 2, life: 26, max: 26, kind: 'spark', c: '#ffe680', s: 2, g: .05, drag: .95}); kick(); }
+    });
+  });
 }
 function topple(g, d, power = 1){
   const r0x = g.rotation.x, r0z = g.rotation.z, ax = d.z * 1.3 * power, az = -d.x * 1.3 * power;
@@ -1128,7 +1197,7 @@ async function promoFx(mv){
 }
 
 /* ================= BOARD STATE → SCENE + PANEL ================= */
-function kingSq(color){ const b = game.board(); for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){ const p = b[r][f]; if (p && p.type === 'k' && p.color === color) return 'abcdefgh'[f] + (8 - r); } }
+function kingSq(color, src = game){ const b = src.board(); for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){ const p = b[r][f]; if (p && p.type === 'k' && p.color === color) return 'abcdefgh'[f] + (8 - r); } }
 function render(force){
   for (const sq in marks){
     const m = marks[sq]; m.hl.visible = m.dot.visible = m.ring.visible = false;
@@ -1263,6 +1332,240 @@ async function mateFx(){
   if (mode === 'online' && net.my) msg = winner[0].toLowerCase() === net.my ? 'Victory over your friend. Savor it.' : 'Your friend takes the crown. Demand a rematch.';
   showEnd(`${winner} wins by checkmate`, msg, '詰み');
 }
+/* ================= CHECKMATE MOVIE: a ~15 s outro that recaps the game ================= */
+function grainURL(){
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), d = x.createImageData(128, 128);
+  for (let i = 0; i < d.data.length; i += 4){ const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 40; }
+  x.putImageData(d, 0, 0); return c.toDataURL();
+}
+// Score every move except the mating one and keep the four biggest moments, in game order.
+function pickHighlights(hist){
+  const scored = hist.slice(0, -1).map((m, i) => {
+    let s = 0, kind = null;
+    if (m.captured === 'q'){ s = 100; kind = 'queen'; }
+    else if (m.promotion){ s = 80; kind = 'promo'; }
+    else if (m.captured){ s = PV[m.captured] / 10; kind = 'cap'; }
+    if (m.san.includes('+')){ s += 25; kind = kind || 'check'; }
+    if (/[kq]/.test(m.flags) && !kind){ s = 15; kind = 'castle'; }
+    return {m, i, s, kind};
+  }).filter(h => h.kind);
+  const first = scored.find(h => h.kind === 'cap'); if (first){ first.s += 30; first.first = true; }
+  const top = scored.sort((a, b) => b.s - a.s).slice(0, 3).sort((a, b) => a.i - b.i);
+  return top.length || hist.length < 2 ? top : [{m: hist[0], i: 0, kind: 'open'}];
+}
+// [Japanese title, English headline, dramatic movie subtitle]
+function headline(h){
+  const m = h.m, side = m.color === 'w' ? 'WHITE' : 'BLACK', P = NAME[m.piece].toUpperCase();
+  switch (h.kind){
+    case 'queen': return [SP_TITLE[m.piece][1], `${P} TAKES THE QUEEN!`, '"NOOOO! MY QUEEEEN!!"'];
+    case 'promo': return ['変形合体', `PAWN BECOMES ${NAME[m.promotion].toUpperCase()}!`, '"I\'ve waited my whole life for this moment!"'];
+    case 'cap': return h.first ? ['先制攻撃', `FIRST BLOOD! THE ${P} STRIKES`, '"So this… is war…"'] : [ATK[m.piece].jp, `${P} CRUSHES THE ${NAME[m.captured].toUpperCase()}!`, '"We will never forget your sacrifice…"'];
+    case 'check': return ['王手', `${side} DECLARES CHECK!`, '"Your Majesty! You must flee!!"'];
+    case 'castle': return ['入城', 'THE KING TAKES SHELTER', '"Rest now, my king. We will protect you."'];
+    default: return ['開戦', 'THE DUEL BEGINS', '"Nobody knew how this would end…"'];
+  }
+}
+const LAST_WORDS = ['ぐはっ…!', '無念…!', 'すまない…みんな…', 'まだだ…まだ終わらんよ…', '母さん…!', 'ここまで…か…'];
+function mvCaption(layer, idx, color, jp, en, quote){
+  const c = document.createElement('div'); c.className = 'mv-cap';
+  [['no', `MOVE ${Math.floor(idx / 2) + 1} · ${color === 'w' ? 'WHITE' : 'BLACK'}`], ['jp', jp], ['en', en]].concat(quote ? [['sub', quote]] : []).forEach(([cls, t]) => { const e = document.createElement('div'); e.className = cls; e.textContent = t; c.appendChild(e); });
+  layer.appendChild(c);
+  c.animate([{opacity: 0, transform: 'translateX(-60px) skewX(-12deg)'}, {opacity: 1, transform: 'none'}], {duration: 300, easing: 'ease-out', fill: 'forwards'});
+  return c;
+}
+let movieSkip = false;
+const beat = ms => movieSkip ? Promise.resolve() : sleep(ms);
+async function flashback(h, n, layer, replay, hist){
+  replay.reset(); for (let i = 0; i < h.i; i++) replay.move(hist[i]);
+  syncPieces(true, replay);
+  const m = h.m, T = sqPos(m.to);
+  const a = (m.color === 'w' ? Math.PI / 2 : -Math.PI / 2) + [.9, -.9, .5, -.5][n % 4], ht = [1.1, 1.6, .75, 1.3][n % 4];
+  controls.target.set(T.x, .45, T.z);
+  const camAt = (k, r) => { camera.position.set(T.x + Math.cos(a + k * .3) * r, ht, T.z + Math.sin(a + k * .3) * r); camera.lookAt(controls.target); };
+  camAt(0, 3.3); flash('#fff', 260, .9); A.sfx.whoosh();
+  tween(2100, k => camAt(k, 3.3 - k * .9));
+  const [jp, en, quote] = headline(h), cap = mvCaption(layer, h.i, m.color, jp, en, quote);
+  await beat(420);
+  const vSq = m.flags.includes('e') ? m.to[0] + m.from[1] : m.to, victim = m.captured ? pieceAt[vSq] : null;
+  if (victim && !movieSkip){
+    const ve = addEyes(victim, sqPos(m.from), false); ve.whites.forEach(w => { w.scale.y = .6; });
+    bubble(victim, LAST_WORDS[Math.floor(Math.random() * LAST_WORDS.length)], 1100, 1.3); A.sfx.sob(); weep(ve, 700);
+    await beat(450);
+  }
+  const jobs = [fly(m.from, m.to, !!m.captured, m.captured ? 600 : 520)];
+  if (/[kq]/.test(m.flags)){ const rk = m.color === 'w' ? '1' : '8', ks = m.flags.includes('k'); jobs.push(fly((ks ? 'h' : 'a') + rk, (ks ? 'f' : 'd') + rk, false, 520)); }
+  if (!m.captured) A.sfx.move();
+  await Promise.all(jobs);
+  if (victim){
+    scene.remove(victim); shatter(sqPos(vSq), victim.userData.color, 26, 1.2); A.sfx.impact(m.captured === 'q' ? 1.2 : .8); shake(.7, 350);
+    const s = screenOf(sqPos(vSq).setY(.6)); burst(s.x, s.y, {n: 40, kind: 'spark', colors: ['#ffc83d', '#ff2e4d', '#fff'], speed: 14, life: 26}); ring(s.x, s.y, 160, '#fff', 6, 22);
+  }
+  replay.move(m); syncPieces(true, replay);
+  if (m.promotion){ A.sfx.promote(); const s = screenOf(T.clone().setY(.8)); burst(s.x, s.y, {n: 40, kind: 'spark', colors: ['#3fe0ff', '#fff', '#ffc83d'], speed: 12, life: 30}); }
+  if (m.san.includes('+')){ A.sfx.check(); const k = kingSq(m.color === 'w' ? 'b' : 'w', replay); if (k){ const s = screenOf(sqPos(k).setY(.6)); ring(s.x, s.y, 120, '#ff2e4d', 8, 26); } }
+  await beat(650);
+  cap.remove();
+}
+function tbcArrow(layer, text, delay){
+  setTimeout(() => {
+    if (!layer.isConnected) return;
+    const tbc = document.createElement('div'); tbc.className = 'mv-tbc'; tbc.textContent = text; layer.appendChild(tbc);
+    tbc.animate([{transform: 'translateX(120%)'}, {transform: 'none'}], {duration: 350, easing: 'ease-out', fill: 'forwards'});
+  }, delay);
+}
+const drawReason = () => game.in_stalemate() ? 'Stalemate' : game.in_threefold_repetition() ? 'Threefold repetition' : game.insufficient_material() ? 'Insufficient material' : '50-move rule';
+// Draw finale: the last move, then the two kings face off at sunset, acknowledge each other and bow.
+async function drawFinale(last, hist, replay, layer){
+  replay.reset(); for (let i = 0; i < hist.length - 1; i++) replay.move(hist[i]);
+  syncPieces(true, replay);
+  const T = sqPos(last.to);
+  controls.target.set(T.x, .45, T.z); camera.position.set(T.x + 2.2, 1.2, T.z + (last.color === 'w' ? 2.2 : -2.2)); camera.lookAt(controls.target);
+  flash('#fff', 300);
+  const cap = mvCaption(layer, hist.length - 1, last.color, '最後の一手', 'THE LAST MOVE');
+  await beat(400);
+  const vSq = last.flags.includes('e') ? last.to[0] + last.from[1] : last.to, victim = last.captured ? pieceAt[vSq] : null;
+  if (!last.captured) A.sfx.move();
+  await fly(last.from, last.to, !!last.captured, 900);
+  if (victim){ scene.remove(victim); shatter(sqPos(vSq), victim.userData.color, 22, 1); A.sfx.impact(.7); }
+  cap.remove();
+  if (movieSkip) return;
+  syncPieces(true);
+  const wk = pieceAt[kingSq('w')], bk = pieceAt[kingSq('b')]; if (!wk || !bk) return;
+  const mid = wk.position.clone().add(bk.position).multiplyScalar(.5), d = dirOf(wk.position, bk.position), perp = V3(-d.z, 0, d.x);
+  if (perp.dot(V3(0, 0, orientation === 'w' ? 1 : -1)) < 0) perp.negate();
+  controls.target.copy(mid).setY(.7);
+  camera.position.copy(mid).add(perp.multiplyScalar(2.6 + wk.position.distanceTo(bk.position) * .6)).setY(1.5); camera.lookAt(controls.target);
+  renderer.domElement.style.filter = 'sepia(.35) saturate(1.7) hue-rotate(-18deg) brightness(1.05)';
+  const sunset = document.createElement('div'); sunset.style.cssText = 'position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,90,40,.28),transparent 45%,rgba(255,150,60,.3))';
+  layer.insertBefore(sunset, layer.firstChild);
+  const we = addEyes(wk, bk.position, false), be = addEyes(bk, wk.position, false);
+  A.sfx.draw(); flash('#ffd9a8', 600, .7);
+  bubble(wk, '…やるな', 1500, 1.5); await beat(800);
+  bubble(bk, 'お前もな', 1500, 1.5); await beat(800);
+  A.sfx.sob(); weep(we, 2600); weep(be, 2600);
+  word(mid.clone().setY(1.9), '男泣き', {size: 40, color: '#2a6aff', ms: 2200, rot: -4});
+  const bow = (g, toward) => { const dd = dirOf(g.position, toward); return tween(800, k => { const t = Math.sin(Math.PI * k) * .45; g.rotation.x = dd.z * t; g.rotation.z = -dd.x * t; }); };
+  await Promise.all([bow(wk, bk.position), bow(bk, wk.position)]);
+  tbcArrow(layer, 'THE RIVALRY CONTINUES', 700);
+  await bigText('DRAW', '引分', {hold: 1900, color: 'var(--volt)', size: .9, sub: drawReason().toUpperCase()});
+}
+async function outroMovie(isMate){
+  const hist = game.history({verbose: true}), last = hist[hist.length - 1], loser = game.turn(), winner = loser === 'w' ? 'Black' : 'White';
+  const hl = pickHighlights(hist), replay = new Chess(), cv = renderer.domElement;
+  A.music.stop(); A.music.intensity(0); A.sfx.outro();
+  movieSkip = false; camSave(); checkRing.visible = false;
+  for (const sq in marks){ const m = marks[sq]; m.hl.visible = m.dot.visible = m.ring.visible = false; }
+  const layer = document.createElement('div'); layer.className = 'movie';
+  layer.innerHTML = '<div class="grain"></div><button class="mv-skip" type="button">SKIP ▸▸</button>'; fxEl.appendChild(layer);
+  layer.querySelector('.grain').style.backgroundImage = `url(${grainURL()})`;
+  layer.querySelector('.mv-skip').onclick = () => { movieSkip = true; A.sfx.stopOutro(); };
+  bars(['#lbTop', '#lbBot'], true);
+  const ks = kingSq(loser), K = sqPos(ks);
+  try {
+    // 1. title card over a slow fly-around of the board
+    flash('#fff', 600);
+    const title = document.createElement('div'); title.className = 'mv-title';
+    title.innerHTML = `<small>劇場版</small><b>KESSEN CHESS</b><span>${isMate ? 'THE FINAL BATTLE' : 'A BATTLE WITHOUT VICTORS'}</span>`; layer.appendChild(title);
+    title.animate([{opacity: 0, transform: 'scale(1.4)', filter: 'blur(8px)'}, {opacity: 1, transform: 'scale(1)', filter: 'blur(0px)', offset: .2}, {opacity: 1, transform: 'scale(1.04)', offset: .85}, {opacity: 0, transform: 'scale(1.1)'}], {duration: 1250, fill: 'forwards'});
+    controls.target.set(0, 0, 0);
+    tween(1250, k => { const ang = k * .9 + (loser === 'w' ? -Math.PI / 2 : Math.PI / 2); camera.position.set(Math.cos(ang) * 9, 6 - k * 1.5, Math.sin(ang) * 9); camera.lookAt(controls.target); });
+    await beat(1250); title.remove();
+    // 2. flashbacks in sepia
+    cv.style.filter = 'sepia(.65) contrast(1.15) saturate(1.3)';
+    let n = 0;
+    for (const h of hl){ if (movieSkip) break; await flashback(h, n++, layer, replay, hist); }
+    cv.style.filter = '';
+    if (!movieSkip && !isMate) await drawFinale(last, hist, replay, layer);
+    if (!movieSkip && isMate){
+      // 3. the final blow, full colour, super slow motion
+      replay.reset(); for (let i = 0; i < hist.length - 1; i++) replay.move(hist[i]);
+      syncPieces(true, replay);
+      const F = sqPos(last.from), away = K.clone().sub(F).setY(0); if (away.lengthSq() < 1e-4) away.set(0, 0, 1); away.normalize();
+      controls.target.set((K.x + F.x) / 2, .5, (K.z + F.z) / 2);
+      camera.position.copy(K).add(away.multiplyScalar(2.4)).setY(.75); camera.lookAt(controls.target);
+      flash('#fff', 300); A.sfx.riser();
+      const cap = mvCaption(layer, hist.length - 1, last.color, '決着', 'THE FINAL BLOW');
+      speedLines(innerWidth / 2, innerHeight / 2, 1400, 'rgba(255,255,255,.5)');
+      await beat(350);
+      const vSq = last.flags.includes('e') ? last.to[0] + last.from[1] : last.to, victim = last.captured ? pieceAt[vSq] : null;
+      await fly(last.from, last.to, true, 1050);
+      if (victim){ scene.remove(victim); shatter(sqPos(vSq), victim.userData.color, 26, 1.2); }
+      cap.remove();
+      syncPieces(true);
+      A.sfx.impact(1.4); flash('#fff', 500); shake(1.4, 700); camPunch(8, 700);
+      const s0 = screenOf(K.clone().setY(.7));
+      burst(s0.x, s0.y, {n: 80, kind: 'spark', colors: ['#ffc83d', '#ff2e4d', '#fff', '#3fe0ff'], speed: 20, size: 3.5, life: 36}); ring(s0.x, s0.y, 220, '#ffc83d', 8, 30);
+      bigText('CHECKMATE', '詰み', {hold: 600, color: 'var(--gold)', size: .85, rot: -5});
+      await beat(1000);
+      const king = pieceAt[ks];
+      if (king && !movieSkip){
+        // 4. the king's shame: drooping eyes, waterfall tears, a gloomy slump
+        const kp = king.position.clone(), toCam = camera.position.clone().sub(K).setY(0).normalize();
+        await camMove(K.clone().add(toCam.clone().multiplyScalar(1.55)).setY(1.0), K.clone().setY(.8), 400);
+        const ke = addEyes(king, camera.position, false); ke.whites.forEach(w => { w.scale.y = .4; });
+        A.sfx.wail(); bubble(king, 'そ…そんな…', 1400, 1.5);
+        setTimeout(() => { if (layer.isConnected){ A.sfx.sob(); bubble(king, '(´;ω;`) ウッ…', 1000, 1.5); } }, 950);
+        word(kp.clone().setY(1.9), 'ズーン…', {size: 34, color: '#2a3aa0', ms: 1800, rot: 0});
+        cv.style.filter = 'saturate(.35) brightness(.8)';
+        weep(ke, 1900);
+        await tween(1900, k => { const t = .32 * easeIO(Math.min(1, k * 1.5)); king.rotation.x = toCam.z * t; king.rotation.z = -toCam.x * t; king.position.y = BASEY - .06 * k; king.position.x = kp.x + Math.sin(k * 90) * .012; });
+        // 5. hovering death: he rises, glows, dissolves into light and a heart floats away
+        cv.style.filter = ''; ke.face.visible = false;
+        A.sfx.ascend();
+        const ghost = new THREE.MeshBasicMaterial({color: 0xdff2ff, transparent: true, opacity: 1});
+        king.children.forEach(c => { if (c.isMesh){ if (c.userData.outline) c.visible = false; else c.material = ghost; } });
+        $('#dim').animate([{opacity: 0}, {opacity: .8}], {duration: 800, fill: 'forwards'});
+        const y0 = king.position.y, r0x = king.rotation.x, r0z = king.rotation.z;
+        await tween(1800, k => {
+          king.position.y = y0 + easeIO(k) * 1.5; king.rotation.y = k * 2.5; king.rotation.x = r0x * (1 - k); king.rotation.z = r0z * (1 - k);
+          ghost.opacity = k < .7 ? 1 : 1 - (k - .7) / .3 * .9; king.scale.setScalar(.92 * (k < .8 ? 1 : 1 - (k - .8) / .2 * .8));
+          if (Math.random() < .7){ const s = screenOf(king.position.clone().add(V3((Math.random() - .5) * .6, Math.random(), (Math.random() - .5) * .6)));
+            parts.push({x: s.x, y: s.y, vx: (Math.random() - .5) * .6, vy: -1.2 - Math.random() * 1.5, life: 50, max: 50, kind: 'dust', c: 'rgba(205,238,255,.85)', s: 2 + Math.random() * 2, g: -.02, drag: .99}); kick(); }
+        });
+        const hs = screenOf(king.position.clone().setY(king.position.y + .5));
+        scene.remove(king); flash('#eaf6ff', 600, .8); ghost.dispose();
+        burst(hs.x, hs.y, {n: 50, kind: 'spark', colors: ['#fff', '#bfe9ff'], speed: 10, life: 40});
+        const heart = document.createElement('div'); heart.className = 'heart'; heart.textContent = '♥'; heart.style.left = hs.x + 'px'; heart.style.top = hs.y + 'px'; layer.appendChild(heart);
+        heart.animate([{transform: 'translate(-50%,-50%) scale(.3)', opacity: 0}, {transform: 'translate(-50%,-80%) scale(1.2)', opacity: 1, offset: .2}, {transform: 'translate(-50%,-420%) scale(1)', opacity: 0}], {duration: 2300, easing: 'ease-out', fill: 'forwards'});
+        await beat(500);
+      }
+    }
+    if (!movieSkip && isMate){
+      // 6. winner splash: tears of joy, stats, to be continued
+      const caps = hist.filter(m => m.captured).length, checks = hist.filter(m => /[+#]/.test(m.san)).length, moves = Math.ceil(hist.length / 2);
+      const sunEl = document.createElement('div'); sunEl.className = 'sunburst'; sunEl.id = 'sun'; fxEl.insertBefore(sunEl, $('#flash'));
+      sunEl.animate([{opacity: 0}, {opacity: 1}], {duration: 800, fill: 'forwards'});
+      const wk = pieceAt[kingSq(loser === 'w' ? 'b' : 'w')], c = (wk ? wk.position : K).clone().setY(.6);
+      orbit = {c, r: 3.2, h: 1.3, a: Math.atan2(camera.position.z - c.z, camera.position.x - c.x)};
+      if (wk){ const we = addEyes(wk, camera.position, false); A.sfx.joy(); bubble(wk, 'みんな…ありがとう!!', 1900, 1.5); weep(we, 2500, true); }
+      tbcArrow(layer, 'TO BE CONTINUED', 1200);
+      await bigText(`${winner.toUpperCase()} WINS!!`, '完', {hold: 1450, color: 'var(--gold)', size: .8, rot: -4, sub: `${moves} MOVES · ${caps} CAPTURES · ${checks} CHECKS`});
+    }
+  } finally {
+    layer.remove(); cv.style.filter = ''; bars(['#lbTop', '#lbBot'], false);
+    syncPieces(true); const king = pieceAt[ks]; if (isMate && king) scene.remove(king);
+    camSaved = null; controls.enabled = false;
+  }
+  if (!isMate){ showContinue('A draw', `${drawReason()}. Neither king yields today`); return; }
+  let msg = 'The king has fallen. The duel is decided.';
+  if (mode === 'cpu') msg = winner[0].toLowerCase() === playerColor ? 'The king has fallen. Your legend begins here.' : 'The CPU claims the throne. Demand a rematch.';
+  if (mode === 'online' && net.my) msg = winner[0].toLowerCase() === net.my ? 'Victory over your friend. Savor it.' : 'Your friend takes the crown. Demand a rematch.';
+  showContinue(`${winner} wins by checkmate`, msg);
+}
+// Arcade-style CONTINUE? screen: a 10-second countdown, YES = rematch, NO = look at the board.
+let contTimer = 0;
+function showContinue(title, sub){
+  showEnd(title, sub, '');
+  $('#mJp').innerHTML = '<div class="m-count" id="mCount">10</div>';
+  $('#mTitle').textContent = 'CONTINUE?'; $('#mSub').textContent = `${title}. ${sub}`;
+  $('#mRe').textContent = 'YES! REMATCH'; $('#mLook').textContent = 'NO';
+  let n = 10; clearInterval(contTimer);
+  contTimer = setInterval(() => {
+    n--; const el = $('#mCount'); if (!el){ clearInterval(contTimer); return; }
+    if (n > 0){ el.textContent = n; A.sfx.beep(); el.animate([{transform: 'scale(1.4)'}, {transform: 'scale(1)'}], {duration: 250}); return; }
+    clearInterval(contTimer); el.textContent = '終'; $('#mTitle').textContent = 'GAME OVER'; A.sfx.draw();
+  }, 1000);
+}
 async function drawFx(){
   A.music.stop(); A.sfx.draw();
   const why = game.in_stalemate() ? 'Stalemate' : game.in_threefold_repetition() ? 'Threefold repetition' : game.insufficient_material() ? 'Insufficient material' : '50-move rule';
@@ -1270,6 +1573,7 @@ async function drawFx(){
   showEnd('A draw', `${why}. Neither king yields today.`, '引分');
 }
 function clearEndFx(){
+  A.sfx.stopOutro();
   const s = $('#sun'); if (s) s.remove();
   $('#dim').getAnimations().forEach(a => a.cancel());
   if (orbit || !controls.enabled) setCamSide(orientation);
@@ -1288,8 +1592,8 @@ async function commit(input, remote){
     if (mv.captured) await captureFx(mv); else await moveFx(mv);
     lastMove = {from: mv.from, to: mv.to}; render();
     if (mv.promotion) await promoFx(mv);
-    if (game.in_checkmate()) await mateFx();
-    else if (game.game_over()) await drawFx();
+    if (game.in_checkmate()) await (cutins ? outroMovie(true) : mateFx());
+    else if (game.game_over()) await (cutins ? outroMovie(false) : drawFx());
     else if (game.in_check()) await checkFx();
     else A.music.intensity(0);
   } catch (err){
@@ -1631,7 +1935,7 @@ $('#musicBtn').onclick = e => toggle(e.currentTarget, v => { A.init(); A.music.s
 $('#sfxBtn').onclick = e => toggle(e.currentTarget, v => A.sfx.setOn(v));
 $('#fxBtn').onclick = e => toggle(e.currentTarget, v => { cutins = v; });
 
-function hideModal(){ $('#modal').hidden = true; }
+function hideModal(){ $('#modal').hidden = true; clearInterval(contTimer); }
 function showEnd(title, sub, jp){
   $('#mJp').textContent = jp; $('#mTitle').textContent = title; $('#mSub').textContent = sub;
   $('#mActions').innerHTML = '<button class="btn primary" id="mRe">Rematch</button><button class="btn" id="mLook">View board</button>';
