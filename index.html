@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028204942">
+<meta name="kessen-build" content="20261028222951">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -206,6 +206,17 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .pcard .opts{display:flex;gap:8px}
 .pcard button{width:68px;height:68px;background:#ead9b5;border:2px solid #000;cursor:pointer;font-family:var(--chess);font-size:52px;line-height:1;display:grid;place-items:center}
 .pcard button:hover{background:var(--gold)}
+.tricolor{position:absolute;inset:0;background:linear-gradient(90deg,#0055a4 0 33.4%,#fff 33.4% 66.6%,#ef4135 66.6%);mix-blend-mode:screen;opacity:0}
+.pastry{position:absolute;top:0;font-size:clamp(26px,4vw,44px);line-height:1;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.5))}
+.eptv{position:fixed;right:max(16px,3vw);top:calc(11vh + 14px);z-index:65;width:min(280px,calc(100vw - 32px));background:#111;border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 #000;
+  transform:translateY(calc(-100% - 11vh - 60px)) rotate(3deg);transition:transform .35s cubic-bezier(.2,1.3,.4,1);pointer-events:none}
+.eptv.on{transform:translateY(0) rotate(-2deg)}
+.eptv-screen{position:relative;aspect-ratio:16/9;background:#000;border-bottom:3px solid #000}
+.eptv-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.eptv-meta{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff;color:#0f0f0f;font:400 12px/1.35 var(--body)}
+.eptv-meta b{font-weight:700;font-size:14px}
+.eptv-meta span{color:#606060}
+.eptv-meta a{color:#065fd4;pointer-events:auto;text-decoration:none;font-weight:700}
 @media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
 
@@ -483,7 +494,26 @@ const A = (() => {
     charge(){ if (!ok()) return; const t = now(); osc('sine', 180, t, 1.3, .12, sfxBus, {to: 3400, a: .05}); osc('sawtooth', 90, t, 1.3, .05, sfxBus, {to: 1700, a: .05, lp: 2500}); },
     thruster(d = 1.4){ if (!ok()) return; const t = now(); nz(t, d, .45, sfxBus, {type: 'lowpass', f0: 900, f1: 400, a: .1}); nz(t, d, .12, sfxBus, {type: 'highpass', f0: 3000, a: .1}); },
     heroic(){ if (!ok()) return; const t = now(); [[62, 66, 69], [64, 67, 71], [66, 69, 74, 78]].forEach((ch, i) => ch.forEach(m => { osc('sawtooth', mtof(m), t + i * .22, i === 2 ? 1.8 : .2, .055, sfxBus, {lp: 3200}); osc('square', mtof(m - 12), t + i * .22, i === 2 ? 1.8 : .2, .03, sfxBus, {lp: 1800}); })); },
-    fight(){ if (!ok()) return; const t = now(); this.impact(1.1); [62, 69, 74].forEach(m => osc('sawtooth', mtof(m), t + .05, 1.2, .06, sfxBus, {lp: 3000})); }
+    fight(){ if (!ok()) return; const t = now(); this.impact(1.1); [62, 69, 74].forEach(m => osc('sawtooth', mtof(m), t + .05, 1.2, .06, sfxBus, {lp: 3000})); },
+    // --- en passant: an original musette waltz in C, 3/4 at 168 bpm, three reeds tuned slightly apart like a real accordion ---
+    accordion(){
+      if (!ok()) return;
+      const t0 = now() + .02, B = 60 / 168;
+      const reed = (m, t, d, v) => [-14, 0, 14].forEach(dt => osc('sawtooth', mtof(m), t, d, v, sfxBus, {detune: dt, lp: 2400, a: .03}));
+      const mel = [[76,1],[79,1],[84,1],[83,2],[81,1],[79,1],[77,1],[76,1],[74,3],[77,1],[81,1],[86,1],[84,2],[83,1],[81,1],[79,1],[83,1],[84,3]];
+      let b = 0; mel.forEach(([m, d]) => { reed(m, t0 + b * B, d * B * .92, .022); b += d; });
+      const bars = [[48, [60,64,67]], [43, [59,62,65]], [43, [59,62,65]], [43, [59,62,67]], [50, [62,65,69]], [43, [59,62,67]], [43, [59,62,65]], [48, [60,64,67]]];
+      bars.forEach(([bass, ch], i) => {
+        const t = t0 + i * 3 * B;
+        osc('triangle', mtof(bass), t, B * .8, .2, sfxBus); osc('sawtooth', mtof(bass), t, B * .8, .03, sfxBus, {lp: 700});
+        [1, 2].forEach(k => ch.forEach(m => osc('sawtooth', mtof(m), t + k * B, B * .45, .012, sfxBus, {lp: 1800, detune: 9})));
+      });
+    },
+    flex(){ if (!ok()) return; const t = now(); osc('sawtooth', 95, t, .45, .12, sfxBus, {to: 70, lp: 600, q: 4}); osc('sine', 1700, t + .05, .12, .06, sfxBus, {to: 2600}); [62, 66, 69, 74].forEach(m => osc('sawtooth', mtof(m), t + .1, .9, .04, sfxBus, {lp: 3000})); },
+    kyun(){ if (!ok()) return; const t = now(); osc('sine', 620, t, .25, .12, sfxBus, {to: 1240}); osc('triangle', 1250, t + .22, .5, .07, sfxBus); [88, 92, 95].forEach((m, i) => osc('sine', mtof(m), t + .3 + i * .08, .5, .05, sfxBus)); },
+    bonk(){ if (!ok()) return; const t = now(); osc('sine', 340, t, .18, .8, sfxBus, {to: 110}); nz(t, .12, .6, sfxBus, {type: 'lowpass', f0: 1400}); for (let i = 0; i < 6; i++) nz(t + .03 + i * .025, .02, .25, sfxBus, {f0: 3000 + Math.random() * 2500, q: 4}); },
+    boing(){ if (!ok()) return; const t = now(); osc('sine', 180, t, .7, .35, sfxBus, {to: 980, glide: .6}); osc('triangle', 186, t, .7, .1, sfxBus, {to: 990, glide: .6}); },
+    ding(){ if (!ok()) return; const t = now(); [1, 2.76, 5.4].forEach((r, i) => osc('sine', 1320 * r, t, 1.1 - i * .3, .09 / (i + 1), sfxBus)); }
   };
   return {init, music, sfx};
 })();
@@ -862,14 +892,15 @@ function fly(from, to, dash, durOverride){
 /* ================= SPECIAL FINISHES (queen captures) & MECHA PROMOTION ================= */
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 let camSaved = null;
-function camSave(){ if (!camSaved) camSaved = {p: camera.position.clone(), t: controls.target.clone()}; controls.enabled = false; }
+// OrbitControls clamps the camera to minDistance on every update, even when disabled, so cinematics lift that limit.
+function camSave(){ if (!camSaved) camSaved = {p: camera.position.clone(), t: controls.target.clone()}; controls.enabled = false; controls.minDistance = .5; }
 function camMove(p, t, ms, ease = easeIO){
   const p0 = camera.position.clone(), t0 = controls.target.clone();
   return tween(RM ? Math.min(ms, 250) : ms, k => { const e = ease(k); camera.position.lerpVectors(p0, p, e); controls.target.lerpVectors(t0, t, e); camera.lookAt(controls.target); });
 }
 async function camRestore(ms = 700){
   if (!camSaved) return;
-  const s = camSaved; await camMove(s.p, s.t, ms); camSaved = null; controls.enabled = true;
+  const s = camSaved; await camMove(s.p, s.t, ms); camSaved = null; controls.enabled = true; controls.minDistance = 7;
   camera.fov = baseFov; camera.updateProjectionMatrix();
 }
 function sideShot(a, q, h = 1.25, extra = 0){
@@ -1428,7 +1459,7 @@ function panel(){
   $('#trayW').innerHTML = tray('w') || '<span class="note">No white losses</span>';
   $('#trayB').innerHTML = tray('b') || '<span class="note">No black losses</span>';
   const log = $('#log');
-  log.innerHTML = hist.map((m, i) => `<li><span class="n">${i % 2 ? '' : (i/2 + 1) + '.'}</span><span class="san">${m.san}</span>${m.captured ? `<span class="atk">${m.captured === 'q' ? SP_TITLE[m.piece][0] : ATK[m.piece].en}</span>` : ''}</li>`).join('') || '<li class="note">No moves yet. White opens.</li>';
+  log.innerHTML = hist.map((m, i) => `<li><span class="n">${i % 2 ? '' : (i/2 + 1) + '.'}</span><span class="san">${m.san}</span>${m.captured ? `<span class="atk">${m.flags.includes('e') ? 'En passant!' : m.captured === 'q' ? SP_TITLE[m.piece][0] : ATK[m.piece].en}</span>` : ''}</li>`).join('') || '<li class="note">No moves yet. White opens.</li>';
   log.scrollTop = log.scrollHeight;
   $('#lvlField').hidden = mode !== 'cpu';
   $('#sideField').hidden = mode === 'pvp' || (mode === 'online' && !!net.code);
@@ -1440,7 +1471,111 @@ function panel(){
 }
 
 /* ================= CINEMATICS ================= */
+/* ================= CASTLING: the rook flexes its rock-hard six-pack, the king blushes ================= */
+const CSM = {skin: toon(0xf3c29a), shade: new THREE.MeshBasicMaterial({color: 0x8a4a2a}), blush: new THREE.MeshBasicMaterial({color: 0xff6fa8, transparent: true, opacity: 0, depthWrite: false})};
+const absGeo = new THREE.SphereGeometry(.05, 12, 8), armGeo = new THREE.CylinderGeometry(.04, .045, .2, 10), bicepGeo = new THREE.SphereGeometry(.06, 12, 10), fistGeo = new THREE.SphereGeometry(.045, 10, 8), cheekGeo = new THREE.CircleGeometry(.065, 18);
+// Bolts a six-pack and two flexing arms onto a rook, facing `toward`. Returns handles for the flex animation.
+function addMuscles(g, toward){
+  const fit = new THREE.Group(), d = toward.clone().sub(g.position).setY(0);
+  fit.rotation.y = Math.atan2(-d.z, d.x) - g.rotation.y; g.add(fit);
+  const pack = new THREE.Group(); fit.add(pack);
+  for (const y of [.3, .4, .5]) for (const s of [-1, 1]){
+    const m = new THREE.Mesh(absGeo, CSM.skin); m.scale.set(.55, .85, 1); m.position.set(.19 + (.6 - y) * .03, y, s * .052); pack.add(m);
+  }
+  const line = new THREE.Mesh(new THREE.BoxGeometry(.012, .3, .012), CSM.shade); line.position.set(.215, .4, 0); pack.add(line);   // the centre line
+  pack.scale.setScalar(.01);
+  const arms = [-1, 1].map(s => {
+    const sh = new THREE.Group(); sh.position.set(.02, .56, s * .2); fit.add(sh);
+    const upper = new THREE.Mesh(armGeo, CSM.skin); upper.rotation.x = s * Math.PI / 2; upper.position.z = s * .1; sh.add(upper);
+    const bicep = new THREE.Mesh(bicepGeo, CSM.skin); bicep.position.set(0, .03, s * .1); sh.add(bicep);
+    const elbow = new THREE.Group(); elbow.position.z = s * .2; sh.add(elbow);
+    const fore = new THREE.Mesh(armGeo, CSM.skin); fore.position.y = .1; elbow.add(fore);
+    const fist = new THREE.Mesh(fistGeo, CSM.skin); fist.position.y = .21; elbow.add(fist);
+    sh.scale.setScalar(.01);
+    return {sh, elbow, bicep, s};
+  });
+  return {fit, pack, arms};
+}
+function blushOn(eyes, type){
+  const [x, y] = EYE[type], mat = CSM.blush.clone(), cheeks = [];
+  for (const s of [-1, 1]){ const c = new THREE.Mesh(cheekGeo, mat); c.position.set(x + .015, y - .07, s * .1); c.rotation.y = Math.PI / 2; eyes.face.add(c); cheeks.push(c); }
+  return mat;
+}
+function hearts(pos, n = 6){
+  const s = screenOf(pos);
+  for (let i = 0; i < (RM ? 2 : n); i++){
+    const el = document.createElement('div'); el.className = 'heart'; el.textContent = '♥'; el.style.fontSize = `${24 + Math.random() * 26}px`;
+    el.style.left = s.x + 'px'; el.style.top = s.y + 'px'; fxEl.appendChild(el);
+    const dx = (Math.random() - .5) * 160, dy = -120 - Math.random() * 140;
+    el.animate([{transform: 'translate(-50%,-50%) scale(.2)', opacity: 0}, {transform: `translate(calc(-50% + ${dx * .3}px), calc(-50% + ${dy * .3}px)) scale(1.1)`, opacity: 1, offset: .25}, {transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.8)`, opacity: 0}], {duration: 1400 + Math.random() * 600, delay: i * 110, easing: 'ease-out', fill: 'backwards'}).finished.then(() => el.remove());
+  }
+}
+async function castleFx(mv){
+  const rk = mv.color === 'w' ? '1' : '8', ks = mv.flags.includes('k');
+  const rFrom = (ks ? 'h' : 'a') + rk, rTo = (ks ? 'f' : 'd') + rk;
+  const king = pieceAt[mv.from], rook = pieceAt[rFrom];
+  const a = sqPos(mv.from), r = sqPos(rFrom), d = dirOf(a, r);
+  A.music.duck(9000); camSave(); bars(['#lbTop', '#lbBot'], true);
+  const card = spCard('CASTLING', '入城'); card.querySelector('small').textContent = 'SPECIAL MOVE';
+  try {
+    // 1. close-up of the pair, from the viewer's side
+    const mid = a.clone().add(r).multiplyScalar(.5), perp = V3(-d.z, 0, d.x);
+    if (perp.dot(camera.position.clone().sub(mid)) < 0) perp.negate();
+    const span = a.distanceTo(r), shot = (c, dist, h, ty, ms) => camMove(c.clone().addScaledVector(perp, dist).setY(h), c.clone().setY(ty), ms);
+    await shot(r.clone().addScaledVector(d, -.35), 2.1, 1.25, .5, 650);   // tight on the rook
+    // 2. the king looks over (half at the rook, half at us); the rook turns to the camera with a confident stare
+    const ke = addEyes(king, r.clone().lerp(camera.position, .5), false);
+    const re = addEyes(rook, camera.position, true);
+    A.sfx.suspense(); bubble(rook, 'Your Majesty...', 1100, 1.25);
+    await sleep(900);
+    // 3. FLEX: six-pack pops out, arms go up into a double biceps pose
+    const mu = addMuscles(rook, camera.position);
+    A.sfx.flex(); A.sfx.shing();
+    await tween(320, k => { const e = easeIO(k); mu.pack.scale.setScalar(.01 + .99 * e); mu.arms.forEach(m => m.sh.scale.setScalar(.01 + .99 * e)); rook.scale.y = .92 * (1 + .12 * Math.sin(Math.PI * k)); });
+    await tween(380, k => { const e = easeIO(k); mu.arms.forEach(m => { m.elbow.rotation.x = -m.s * 1.7 * e; m.bicep.scale.setScalar(1 + .7 * e); }); });
+    shake(.4, 300); camPunch(5, 600);
+    const rs = screenOf(rook.position.clone().setY(.45));
+    ring(rs.x, rs.y, 140, '#ffc83d', 6); burst(rs.x, rs.y, {n: 26, kind: 'spark', colors: ['#fff', '#ffe680', '#ffc83d'], speed: 10, life: 30});
+    word(rook.position.clone().setY(1.25), 'ROCK HARD!!', {size: 40, color: '#ffc83d', ms: 1400, rot: -6});
+    word(rook.position.clone().setY(.75).addScaledVector(d, .55), 'ムキッ!', {size: 30, color: '#ff2e4d', ms: 1000, rot: 12});
+    // glints off each ab, then two more pumps
+    for (let i = 0; i < 3; i++){
+      setTimeout(() => { const p = rook.position.clone().setY(.3 + i * .1); const s = screenOf(p); burst(s.x, s.y, {n: 6, kind: 'spark', colors: ['#fff'], speed: 5, life: 16}); A.sfx.twinkle(); }, i * 220);
+      await tween(260, k => { const p = Math.sin(Math.PI * k); mu.arms.forEach(m => m.bicep.scale.setScalar(1.7 + .35 * p)); mu.pack.scale.setScalar(1 + .12 * p); });
+    }
+    bubble(rook, 'Rock. Hard.', 1000, 1.25); await sleep(700);
+    // 4. whip-pan to the king, who blushes: pink cheeks, a gasp, hearts, a shy wiggle
+    A.sfx.whoosh(); await shot(a.clone().addScaledVector(d, .3), 2.2, 1.45, .75, 380);
+    const blush = blushOn(ke, 'k');
+    // the whole king flushes pink (its own material copy; the board rebuild after the move restores the normal look)
+    const body = MAT[king.userData.color].clone(), c0 = body.color.clone(), pink = new THREE.Color(0xff8fbf);
+    king.children.forEach(c => { if (!c.userData.outline && c.isMesh && c.material === MAT[king.userData.color]) c.material = body; });
+    A.sfx.kyun(); bubble(king, 'ドキッ…♡', 1500, 1.2);
+    ke.whites.forEach(w => { w.scale.setScalar(1.25); });
+    word(king.position.clone().setY(.95).addScaledVector(d, -.35), '///', {size: 34, color: '#ff6fa8', ms: 1600, rot: -15});
+    hearts(king.position.clone().setY(1.05), 9);
+    await tween(1300, k => {
+      blush.opacity = Math.min(.95, k * 2.5); body.color.copy(c0).lerp(pink, Math.min(1, k * 1.6) * .75);
+      king.rotation.z = Math.sin(k * Math.PI * 5) * .07; king.rotation.x = Math.sin(k * Math.PI * 3) * .04;
+    });
+    king.rotation.x = king.rotation.z = 0;
+    await shot(mid, 2.4 + span * .5, 1.7, .55, 450);   // wide enough for both
+    bubble(rook, 'Shall we switch places?', 1300, 1.25);
+    await sleep(800);
+    // 5. the swap: the king floats over dreamily, the rook strides past and lands with a thud
+    mu.arms.forEach(m => { m.elbow.rotation.x = -m.s * .4; m.bicep.scale.setScalar(1.2); });
+    hearts(king.position.clone().setY(1.2), 5);
+    await Promise.all([fly(mv.from, mv.to, false, 900), fly(rFrom, rTo, true, 700)]);
+    A.sfx.hoof(); A.sfx.impact(.35); camShake = Math.max(camShake, .12);
+    mini(mv.to, 'CASTLED! 入城');
+    await sleep(500);
+  } finally {
+    bars(['#lbTop', '#lbBot'], false); card.remove();
+    await camRestore(650);
+  }
+}
 async function moveFx(mv){
+  if (cutins && /[kq]/.test(mv.flags) && pieceAt[mv.from] && pieceAt[(mv.flags.includes('k') ? 'h' : 'a') + mv.from[1]]) return castleFx(mv);
   A.sfx.move();
   const jobs = [fly(mv.from, mv.to, false)];
   if (/[kq]/.test(mv.flags)){
@@ -1455,8 +1590,180 @@ async function moveFx(mv){
   if (/[kq]/.test(mv.flags)) mini(mv.to, 'CASTLE! 入城');
   else if (mv.piece === 'n') mini(mv.to, 'HYAH!');
 }
+/* ================= EN PASSANT: a beret, a moustache, a baguette, and the word said properly ================= */
+// The voice is Julien Miquel's "How to Pronounce En Passant", played through YouTube's official embed in a small credited
+// TV (never downloaded or copied). Where YouTube cannot load, the browser's French voice says it instead.
+const EP_VIDEO = 'VO-YWOKX5jc', EP_FROM = 12, EP_LEN = 3000;   // 0:12–0:15 of the video
+const yt = {player: null, ready: false, loading: false};
+function ytBox(){
+  let el = $('#epTv');
+  if (!el){
+    el = document.createElement('div'); el.id = 'epTv'; el.className = 'eptv';
+    el.innerHTML = `<div class="eptv-screen"><div id="epTvFrame"></div></div>
+      <div class="eptv-meta"><b>How to Pronounce En Passant</b><span>Julien Miquel · YouTube</span>
+      <a href="https://www.youtube.com/watch?v=${EP_VIDEO}" target="_blank" rel="noopener">Watch the full video ↗</a></div>`;
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function ytLoad(){
+  if (yt.loading || location.protocol === 'file:') return; yt.loading = true;
+  ytBox();
+  window.onYouTubeIframeAPIReady = () => {
+    try {
+      yt.player = new YT.Player('epTvFrame', {width: 200, height: 113, videoId: EP_VIDEO,
+        playerVars: {controls: 0, disablekb: 1, playsinline: 1, rel: 0, modestbranding: 1, fs: 0, iv_load_policy: 3},
+        events: {onReady: () => { yt.ready = true; try { yt.player.cueVideoById({videoId: EP_VIDEO, startSeconds: EP_FROM}); } catch(e){} },
+          onStateChange: e => { yt.state = e.data; (window.__ytStates = window.__ytStates || []).push(e.data); }}});
+    } catch(e){}
+  };
+  const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = () => {}; document.head.appendChild(s);
+}
+document.addEventListener('pointerdown', ytLoad, {once: true});
+const sfxOnNow = () => $('#sfxBtn').getAttribute('aria-pressed') === 'true';
+let frVoices = [];
+const pickVoices = () => { try { frVoices = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); } catch(e){} };
+if (window.speechSynthesis){ pickVoices(); speechSynthesis.addEventListener?.('voiceschanged', pickVoices); }
+function say(text, {rate = .85, pitch = 1.1} = {}){
+  try {
+    if (!sfxOnNow() || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'fr-FR'; u.rate = rate; u.pitch = pitch;
+    const score = v => (v.lang === 'fr-FR' ? 4 : 0) + (/natural|google|online/i.test(v.name) ? 2 : 0) + (/henri|thomas|paul|remy|denis|claude|male/i.test(v.name) ? 1 : 0);
+    const v = frVoices.slice().sort((a, b) => score(b) - score(a))[0]; if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+// Shows the credited TV and plays the clip. `started` resolves once the word is about to be heard (YouTube playing,
+// or the fallback voice speaking); `done` resolves when the TV has been put away.
+function sayEnPassant(){
+  const fallback = () => say('En passant !', {rate: .7, pitch: 1});
+  const p = yt.player, box = $('#epTv');
+  if (!sfxOnNow() || !yt.ready || !p || !box){ if (sfxOnNow()) fallback(); return {started: Promise.resolve(), done: Promise.resolve()}; }
+  box.classList.add('on');
+  try { p.unMute(); p.setVolume(100); p.seekTo(EP_FROM, true); p.playVideo(); } catch(e){}
+  let doneRes; const done = new Promise(r => { doneRes = r; });
+  const finish = ms => setTimeout(() => { try { p.pauseVideo(); } catch(e){} box.classList.remove('on'); doneRes(); }, ms);
+  const started = new Promise(res => {
+    const t0 = Date.now();
+    const check = setInterval(() => {
+      let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
+      if (st === 1 || yt.state === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(EP_LEN + 600); res(); }
+      else if (Date.now() - t0 > 3500){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(1200); res(); }
+    }, 50);
+  });
+  return {started, done};
+}
+const EPM = {
+  beretW: toon(0x1b1b2a), beretB: toon(0xc8102e), stem: toon(0x111111),
+  stache: {w: new THREE.MeshBasicMaterial({color: 0x2a1608}), b: new THREE.MeshBasicMaterial({color: 0xf6f0e0})},
+  crust: toon(0xd38b35), score: toon(0xf5d79a)
+};
+function dressFrench(g, toward){
+  const color = g.userData.color, kit = new THREE.Group(); g.add(kit);
+  // beret, tilted at a jaunty angle
+  const beret = new THREE.Group();
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(.16, .2, .07, 28), color === 'w' ? EPM.beretW : EPM.beretB); beret.add(cap);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(.015, .02, .06, 8), EPM.stem); stem.position.y = .06; beret.add(stem);
+  beret.position.set(-.02, .78, .02); beret.rotation.set(.12, 0, .3); kit.add(beret);
+  // eyes plus a curly handlebar moustache, both facing the victim
+  const eyes = addEyes(g, toward, false, true);
+  const curve = new THREE.CatmullRomCurve3([V3(0, 0, 0), V3(0, -.015, .05), V3(0, -.005, .1), V3(0, .03, .135), V3(0, .06, .125), V3(0, .055, .1)]);
+  const tubeGeo = new THREE.TubeGeometry(curve, 24, .019, 6);
+  for (const s of [-1, 1]){ const m = new THREE.Mesh(tubeGeo, EPM.stache[color]); m.position.set(.165, .545, 0); m.scale.z = s; eyes.face.add(m); }
+  // a baguette, held at the grip so it swings from the bottom
+  const piv = new THREE.Group(); piv.rotation.y = eyes.face.rotation.y; kit.add(piv);
+  const holder = new THREE.Group(); holder.position.set(.02, .42, -.26); holder.rotation.z = .35; piv.add(holder);
+  const loaf = new THREE.Group(); loaf.position.y = .44; holder.add(loaf);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .88, 14), EPM.crust); body.castShadow = true; loaf.add(body);
+  [-.44, .44].forEach(y => { const e = new THREE.Mesh(new THREE.SphereGeometry(.05, 12, 8), EPM.crust); e.position.y = y; loaf.add(e); });
+  [-.27, -.09, .09, .27].forEach(y => { const sc = new THREE.Mesh(new THREE.BoxGeometry(.03, .1, .02), EPM.score); sc.position.set(.035, y, 0); sc.rotation.x = .6; loaf.add(sc); });
+  return {kit, beret, eyes, holder, piv};
+}
+function tricolor(ms = 900){
+  const el = document.createElement('div'); el.className = 'tricolor'; fxEl.insertBefore(el, $('#flash'));
+  return el.animate([{opacity: 0, transform: 'translateX(-100%)'}, {opacity: .55, transform: 'translateX(0)', offset: .3}, {opacity: .55, transform: 'translateX(0)', offset: .7}, {opacity: 0, transform: 'translateX(100%)'}], {duration: ms, easing: 'ease-in-out'}).finished.then(() => el.remove());
+}
+function pastries(n = 14){
+  const items = ['🥐', '🥖', '🧀', '🍷', '🥐', '🌹'];
+  for (let i = 0; i < (RM ? 4 : n); i++){
+    const el = document.createElement('div'); el.className = 'pastry'; el.textContent = items[i % items.length];
+    el.style.left = (Math.random() * 100) + 'vw'; fxEl.appendChild(el);
+    const dur = 1600 + Math.random() * 1200, rot = (Math.random() - .5) * 720;
+    el.animate([{transform: 'translateY(-12vh) rotate(0deg)'}, {transform: `translateY(112vh) rotate(${rot}deg)`}], {duration: dur, delay: Math.random() * 500, easing: 'ease-in', fill: 'backwards'}).finished.then(() => el.remove());
+  }
+}
+async function enPassantFx(mv){
+  const vSq = mv.to[0] + mv.from[1], g = pieceAt[mv.from], victim = pieceAt[vSq];
+  const a = sqPos(mv.from), v = sqPos(vSq), d = dirOf(a, v);
+  A.music.duck(10500); camSave(); bars(['#lbTop', '#lbBot'], true);
+  const card = spCard('EN PASSANT', 'アン・パッサン'); card.querySelector('small').textContent = 'SPÉCIALITÉ DE LA MAISON';
+  try {
+    // 1. close-up, musette starts, the flag sweeps by
+    // tight shot from the side the viewer is on, high enough that pieces in front don't block it
+    const mid = a.clone().add(v).multiplyScalar(.5), perp = V3(-d.z, 0, d.x);
+    if (perp.dot(camera.position.clone().sub(mid)) < 0) perp.negate();
+    await camMove(mid.clone().addScaledVector(perp, 2.5).setY(1.55), mid.clone().setY(.45), 650);
+    A.sfx.accordion(); tricolor(1100);
+    await sleep(350);
+    // 2. the pawn becomes French: beret drops in, moustache, baguette
+    const fr = dressFrench(g, camera.position), by = fr.beret.position.y;   // faces the viewer first
+    A.sfx.boing();
+    await tween(420, k => { fr.beret.position.y = by + 1.2 * (1 - easeIO(k)); fr.beret.rotation.y = (1 - k) * 6; });
+    A.sfx.ding(); const s0 = screenOf(g.position.clone().setY(1)); burst(s0.x, s0.y, {n: 18, kind: 'spark', colors: ['#0055a4', '#ffffff', '#ef4135'], speed: 7, life: 30});
+    bubble(g, 'Hon hon hon~', 1500, 1.45); say('Hon hon hon !', {rate: .95, pitch: 1.25});
+    word(g.position.clone().setY(1.25).addScaledVector(d, -.6), 'Oh là là!', {size: 30, color: '#0055a4', ms: 1400, rot: -10});
+    await tween(900, k => { g.rotation.z = Math.sin(k * Math.PI * 4) * .08; });   // smug little shimmy
+    g.rotation.z = 0;
+    // 3. the victim realises what is about to happen
+    const voice = sayEnPassant();   // the TV slides in now so the clip has time to buffer
+    const r0 = fr.eyes.face.rotation.y, r1 = Math.atan2(-d.z, d.x);   // ...then turns to face its victim
+    let dr = r1 - r0; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+    tween(350, k => { fr.eyes.face.rotation.y = fr.piv.rotation.y = r0 + dr * easeIO(k); });
+    const ve = victim ? addEyes(victim, a, false) : null;
+    if (victim){ bubble(victim, 'Quoi?!', 1000, 1.4); await tween(450, k => { victim.position.x = v.x + Math.sin(k * 60) * .03; }); victim.position.x = v.x; }
+    // 4. wind up (lean back, baguette high) and... EN PASSANT!
+    await tween(380, k => { fr.holder.rotation.z = .35 + .9 * easeIO(k); g.rotation.x = d.z * -.12 * k; g.rotation.z = d.x * .12 * k; });
+    await voice.started;
+    bigText('EN PASSANT!', 'アン・パッサン', {hold: 1500, color: '#0055a4', size: .75, rot: -4, sub: '« ahn pah-SAHN »'});
+    await sleep(650);
+    const a2 = a.clone().addScaledVector(d, .22);
+    await tween(170, k => { fr.holder.rotation.z = 1.25 - 3 * easeIn(k); g.position.lerpVectors(a, a2, k); g.position.y = BASEY; });
+    // 5. BONK: crumbs everywhere, the victim is launched off the board
+    A.sfx.bonk(); A.sfx.impact(.6); shake(.7, 380); camShake = Math.max(camShake, .2);
+    const vs = screenOf(v.clone().setY(.7));
+    burst(vs.x, vs.y, {n: 40, kind: 'dust', colors: ['#e9b25e', '#c98a3a', '#f8e1b0'], speed: 9, size: 3, life: 36, g: .25});
+    ring(vs.x, vs.y, 120, '#fff', 6); word(v.clone().setY(1.1), 'PAF!!', {size: 46, color: '#ef4135', rot: 12});
+    if (victim){
+      A.sfx.boing(); if (ve) ve.whites.forEach(w => { w.scale.y = .25; });
+      const out = v.clone().addScaledVector(d, 6).setY(0);
+      await tween(1000, k => {
+        victim.position.lerpVectors(v, out, k); victim.position.y = BASEY + Math.sin(Math.PI * Math.min(1, k * .8)) * 3.4 + k * 2.4;
+        victim.rotation.x += .32; victim.rotation.z += .21; victim.scale.setScalar(.92 * (1 - .75 * k));
+      });
+      const st = screenOf(victim.position); scene.remove(victim);
+      A.sfx.twinkle();
+      const star = document.createElement('div'); star.className = 'star'; star.textContent = '✦'; star.style.left = st.x + 'px'; star.style.top = st.y + 'px'; fxEl.appendChild(star);
+      star.animate([{transform: 'translate(-50%,-50%) scale(0) rotate(0deg)', opacity: 1}, {transform: 'translate(-50%,-50%) scale(1.4) rotate(180deg)', opacity: 1, offset: .4}, {transform: 'translate(-50%,-50%) scale(0) rotate(360deg)', opacity: 0}], {duration: 700}).finished.then(() => star.remove());
+    }
+    pastries(16);
+    await voice.done;
+    // 6. a dainty diagonal hop onto the square it passed, a tip of the beret: voilà
+    fr.holder.rotation.z = .35; g.rotation.x = g.rotation.z = 0;
+    g.position.copy(a);
+    await fly(mv.from, mv.to, false, 480);
+    bubble(g, 'Voilà!', 1100, 1.5); say('Voilà !', {rate: .9, pitch: 1.2}); A.sfx.ding();
+    await tween(500, k => { fr.beret.position.y = by + Math.sin(Math.PI * k) * .25; fr.beret.rotation.z = .3 - Math.sin(Math.PI * k) * .5; });
+    await sleep(250);
+  } finally {
+    if (victim && victim.parent) scene.remove(victim);
+    bars(['#lbTop', '#lbBot'], false); card.remove();
+    await camRestore(650);
+  }
+  lastMove = {from: mv.from, to: mv.to}; render();
+}
 async function captureFx(mv){
   if (mv.captured === 'q' && cutins && pieceAt[mv.from] && pieceAt[mv.to] && SP[mv.piece]) return special(mv);
+  if (mv.flags.includes('e') && cutins && pieceAt[mv.from] && pieceAt[mv.to[0] + mv.from[1]]) return enPassantFx(mv);
   const power = .7 + PV[mv.captured] / 900 * .9;
   const vSq = mv.flags.includes('e') ? mv.to[0] + mv.from[1] : mv.to;
   A.music.duck(2200);
@@ -1744,7 +2051,7 @@ async function outroMovie(isMate){
   } finally {
     layer.remove(); cv.style.filter = ''; bars(['#lbTop', '#lbBot'], false);
     syncPieces(true); const king = pieceAt[ks]; if (isMate && king) scene.remove(king);
-    camSaved = null; controls.enabled = false;
+    camSaved = null; controls.enabled = false; controls.minDistance = 7;
   }
   if (!isMate){ showContinue('A draw', `${drawReason()}. Neither king yields today`); return; }
   let msg = 'The king has fallen. The duel is decided.';
@@ -1912,7 +2219,7 @@ async function commit(input, remote, remoteClock){
   } catch (err){
     // An effect failed: never leave the board frozen. Restore the camera and redraw from the real game state.
     console.error(err);
-    if (camSaved){ camera.position.copy(camSaved.p); controls.target.copy(camSaved.t); camSaved = null; }
+    if (camSaved){ camera.position.copy(camSaved.p); controls.target.copy(camSaved.t); camSaved = null; controls.minDistance = 7; }
     controls.enabled = !orbit; camera.fov = baseFov; camera.updateProjectionMatrix();
     render(true);
   } finally {
@@ -2457,7 +2764,14 @@ function showEnd(title, sub, jp){
   $('#mRe').disabled = mode === 'online' && !net.my;
   $('#modal').hidden = false; $('#mRe').focus();
 }
-$('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); };
+$('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+// Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
+const DEMOS = {'#ep-demo': ['1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'}], '#castle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'}]};
+function demo(pgn, move){
+  mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame();
+  game.load_pgn(pgn); const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = {from: l.from, to: l.to}; render(true);
+  setTimeout(() => { if (canMoveNow()) commit(move); }, 1800);
+}
 
 setCamSide('w');
 function start(data){
