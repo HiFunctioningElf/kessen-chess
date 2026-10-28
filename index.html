@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028231216">
+<meta name="kessen-build" content="20261028231950">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -1807,7 +1807,6 @@ async function dejavuFx(){
   layer.querySelector('.vhs-band').animate([{top: '-10%'}, {top: '105%'}], {duration: 700, iterations: Infinity});
   osd.animate([{opacity: 1}, {opacity: .2}], {duration: 400, iterations: Infinity, direction: 'alternate'});
   try {
-    const song = playClip(CLIPS.dejavu);   // the TV comes on now, so the song buffers during the rewind
     A.sfx.rewind(2.4); flash('#fff', 200, .4);
     let n = Math.ceil(hist.length / 2);
     await tween(2400, k => {
@@ -1817,25 +1816,9 @@ async function dejavuFx(){
       camShake = Math.max(camShake, .04);
     });
     movers.forEach(x => x.g.position.copy(x.a));
-    // ▶ PLAY: the Initial D chorus kicks in on the credited TV while the pieces keep drifting through the same moves
-    await song.started;
     osd.getAnimations().forEach(a => a.cancel()); osd.textContent = '▶ PLAY'; osdR.textContent = 'AGAIN. AND AGAIN.';
     A.sfx.twinkle(); flash('#fff', 250, .5);
-    const title = bigText('DÉJÀ VU!', '既視感', {color: 'var(--volt)', hold: 2200, size: .75, rot: -3, sub: "I'VE JUST BEEN IN THIS PLACE BEFORE"});
-    // eurobeat drift: the repeating pieces slide between their two squares, swinging their tails out on every beat
-    const playing = box => box && box.dataset.voice === 'youtube';
-    if (playing($('#epTv'))){
-      let over = false; const t0 = performance.now();
-      const step = () => {
-        if (over) return;
-        const k = (performance.now() - t0) / 1550, e = (1 - Math.cos(k * Math.PI)) / 2;   // one slide per 1.55 s
-        movers.forEach(x => { x.g.position.lerpVectors(x.a, x.b, e); x.g.rotation.z = Math.sin(k * Math.PI) * .35; });
-        requestAnimationFrame(step);
-      };
-      step();
-      await song.done; over = true;   // the song's timer ends it, so a hidden tab (no animation frames) can't stall here
-      movers.forEach(x => { x.g.position.copy(x.a); x.g.rotation.z = 0; });
-    } else await title;
+    await bigText('DÉJÀ VU!', '既視感', {color: 'var(--volt)', hold: 1800, size: .75, rot: -3, sub: 'THREEFOLD REPETITION'});
   } finally { layer.remove(); cv.style.filter = ''; }
 }
 // A PAWN ON THE 7TH RANK: an ominous choir, the pawn sweats, and the whole enemy back rank turns to stare
@@ -1887,9 +1870,7 @@ async function moveFx(mv){
 // Never downloaded or copied: each clip plays in a small TV that names the video and its channel and links to it.
 const CLIPS = {
   // Julien Miquel, "How to Pronounce En Passant", 0:12–0:15
-  ep: {id: 'VO-YWOKX5jc', from: 12, len: 3000, title: 'How to Pronounce En Passant', channel: 'Julien Miquel'},
-  // avex, "DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】", the chorus (starts ~2 s early: that part plays under the rewind)
-  dejavu: {id: 'UT7O7FyUbxA', from: 56, len: 8000, wait: 9000, title: 'DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】', channel: 'avex'}
+  ep: {id: 'VO-YWOKX5jc', from: 12, len: 3000, title: 'How to Pronounce En Passant', channel: 'Julien Miquel'}
 };
 const yt = {player: null, ready: false, loading: false, state: -1};
 function ytBox(){
@@ -1959,7 +1940,7 @@ function playClip(clip, fallback = () => {}){
     const check = setInterval(() => {
       let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
       // a late "cue" from the player's start-up can swallow the play request: ask again until it plays
-      if (st !== 1 && st !== 3 && Date.now() - kicked > 700){ kicked = Date.now(); kick(); }
+      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); kick(); }
       if (st === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(clip.len + 600); res(); }
       else if (Date.now() - t0 > (clip.wait || 4000)){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(800); res(); }
     }, 50);
@@ -2551,6 +2532,13 @@ async function commit(input, remote, remoteClock){
   if (!mv) return;
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
   if (premove && canMoveNow()){ tryPremove(); return; }
+  // A piece picked during the opponent's turn (purple dots, no destination yet) becomes a normal selection now,
+  // so its stale premove dots don't linger into your turn.
+  if (preSel && canMoveNow()){
+    const s = preSel, p = game.get(s); clearPremove();
+    if (p && p.color === game.turn()){ selected = s; legal = game.moves({square: s, verbose: true}); }
+    render();
+  }
   cpuTurn();
 }
 /* ---- Premoves: queue one move during the opponent's turn (vs CPU or online); it plays the instant your turn starts ---- */
