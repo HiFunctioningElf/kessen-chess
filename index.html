@@ -53,6 +53,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .stage{position:relative;width:min(calc(100vw - 32px),860px);height:min(calc((100vw - 32px) * .9),78vh,720px);max-width:100%;
   border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 8px var(--blood),0 24px 60px rgba(0,0,0,.6);
   background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);overflow:hidden}
+@media (min-width:981px){.stage{width:min(860px,calc(100vw - 340px));height:min(calc((100vw - 340px) * .9),78vh,720px)}}
 .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
 .stage .hint-orbit{position:absolute;left:10px;bottom:8px;font-size:11px;letter-spacing:.08em;color:var(--muted);pointer-events:none;text-transform:uppercase}
 .stage .err{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:var(--muted)}
@@ -100,6 +101,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .tray .adv{font-family:var(--body);font-size:12px;font-weight:700;color:var(--gold);margin-left:6px}
 .gw{color:#fffaf0;-webkit-text-stroke:1px #22183a;paint-order:stroke fill}
 .gb{color:#1b1328;-webkit-text-stroke:1px #ffd36b;paint-order:stroke fill}
+.loghead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
 #log{list-style:none;margin:0;padding:0;max-height:200px;overflow-y:auto;font-size:13px;display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
 #log li{display:flex;gap:8px;align-items:baseline}
 #log .n{color:var(--muted);min-width:2.2em}
@@ -204,6 +206,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .m-sub{color:var(--muted);line-height:1.6}
 .m-actions{display:flex;gap:10px;flex-wrap:wrap}
 .m-actions .btn{font-size:18px;padding:14px}
+.rules{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
 #promo{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(8,5,18,.55)}
 .pcard{background:var(--night);border:3px solid var(--gold);padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center}
 .pcard .opts{display:flex;gap:8px}
@@ -289,7 +292,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
         <div class="tray" id="trayB"></div>
       </section>
       <section class="card">
-        <div class="label">Battle log</div>
+        <div class="loghead"><span class="label">Battle log</span><button class="chip" id="pgnBtn" type="button">Copy PGN</button></div>
         <ol id="log"></ol>
       </section>
     </aside>
@@ -2543,6 +2546,7 @@ async function commit(input, remote, remoteClock){
     if (mv && tcOn() && !isOver()) clockStart(game.turn());
   }
   if (!mv) return;
+  saveGame();
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
   if (premove && canMoveNow()){ tryPremove(); return; }
   // A piece picked during the opponent's turn (purple dots, no destination yet) becomes a normal selection now,
@@ -2669,7 +2673,7 @@ async function resultFx(res){
 }
 async function endGame(res, remote){
   if (isOver()) return;
-  ended = res; clockPause(); clock.run = null; clearPremove(); selected = null; legal = []; render(); drawClocks();
+  ended = res; saveGame(); clockPause(); clock.run = null; clearPremove(); selected = null; legal = []; render(); drawClocks();
   if (mode === 'online' && !remote && net.ref) net.ref.update({result: res, drawOffer: null}).catch(() => {});
   busy = true; busySince = Date.now();
   try { await resultFx(res); } catch(e){ console.error(e); } finally { busy = false; render(true); }
@@ -3262,8 +3266,13 @@ function applyRemote(d){
   if ((d.n || 0) === game.history().length && !(d.n === 0 && (flagged || game.game_over()))){ panel(); return; }
   const tmp = new Chess(); if (d.pgn) tmp.load_pgn(d.pgn);
   const hist = tmp.history({verbose: true}), mine = game.history();
-  if (hist.length === mine.length + 1 && hist.slice(0, -1).every((m, i) => m.san === mine[i])){
+  const prefix = hist.length >= mine.length && mine.every((m, i) => hist[i] && hist[i].san === m);
+  if (net.my && mine.length && hist.length && !(prefix && hist.length > mine.length) && !(hist.length === mine.length && prefix)){
+    note("Your friend's game didn't match yours, so their change was ignored.", true); return;
+  }
+  if (hist.length === mine.length + 1 && prefix){
     const m = hist[hist.length - 1];
+    if (net.my && m.color === net.my){ note('Ignored a move made for your pieces.', true); return; }
     commit({from: m.from, to: m.to, promotion: m.promotion}, true, d.clock || null);
     return;
   }
@@ -3279,10 +3288,11 @@ function applyRemote(d){
   if (!hist.length){ A.music.intensity(0); A.music.start(); }
   render(true);
 }
-function rematchOnline(){
+// sides: 'swap' (default), 'keep' or 'random'; tc: a new time control, or keep the current one
+function rematchOnline({sides = 'swap', tc = null} = {}){
   if (!net.ref || !net.data) return;
-  const d = net.data;
-  net.ref.update({pgn: '', n: 0, w: d.b || null, b: d.w || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null}).catch(() => note('Could not start the rematch. Try again.', true));
+  const d = net.data, swap = sides === 'swap' || (sides === 'random' && Math.random() < .5);
+  net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null}, tc ? {tc} : {})).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
 $('#joinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); joinGame($('#joinCode').value); });
@@ -3299,13 +3309,14 @@ document.addEventListener('pointerdown', () => { A.init(); if (started) A.music.
 /* ================= CONTROLS ================= */
 function seg(id, attr, val){ document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val)))); }
 function newGame(){
-  if (mode === 'online'){ if (net.code) rematchOnline(); else { game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true); } return; }
+  if (mode === 'online'){ if (net.code){ if (net.my) showEnd('Rematch?', 'Same rules with sides swapped, or change them first.', '再戦'); } else { game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true); } return; }
   game.reset(); lastMove = null; selected = null; legal = []; busy = false;
   clockReset(parseTc($('#tcSel').value));
   orientation = mode === 'cpu' ? playerColor : 'w';
   clearEndFx(); setCamSide(orientation);
   A.music.intensity(0); A.music.start();
   render(true);
+  saveGame();
   if (started){ A.sfx.fight(); flash('#fff', 300, .6); bigText('FIGHT!', '決戦', {hold: 500}); setTimeout(cpuTurn, 900); }
 }
 $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || busy) return;
@@ -3323,7 +3334,7 @@ $('#undoBtn').onclick = () => {
   selected = null; legal = []; clearEndFx();
   A.music.intensity(game.in_check() ? 1 : 0); A.music.start(); render(true);
   if (tcOn() && clock.run){ clockPause(); clockStart(game.turn()); }
-  cpuTurn();
+  saveGame(); cpuTurn();
 };
 const toggle = (btn, fn) => { const v = btn.getAttribute('aria-pressed') !== 'true'; btn.setAttribute('aria-pressed', String(v)); fn(v); };
 $('#musicBtn').onclick = e => toggle(e.currentTarget, v => { A.init(); A.music.setOn(v); });
@@ -3370,14 +3381,62 @@ styleSel.addEventListener('change', () => {
 });
 
 function hideModal(){ $('#modal').hidden = true; clearInterval(contTimer); }
+// Online: change the time control and who plays which side before the rematch starts.
+function showRules(){
+  clearInterval(contTimer);
+  $('#mJp').textContent = '再戦'; $('#mTitle').textContent = 'Change the rules'; $('#mSub').textContent = 'Your friend gets the new rules as soon as you start.';
+  const cur = net.data && net.data.tc ? `${net.data.tc.base / 60000}+${net.data.tc.inc / 1000}` : '0+0';
+  $('#mActions').innerHTML = `<div class="rules"><label class="label" for="rTc">Time control</label><select id="rTc" class="sel">${$('#tcSel').innerHTML}</select>
+    <span class="label">Sides</span><div class="seg" id="rSides"><button data-s="swap" aria-pressed="true">Swap</button><button data-s="keep" aria-pressed="false">Keep</button><button data-s="random" aria-pressed="false">Random</button></div>
+    <div class="m-actions"><button class="btn primary" id="rGo">Start rematch</button><button class="btn" id="rBack">Back</button></div></div>`;
+  $('#rTc').value = cur;
+  let sides = 'swap';
+  $('#rSides').onclick = e => { const b = e.target.closest('button'); if (!b) return; sides = b.dataset.s; $('#rSides').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
+  $('#rGo').onclick = () => { hideModal(); rematchOnline({sides, tc: parseTc($('#rTc').value)}); };
+  $('#rBack').onclick = () => showEnd('Rematch?', 'Same rules with sides swapped, or change them first.', '再戦');
+  $('#modal').hidden = false; $('#rGo').focus();
+}
 function showEnd(title, sub, jp){
   $('#mJp').textContent = jp; $('#mTitle').textContent = title; $('#mSub').textContent = sub;
-  $('#mActions').innerHTML = '<button class="btn primary" id="mRe">Rematch</button><button class="btn" id="mLook">View board</button>';
+  const rules = mode === 'online' && net.my ? '<button class="btn" id="mRules">Change rules</button>' : '';
+  $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>`;
+  if ($('#mRules')) $('#mRules').onclick = showRules;
   $('#mRe').onclick = () => { hideModal(); newGame(); };
   $('#mLook').onclick = () => { hideModal(); clearEndFx(); };
   $('#mRe').disabled = mode === 'online' && !net.my;
   $('#modal').hidden = false; $('#mRe').focus();
 }
+/* ---- Save and resume: a CPU or same-screen game survives a reload ---- */
+const SAVE_KEY = 'kessen-save';
+function saveGame(){
+  try {
+    if (mode === 'online' || !started || isOver() || !game.history().length){ localStorage.removeItem(SAVE_KEY); return; }
+    localStorage.setItem(SAVE_KEY, JSON.stringify({pgn: game.pgn(), mode, playerColor, level, orientation, at: Date.now()}));
+  } catch(e){}
+}
+let savedGame = null;
+try { savedGame = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch(e){}
+if (savedGame && savedGame.pgn && (savedGame.mode === 'cpu' || savedGame.mode === 'pvp') && !location.hash){
+  const n = (() => { const g = new Chess(); return g.load_pgn(savedGame.pgn) && !g.game_over() ? g.history().length : 0; })();
+  if (n){
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'mResume';
+    b.textContent = `Continue your duel (move ${Math.floor(n / 2) + 1}${savedGame.mode === 'cpu' ? ' vs CPU' : ''})`;
+    $('#mActions').appendChild(b);
+    b.onclick = () => {
+      A.init(); started = true; hideModal();
+      mode = savedGame.mode; playerColor = savedGame.playerColor || 'w'; level = savedGame.level ?? level;
+      seg('modeSeg', 'mode', mode); seg('sideSeg', 'side', playerColor); seg('lvlSeg', 'lvl', level);
+      newGame();
+      game.load_pgn(savedGame.pgn); orientation = savedGame.orientation || orientation; setCamSide(orientation);
+      const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
+      render(true); cpuTurn();
+    };
+  }
+}
+$('#pgnBtn').onclick = () => {
+  const pgn = game.pgn({max_width: 72}) || '(no moves yet)';
+  try { navigator.clipboard.writeText(pgn).then(() => toast('PGN copied'), () => toast('Copy failed')); } catch(e){ toast('Copy failed'); }
+};
 $('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
