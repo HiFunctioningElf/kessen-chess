@@ -1911,21 +1911,52 @@ const inviteLink = code => location.origin + location.pathname + '#g' + code;
   const m = /^#g([A-Z0-9]{6})$/.exec(location.hash || '');
   if (m){ mode = 'online'; seg('modeSeg', 'mode', mode); joinGame(m[1]); }
 })();
-// PeerJS: a ref that looks like a db document (update / onSnapshot), mirrored to the friend over the data channel
+// PeerJS: a ref that looks like a db document (update / onSnapshot), mirrored to the friend over the data channel.
+// Every change bumps a version number `v`; a side only accepts states newer than its own. Both sides re-send
+// their state every few seconds, so a move sent during a connection hiccup still arrives once the link is back,
+// and an old or repeated message can never roll the game back.
 function p2pRef(){
   let listener = null;
   const emit = d => { if (listener) listener({exists: true, data: () => d}); };
   return {
     onSnapshot(fn){ listener = fn; return () => { listener = null; }; },
-    update(patch){ const d = Object.assign({}, net.data || {}, patch); emit(d); if (net.conn && net.conn.open) net.conn.send({t: 'state', d}); return Promise.resolve(); },
-    receive: emit
+    update(patch){ const d = Object.assign({}, net.data || {}, patch, {v: ((net.data && net.data.v) || 0) + 1}); emit(d); p2pSend(); return Promise.resolve(); },
+    receive(d){ if (net.data && (d.v || 0) <= (net.data.v || 0)) return; emit(d); }
   };
+}
+const p2pSend = () => { if (net.conn && net.conn.open && net.data){ try { net.conn.send({t: 'state', d: net.data}); } catch(e){} } };
+let lastHeard = 0, reconnecting = false, linkOk = null;
+setInterval(() => {
+  if (net.kind !== 'p2p' || !net.code) return;
+  p2pSend();
+  const open = !!(net.conn && net.conn.open), quiet = Date.now() - lastHeard > 20000;
+  if (net.myId === 'guest' && (!open || quiet)) reconnectGuest();
+  if (net.data && net.data.w && net.data.b){
+    const ok = open && !quiet;
+    if (ok !== linkOk){ linkOk = ok; note(ok ? 'Connected to your friend. Keep this tab open while you play.' : net.myId === 'host' ? 'Connection lost. Waiting for your friend to reconnect…' : 'Connection lost. Reconnecting to your friend…', !ok); }
+  }
+}, 2500);
+// The friend's side redials the host whenever the link drops; the host always takes the newest connection.
+async function reconnectGuest(){
+  if (reconnecting || !net.peer || !net.code) return;
+  reconnecting = true;
+  const peer = net.peer, code = net.code;
+  try {
+    if (peer.disconnected){ try { peer.reconnect(); } catch(e){} await sleep(1500); }
+    const conn = peer.connect(PEER_PREFIX + code, {reliable: true});
+    await new Promise((res, rej) => { conn.on('open', res); conn.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 8000); });
+    if (net.code !== code || net.peer !== peer){ conn.close(); return; }
+    const old = net.conn; wireConn(conn); if (old && old !== conn){ try { old.close(); } catch(e){} }
+    lastHeard = Date.now(); conn.send({t: 'hello'}); p2pSend();
+  } catch(e){ /* the next heartbeat tries again */ }
+  finally { reconnecting = false; }
 }
 const seatOk = v => v === null || v === 'host' || v === 'guest';
 function wireConn(conn){
   net.conn = conn;
   conn.on('data', m => {
-    if (m && m.t === 'hello' && net.myId === 'host' && net.ref){ net.ref.update({}); return; }
+    lastHeard = Date.now();
+    if (m && m.t === 'hello' && net.myId === 'host' && net.ref){ p2pSend(); return; }
     if (!m || m.t !== 'state' || !m.d || typeof m.d !== 'object') return;
     const d = m.d;
     if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return;
@@ -1934,9 +1965,9 @@ function wireConn(conn){
     const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
     const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
     const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
-    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag});
+    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, v: num(d.v) ? d.v : 0});
   });
-  conn.on('close', () => { if (net.conn === conn){ net.conn = null; note(net.myId === 'host' ? 'Your friend disconnected. They can rejoin with the same invite link.' : 'Lost the connection to your friend. Rejoin with the same code.', true); } });
+  conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
 function dropPeer(){ if (net.peer){ try { net.peer.destroy(); } catch(e){} } net.peer = null; net.conn = null; }
 async function createGame(){
@@ -1949,11 +1980,15 @@ async function createGame(){
     try {
       peer = await new Promise((res, rej) => { const p = new Peer(PEER_PREFIX + code); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); });
     } catch(e){ note(e && e.type === 'unavailable-id' ? 'That code was taken. Click Create game again.' : 'Could not reach the matchmaking server. Try again in a moment.', true); return; }
-    net.peer = peer; net.myId = 'host';
+    net.peer = peer; net.myId = 'host'; linkOk = null;
     peer.on('connection', conn => {
-      if (net.conn && net.conn.open){ conn.on('open', () => conn.close()); return; }
-      wireConn(conn);
-      conn.on('open', () => { const d = net.data || {}; net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'}); });
+      conn.on('open', () => {
+        const old = net.conn; wireConn(conn); lastHeard = Date.now();
+        if (old && old !== conn){ try { old.close(); } catch(e){} }
+        const d = net.data || {};
+        if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
+        else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
+      });
     });
     peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
     const ref = p2pRef();
@@ -1981,7 +2016,7 @@ async function joinGame(code){
       const conn = peer.connect(PEER_PREFIX + code, {reliable: true});
       await new Promise((res, rej) => { conn.on('open', res); peer.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 15000); });
       const ref = p2pRef();
-      attach(code, ref); wireConn(conn); conn.send({t: 'hello'});
+      attach(code, ref); wireConn(conn); lastHeard = Date.now(); linkOk = null; conn.send({t: 'hello'});
       note('Connected. Waiting for the game to load…');
     } catch(e){
       dropPeer();
