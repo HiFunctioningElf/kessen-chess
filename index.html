@@ -234,6 +234,14 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .swatches button{width:34px;height:34px;border:2px solid #000;cursor:pointer;border-radius:50%}
 .swatches button[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px}
 .scouter{font:700 15px/1.5 ui-monospace,Consolas,monospace;color:#7dff8a;background:rgba(10,30,14,.92);border:2px solid #7dff8a;box-shadow:inset 0 0 18px rgba(125,255,138,.25);padding:10px 12px;text-align:left;text-shadow:0 0 6px rgba(125,255,138,.7)}
+.fairplay{text-align:left;font-size:13px;border:2px solid var(--line);background:var(--ink);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.fairplay .fh{display:flex;justify-content:space-between;gap:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--muted)}
+.fairplay .fr{display:grid;grid-template-columns:22px 1fr;gap:2px 8px;align-items:start}
+.fairplay .fr .g{font-family:var(--chess);font-size:18px;line-height:1.1}
+.fairplay .stats{color:var(--text)}
+.fairplay .verdict{font-weight:700}
+.fairplay .ok{color:#7dff8a}.fairplay .warn{color:var(--gold)}
+.fairplay small{color:var(--muted);line-height:1.4}
 .scouter .big{font-size:26px;display:block}
 .scouter .rk{color:#ffe36b}
 .pl .pw{font-size:11px;color:var(--gold);margin-left:auto}
@@ -300,7 +308,6 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
       <button class="chip" id="fxBtn" aria-pressed="true">Cut-ins</button>
-      <button class="chip" id="mgBtn" aria-pressed="true" title="A minigame every 8 moves; the winner gets a power-up">Minigames</button>
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
@@ -322,6 +329,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
           <div class="seg" id="modeSeg"><button id="mCpu" data-mode="cpu" aria-pressed="true">CPU</button><button id="mPvp" data-mode="pvp" aria-pressed="false">Same screen</button><button id="mOn" data-mode="online" aria-pressed="false">Online friend</button></div></div>
         <div class="field" id="sideField"><span class="label">You play</span>
           <div class="seg" id="sideSeg"><button id="sW" data-side="w" aria-pressed="true">White</button><button id="sB" data-side="b" aria-pressed="false">Black</button></div></div>
+        <div class="field" id="gmField"><span class="label">Game mode</span>
+          <div class="seg" id="gmSeg"><button data-gm="classic" aria-pressed="false">Classic</button><button data-gm="kessen" aria-pressed="true">Kessen</button></div>
+          <div class="note" id="gmNote"></div></div>
         <div class="field" id="flipField"><span class="label">Board view</span>
           <div class="seg" id="flipSeg"><button data-flip="on" aria-pressed="false">Auto-flip</button><button data-flip="off" aria-pressed="true">Fixed</button></div></div>
         <div class="field" id="lvlField"><span class="label">CPU level</span>
@@ -380,6 +390,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <div class="m-jp" id="mJp">決戦</div>
     <div class="m-title" id="mTitle">A duel of kings awaits</div>
     <div class="scouter" id="mScouter" hidden></div>
+    <div class="fairplay" id="mFair" hidden></div>
     <div class="m-sub" id="mSub">A 3D board, a cut-in for every capture, an alarm for every check, and a shattering king at checkmate. Play the CPU, a friend on this screen, or a friend online. All music and sound are synthesized live in your browser.</div>
     <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button></div>
   </div>
@@ -1645,6 +1656,7 @@ function panel(){
   log.scrollTop = log.scrollHeight;
   $('#lvlField').hidden = mode !== 'cpu';
   $('#flipField').hidden = mode !== 'pvp';
+  if (typeof drawGameMode === 'function') drawGameMode();
   if (typeof drawPowers === 'function') drawPowers();
   $('#sideField').hidden = mode === 'pvp' || (mode === 'online' && !!net.code);
   $('#onlineField').hidden = mode !== 'online';
@@ -2488,7 +2500,7 @@ let ended = null;     // {type: 'resign' | 'draw' | 'abandon', winner: 'w' | 'b'
 const isOver = () => game.game_over() || !!flagged || !!ended;
 const tcOn = () => clock.base > 0 && mode !== 'cpu';
 const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
-function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; oracle = null; const eb = document.querySelector('#evalBar'); if (eb) eb.hidden = true; } drawClocks(); }
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } if (typeof fp !== 'undefined'){ fp = {tabouts: 0, awayMs: 0}; awaySince = 0; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; oracle = null; const eb = document.querySelector('#evalBar'); if (eb) eb.hidden = true; } drawClocks(); }
 function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
 function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
 const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
@@ -2654,8 +2666,21 @@ async function commit(input, remote, remoteClock){
 const MG_EVERY = Math.max(2, +new URLSearchParams(location.search).get('mgEvery') || 16), MG_WIN = 2, SLAP_MS = 380, FLINCH_MS = 450, LIVE_MS = 3000;
 const OTHER = c => (c === 'w' ? 'b' : 'w');
 let minigamesOn = true; try { minigamesOn = localStorage.getItem('kessen-minigames') !== 'off'; } catch(e){}
-$('#mgBtn').setAttribute('aria-pressed', String(minigamesOn));
-$('#mgBtn').onclick = e => toggle(e.currentTarget, v => { minigamesOn = v; try { localStorage.setItem('kessen-minigames', v ? 'on' : 'off'); } catch(err){} toast(v ? 'Minigames on' : 'Minigames off'); });
+// Game mode is picked before a match: Classic is pure chess, Kessen adds the minigames and power-ups. It can't change mid-match.
+const matchLive = () => started && !isOver() && (mode === 'online' ? !!net.code : game.history().length > 0);
+function drawGameMode(){
+  const kessen = mgEnabled(), locked = matchLive() || (mode === 'online' && !!net.code);
+  seg('gmSeg', 'gm', kessen ? 'kessen' : 'classic');
+  $('#gmSeg').querySelectorAll('button').forEach(b => { b.disabled = locked; });
+  $('#gmNote').textContent = (kessen ? 'Kessen: a Red Hands minigame every 8 moves; the winner earns a power-up.' : 'Classic: just chess.') +
+    (locked ? (mode === 'online' && net.code ? ' Set by the game creator.' : ' Locked until this duel ends.') : '');
+}
+$('#gmSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled || busy) return;
+  minigamesOn = b.dataset.gm === 'kessen';
+  try { localStorage.setItem('kessen-minigames', minigamesOn ? 'on' : 'off'); } catch(err){}
+  if (mode !== 'online' && started) newGame(); else panel();
+});
 const mgEnabled = () => mode === 'online' ? !!(net.data && net.data.mg !== false) : minigamesOn;
 function shouldMinigame(){
   const n = game.history().length;
@@ -2901,21 +2926,34 @@ function getStockfish(){
   return sfWorker;
 }
 // Evaluation from White's point of view: {cp} in centipawns or {mate} in moves (negative = Black mates).
-function analyse(fen){
-  const flip = fen.split(' ')[1] === 'b' ? -1 : 1;
-  const viaEngine = async () => { const r = await engineMove({fen, seen: [], depth: 3, ms: 900, noise: 0, quiet: true}); return {cp: r ? flip * r.score : 0, src: 'kessen'}; };
-  const w = getStockfish(); if (!w) return viaEngine();
-  return new Promise(res => {
-    let last = null;
-    const done = v => { sfOnLine = null; clearTimeout(t); res(v); };
-    const t = setTimeout(() => done(last || null), 2500);
+// One search at a time (Stockfish has a single line of output). Score is from the side to move's view, in centipawns;
+// a forced mate counts as ±10000 less the distance.
+let sfQueue = Promise.resolve();
+function sfSearch(fen, ms){
+  const job = sfQueue.then(() => new Promise(res => {
+    const w = getStockfish();
+    const viaEngine = () => engineMove({fen, seen: [], depth: 2, ms: Math.max(300, ms), noise: 0, quiet: true}).then(r => res(r ? {score: r.score, best: r.from + r.to + (r.promotion || ''), src: 'kessen'} : null));
+    if (!w) return viaEngine();
+    let score = null, settled = false;
+    const done = v => { if (settled) return; settled = true; sfOnLine = null; clearTimeout(t); v ? res(v) : viaEngine(); };
+    const t = setTimeout(() => done(score === null ? null : {score, best: null, src: 'sf'}), ms + 2500);
     sfOnLine = line => {
       const m = / score (cp|mate) (-?\d+)/.exec(line);
-      if (m) last = m[1] === 'cp' ? {cp: flip * +m[2], src: 'sf'} : {mate: flip * +m[2], src: 'sf'};
-      if (line.startsWith('bestmove')) done(last);
+      if (m) score = m[1] === 'cp' ? +m[2] : (+m[2] > 0 ? 10000 - +m[2] : -10000 - +m[2]);
+      const b = /^bestmove (\S+)/.exec(line);
+      if (b) done(score === null ? null : {score, best: b[1] === '(none)' ? null : b[1], src: 'sf'});
     };
-    w.postMessage('position fen ' + fen); w.postMessage('go movetime 900');
-  }).then(v => v || viaEngine());
+    w.postMessage('position fen ' + fen); w.postMessage('go movetime ' + ms);
+  }));
+  sfQueue = job.catch(() => {});
+  return job;
+}
+// White's point of view, for the eval bar: {cp} or {mate}.
+async function analyse(fen){
+  const flip = fen.split(' ')[1] === 'b' ? -1 : 1, r = await sfSearch(fen, 900);
+  if (!r) return {cp: 0, src: 'kessen'};
+  if (Math.abs(r.score) > 9000) return {mate: flip * Math.sign(r.score) * (10000 - Math.abs(r.score)), src: r.src};
+  return {cp: flip * r.score, src: r.src};
 }
 const oracleVisible = () => oracle && (mode === 'pvp' || oracle.color === myColor());
 async function oracleUpdate(){
@@ -2940,6 +2978,60 @@ function oracleTick(){
   if (!oracle) return;
   if (--oracle.plies <= 0){ oracle = null; $('#evalBar').hidden = true; toast('Rude Fishy swims off, unimpressed 🐟'); return; }
   oracleUpdate();
+}
+/* ---- Fair-play report (online games): signals, not proof ----
+   Tab-outs: each screen counts how often (and how long) its own player left the tab or window during their own turn, and
+   shares it. Accuracy: after the game, Stockfish reviews every move: how often each player picked its top choice, and how
+   much each move gave away on average (very low = engine-like). Opening moves and already-decided positions are skipped. */
+let fp = {tabouts: 0, awayMs: 0}, awaySince = 0, fairJob = 0;
+const myTurnOnline = () => mode === 'online' && net.my && started && !isOver() && game.turn() === net.my;
+const shareFp = () => { if (mode === 'online' && net.ref && net.my) net.ref.update({['fp' + net.my]: {tabouts: fp.tabouts, awayMs: Math.round(fp.awayMs)}}).catch(() => {}); };
+function goneAway(){ if (!awaySince && myTurnOnline()){ awaySince = performance.now(); fp.tabouts++; } }
+function cameBack(){ if (awaySince){ fp.awayMs += performance.now() - awaySince; awaySince = 0; shareFp(); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) goneAway(); else cameBack(); });
+addEventListener('blur', () => setTimeout(() => { if (!document.hasFocus() && !(document.activeElement && document.activeElement.tagName === 'IFRAME')) goneAway(); }, 50));
+addEventListener('focus', cameBack);
+async function fairReview(onProgress){
+  const hist = game.history({verbose: true}), r = new Chess(), fens = [r.fen()];
+  for (const m of hist){ r.move(m); fens.push(r.fen()); }
+  const evals = [];
+  for (let i = 0; i < fens.length; i++){
+    const g = new Chess(fens[i]);
+    evals.push(g.game_over() ? {score: g.in_checkmate() ? -10000 : 0, best: null} : await sfSearch(fens[i], 140));
+    onProgress(i + 1, fens.length);
+  }
+  const st = {w: {n: 0, match: 0, loss: 0}, b: {n: 0, match: 0, loss: 0}};
+  hist.forEach((m, i) => {
+    const e0 = evals[i], e1 = evals[i + 1];
+    if (i < 8 || !e0 || !e1 || Math.abs(e0.score) > 600) return;   // opening theory, or the game is already decided
+    const after = -e1.score, played = m.from + m.to + (m.promotion || '');
+    const x = st[m.color]; x.n++; if (e0.best && e0.best === played) x.match++;
+    x.loss += Math.min(300, Math.max(0, e0.score - after));
+  });
+  return st;
+}
+function fairVerdict(a, t){
+  const flags = [];
+  if (a && a.n >= 12 && a.match / a.n >= .85 && a.loss / a.n < 15) flags.push(['warn', '🚩 Very engine-like accuracy']);
+  if (t && t.tabouts >= 3) flags.push(['warn', `👀 Left the game during their turn ${t.tabouts} times (${Math.round(t.awayMs / 1000)} s)`]);
+  return flags.length ? flags : [['ok', '✅ Nothing unusual']];
+}
+async function showFairPlay(){
+  const box = $('#mFair');
+  if (!(mode === 'online' && net.my && isOver() && game.history().length >= 10)){ box.hidden = true; return; }
+  const job = ++fairJob, d = net.data || {};
+  const tab = c => (c === net.my ? {tabouts: fp.tabouts, awayMs: fp.awayMs} : d['fp' + c] || {tabouts: 0, awayMs: 0});
+  const draw = (acc, prog) => {
+    box.innerHTML = `<div class="fh"><span>Fair-play report</span><span>${prog || 'Stockfish review'}</span></div>` + ['w', 'b'].map(c => {
+      const a = acc && acc[c], t = tab(c);
+      const stats = a ? (a.n ? `Engine match ${Math.round(100 * a.match / a.n)}% · avg loss ${Math.round(a.loss / a.n)} · ${a.n} moves checked` : 'Too few moves to judge') : 'Reviewing…';
+      const v = acc ? fairVerdict(a, t).map(([k, txt]) => `<span class="verdict ${k}">${txt}</span>`).join('<br>') : '';
+      return `<div class="fr"><span class="g ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span><div><div class="stats">${SIDE(c)}${c === net.my ? ' (you)' : ''}: ${stats} · tab-outs ${t.tabouts}</div>${v}</div></div>`;
+    }).join('') + '<small>Signals, not proof: strong players can be accurate, and tab-outs are reported by each player\'s own browser.</small>';
+  };
+  box.hidden = false; draw(null, 'Reviewing…');
+  const acc = await fairReview((i, n) => { if (job === fairJob) box.querySelector('.fh span:last-child').textContent = `Reviewing ${i}/${n}`; });
+  if (job === fairJob) draw(acc);
 }
 /* ---- Resign, draw offers and forfeits: games that end off the board ---- */
 const SIDE = c => (c === 'w' ? 'White' : 'Black');
@@ -3066,7 +3158,7 @@ async function endGame(res, remote){
 }
 const canEndNow = () => started && !busy && !isOver() && game.history().length > 0 && (mode !== 'online' || !!(net.my && net.data && net.data.w && net.data.b));
 $('#resignBtn').onclick = () => {
-  if (!canEndNow()){ toast(isOver() ? 'This duel is already over' : 'Make a move first'); return; }
+  if (!canEndNow()){ toast(isOver() ? 'This duel is already over' : busy ? 'Wait for the move to finish' : 'Make a move first'); return; }
   const me = mode === 'cpu' ? playerColor : mode === 'online' ? net.my : game.turn();
   if (!confirm(`Resign as ${SIDE(me)}?`)) return;
   endGame({type: 'resign', winner: me === 'w' ? 'b' : 'w'});
@@ -3078,7 +3170,7 @@ function showChoice(offerer){
 const hideChoice = () => { $('#drawChoice').hidden = true; };
 let pvpOffer = null;
 $('#drawBtn').onclick = async () => {
-  if (!canEndNow()){ toast(isOver() ? 'This duel is already over' : 'Make a move first'); return; }
+  if (!canEndNow()){ toast(isOver() ? 'This duel is already over' : busy ? 'Wait for the move to finish' : 'Make a move first'); return; }
   if (offerFx || !$('#drawChoice').hidden){ toast('A draw offer is already on the table'); return; }
   if (mode === 'pvp'){ pvpOffer = game.turn(); handIn(pvpOffer); showChoice(pvpOffer); return; }
   if (mode === 'cpu'){
@@ -3533,7 +3625,8 @@ function wireConn(conn){
     const MG_T = ['ready', 'slap', 'fake', 'res'], POW = Object.keys(POWERS);
     const mg = d.mg === false ? false : d.mg && typeof d.mg === 'object' && MG_T.includes(d.mg.t) && num(d.mg.id) && num(d.mg.k) ? {t: d.mg.t, id: d.mg.id, k: d.mg.k, s: num(d.mg.s) ? d.mg.s : 0, from: wb(d.mg.from), pt: wb(d.mg.pt), why: ['hit', 'dodge', 'flinch', 'early', 'slow'].includes(d.mg.why) ? d.mg.why : null} : null;
     const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
-    if (net.ref) net.ref.receive({mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
+    const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
+    if (net.ref) net.ref.receive({fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
   });
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
@@ -3718,10 +3811,10 @@ function applyRemote(d){
   render(true);
 }
 // sides: 'swap' (default), 'keep' or 'random'; tc: a new time control, or keep the current one
-function rematchOnline({sides = 'swap', tc = null} = {}){
+function rematchOnline({sides = 'swap', tc = null, mg} = {}){
   if (!net.ref || !net.data) return;
   const d = net.data, swap = sides === 'swap' || (sides === 'random' && Math.random() < .5);
-  net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null, pow: null, tb: 0, heist: 0}, tc ? {tc} : {})).catch(() => note('Could not start the rematch. Try again.', true));
+  net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null, pow: null, tb: 0, heist: 0, fpw: null, fpb: null}, tc ? {tc} : {}, mg !== undefined ? {mg} : {})).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
 /* ---- Random opponent: join someone already waiting in a matchmaking room, or open one and wait ---- */
@@ -3849,25 +3942,29 @@ $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
 })();
 
-function hideModal(){ $('#modal').hidden = true; $('#mScouter').hidden = true; clearInterval(contTimer); }
+function hideModal(){ $('#modal').hidden = true; $('#mScouter').hidden = true; $('#mFair').hidden = true; fairJob++; clearInterval(contTimer); }
 // Online: change the time control and who plays which side before the rematch starts.
 function showRules(){
   clearInterval(contTimer);
   $('#mJp').textContent = '再戦'; $('#mTitle').textContent = 'Change the rules'; $('#mSub').textContent = 'Your friend gets the new rules as soon as you start.';
   const cur = net.data && net.data.tc ? `${net.data.tc.base / 60000}+${net.data.tc.inc / 1000}` : '0+0';
   $('#mActions').innerHTML = `<div class="rules"><label class="label" for="rTc">Time control</label><select id="rTc" class="sel">${$('#tcSel').innerHTML}</select>
+    <span class="label">Game mode</span><div class="seg" id="rMode"><button data-m="classic" aria-pressed="${!mgEnabled()}">Classic</button><button data-m="kessen" aria-pressed="${mgEnabled()}">Kessen</button></div>
     <span class="label">Sides</span><div class="seg" id="rSides"><button data-s="swap" aria-pressed="true">Swap</button><button data-s="keep" aria-pressed="false">Keep</button><button data-s="random" aria-pressed="false">Random</button></div>
     <div class="m-actions"><button class="btn primary" id="rGo">Start rematch</button><button class="btn" id="rBack">Back</button></div></div>`;
   $('#rTc').value = cur;
   let sides = 'swap';
   $('#rSides').onclick = e => { const b = e.target.closest('button'); if (!b) return; sides = b.dataset.s; $('#rSides').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
-  $('#rGo').onclick = () => { hideModal(); rematchOnline({sides, tc: parseTc($('#rTc').value)}); };
+  let gm = mgEnabled() ? 'kessen' : 'classic';
+  $('#rMode').onclick = e => { const b = e.target.closest('button'); if (!b) return; gm = b.dataset.m; $('#rMode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
+  $('#rGo').onclick = () => { hideModal(); rematchOnline({sides, tc: parseTc($('#rTc').value), mg: gm === 'kessen' ? null : false}); };
   $('#rBack').onclick = () => showEnd('Rematch?', 'Same rules with sides swapped, or change them first.', '再戦');
   $('#modal').hidden = false; $('#rGo').focus();
 }
 function showEnd(title, sub, jp){
   $('#mJp').textContent = jp; $('#mTitle').textContent = title; $('#mSub').textContent = sub;
   showScouter(isOver() ? rateGame() : null);
+  if (isOver()) showFairPlay(); else $('#mFair').hidden = true;
   const rules = mode === 'online' && net.my ? '<button class="btn" id="mRules">Change rules</button>' : '';
   $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>`;
   if ($('#mRules')) $('#mRules').onclick = showRules;
