@@ -13,7 +13,7 @@
 
 ## Extras
 
-- **Red Hands minigame** every 8 full moves. The winner earns a power-up: Sensei's Hint, Takeback, Time Heist (clock games) or Rude Fishy (an eval bar with opinions, for 3 moves).
+- **Minigames** every 8 full moves, taking turns: Red Hands (slap first), Memory Flash (repeat the pattern) and Mate in One (fastest checkmate wins). The winner earns a power-up: Sensei's Hint, Takeback, Time Heist (clock games) or Rude Fishy (an eval bar with opinions, for 3 moves; not in same-screen games, since both players would see it). Your next minigame and your power-ups show in the corner of the board.
 - **Power Level (戦闘力)**: a just-for-fun rating saved on your device, with style bonuses for things like en passant and underpromotion.
 - Resign with a white flag, offer a draw with a handshake (or get slapped), premove up to 6 moves, and resume a game after a reload.
 

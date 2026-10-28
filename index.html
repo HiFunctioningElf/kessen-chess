@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029013631">
+<meta name="kessen-build" content="1793203291">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -61,7 +61,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .panel{display:flex;flex-direction:column;gap:14px;width:100%;max-width:520px;min-width:0}
 .card{background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0}
 .status{display:flex;gap:12px;align-items:center;border-left:6px solid var(--blood)}
-.turn-chip{width:38px;height:38px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:30px;background:var(--night);border:2px solid var(--gold)}
+.turn-chip{width:38px;height:38px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:30px;background:var(--night);border:2px solid var(--gold);line-height:1}
+.turn-chip > span{display:block;transform:translateY(.15em)}
 .eyebrow,.label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .status-text{font-family:var(--display);font-size:20px;line-height:1.2;text-wrap:balance}
 .ctrl{display:flex;flex-direction:column;gap:12px}
@@ -76,7 +77,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .btn{flex:1;background:var(--night);border:1px solid var(--line);padding:10px 12px;font-weight:700;cursor:pointer;letter-spacing:.04em}
 .btn:hover{border-color:var(--gold)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.evalbar{position:absolute;left:10px;top:12%;bottom:12%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;width:56px}
+.evalbar{position:absolute;left:10px;top:max(12%,52px);bottom:12%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;width:56px}
 .eb-track{position:relative;flex:1;width:24px;background:#141414;border:2px solid #000;box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,200,61,.35);overflow:hidden}
 .eb-fill{position:absolute;left:0;right:0;bottom:0;height:50%;background:#fffaf0;transition:height .6s cubic-bezier(.2,.9,.3,1)}
 .eb-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-90deg);font:800 12px ui-monospace,Consolas,monospace;color:#ff2e4d;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap}
@@ -278,7 +279,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .vhs-osd.r{left:auto;right:max(16px,4vw)}
 .powers #powRows{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .powrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}
-.powrow .who{font-family:var(--chess);font-size:18px;width:22px}
+.powrow .who{font-family:var(--chess);font-size:18px;width:22px;line-height:1;transform:translateY(.15em);text-align:center}
 .powrow .none{color:var(--muted);font-size:12px}
 .pow{background:var(--night);border:1px solid var(--gold);color:var(--text);padding:5px 9px;font-weight:700;font-size:12px;cursor:pointer}
 .pow:disabled{opacity:.45;cursor:not-allowed}
@@ -304,6 +305,29 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mg-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
 .mg-btn:disabled{opacity:.35}
 .mg-btn kbd{display:block;font:700 10px var(--body);opacity:.7}
+/* new minigames: Memory Flash tiles and the Mate in One board */
+.mg-center{display:grid;place-items:center;container-type:size}
+@media (max-width:600px){.mg{position:fixed;z-index:40;padding:16px 12px}}
+.mem{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:min(300px,96cqw,96cqh);aspect-ratio:1}
+.mem-t{border:2px solid #000;cursor:pointer;transition:transform .08s,background .08s}
+.mem-t.l{background:#a86a84}.mem-t.d{background:#4a1d3e}
+.mem-t.lit{background:var(--gold);box-shadow:0 0 18px var(--gold);transform:scale(1.06)}
+.mem-t.hit{background:var(--volt)}.mem-t.miss{background:var(--blood)}
+.mem-t:disabled{cursor:default}
+.m1{display:flex;flex-direction:column;align-items:center;gap:6px}
+.m1-cap{font-weight:700;font-size:13px;color:var(--muted);text-align:center}
+.m1-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(340px,96cqw,calc(100cqh - 52px));aspect-ratio:1;border:3px solid #000}
+.m1-sq{border:0;padding:0;display:grid;place-items:center;font-family:var(--chess);font-size:min(30px,11cqw,6cqh);line-height:1;cursor:pointer;position:relative}
+.m1-sq.l{background:#a86a84}.m1-sq.d{background:#4a1d3e}
+.m1-sq > span{display:block;transform:translateY(.15em)}
+.m1-sq.sel{box-shadow:inset 0 0 0 3px var(--volt)}
+.m1-sq.dot::after{content:"";position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(63,224,255,.85)}
+.m1-time{font:700 15px ui-monospace,Consolas,monospace;color:var(--gold);font-variant-numeric:tabular-nums}
+/* on-board HUD: next minigame + your power-ups */
+.mghud{position:absolute;left:10px;top:10px;z-index:2;display:flex;gap:6px;flex-wrap:wrap;align-items:center;max-width:calc(100% - 170px)}
+.mghud .next{background:rgba(12,10,23,.88);border:2px solid var(--line);padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.04em}
+.mghud .next b{color:var(--gold)}
+.mghud .pow{background:rgba(12,10,23,.92);font-size:13px;padding:5px 10px;box-shadow:0 0 12px rgba(255,200,61,.3)}
 /* ---- Donations panel, Penny Dropper and the coffee jar ---- */
 .donate-chip{color:#ffb3d6;border-color:#ff8ac4;align-self:center;margin-left:4px}
 .donate-chip .amt{margin-left:6px;color:var(--gold);font-variant-numeric:tabular-nums}
@@ -369,7 +393,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     </div>
   </header>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
@@ -2741,8 +2765,8 @@ async function commit(input, remote, remoteClock){
   if (mode === 'pvp' && autoFlip && !isOver() && orientation !== game.turn()){ orientation = game.turn(); swingTo(orientation); }
   if (shouldMinigame()){
     busy = true; busySince = Date.now(); clockPause(); clearPremove(); render();
-    try { await awardPower(await redHands()); } catch(e){ console.error(e); document.querySelector('#mg')?.remove(); }
-    finally { busy = false; if (tcOn() && !isOver()) clockStart(game.turn()); render(); }
+    try { await awardPower(await playMinigame()); } catch(e){ console.error(e); document.querySelector('#mg')?.remove(); }
+    finally { busy = false; if (tcOn() && !isOver()) clockStart(game.turn()); render(); panel(); }   // panel() re-enables the new power-up buttons
     if (isOver()) return;
   }
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
@@ -2767,7 +2791,7 @@ function drawGameMode(){
   const kessen = mgEnabled(), locked = matchLive() || (mode === 'online' && !!net.code);
   seg('gmSeg', 'gm', kessen ? 'kessen' : 'classic');
   $('#gmSeg').querySelectorAll('button').forEach(b => { b.disabled = locked; });
-  $('#gmNote').textContent = (kessen ? 'Kessen: a Red Hands minigame every 8 moves; the winner earns a power-up.' : 'Classic: just chess.') +
+  $('#gmNote').textContent = (kessen ? `Kessen: a minigame every ${MG_EVERY / 2} moves (Red Hands, Memory Flash, Mate in One); the winner earns a power-up.` : 'Classic: just chess.') +
     (locked ? (mode === 'online' && net.code ? ' Set by the game creator.' : ' Locked until this duel ends.') : '');
 }
 $('#gmSeg').addEventListener('click', e => {
@@ -2777,11 +2801,12 @@ $('#gmSeg').addEventListener('click', e => {
   if (mode !== 'online' && started) newGame(); else panel();
 });
 const mgEnabled = () => mode === 'online' ? !!(net.data && net.data.mg !== false) : minigamesOn;
+let mgPlayedAt = 0;   // the ply of the last minigame: a Takeback can't replay one for another power-up
 function shouldMinigame(){
   const n = game.history().length;
-  if (!mgEnabled() || !started || isOver() || !n || n % MG_EVERY) return false;
-  if (mode === 'online') return !!(net.my && net.data && net.data.w && net.data.b);
-  return true;
+  if (!mgEnabled() || !started || isOver() || !n || n % MG_EVERY || n <= mgPlayedAt) return false;
+  if (mode === 'online' && !(net.my && net.data && net.data.w && net.data.b)) return false;
+  mgPlayedAt = n; return true;
 }
 // who is a person at this screen (the CPU and an online friend are not)
 const humanHere = c => mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
@@ -2936,14 +2961,181 @@ function rhAttemptOnline(ov, att, k){
     }
   });
 }
+/* ---- The minigame rotation: every break plays the next game in this list ---- */
+const MINIGAMES = [
+  {name: 'Red Hands', jp: '赤い手', play: () => redHands()},
+  {name: 'Memory Flash', jp: '記憶', play: () => scoreDuel(MEMORY_FLASH)},
+  {name: 'Mate in One', jp: '詰め', play: () => scoreDuel(MATE_IN_ONE)}
+];
+const minigameAt = n => MINIGAMES[Math.max(0, Math.floor(n / MG_EVERY) - 1) % MINIGAMES.length];   // the one played at ply n
+const upcomingMinigame = () => MINIGAMES[Math.floor(game.history().length / MG_EVERY) % MINIGAMES.length];
+async function playMinigame(){
+  const g = minigameAt(game.history().length);
+  A.sfx.fight(); flash('#fff', 300, .5);
+  await bigText(`${g.name.toUpperCase()}!`, g.jp, {hold: 900, size: .6, color: 'var(--gold)', sub: 'MINIGAME · THE WINNER GETS A POWER-UP'});
+  return g.play();
+}
+// Small seeded random numbers, so both online players get the very same challenge.
+const seededRandom = s => () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+// A score duel: both players take an equal challenge and the higher score wins (a tie has no winner).
+// Same screen: White plays, then Black gets a fresh challenge. vs CPU: the CPU's score comes from its level.
+// Online: both play at once on their own screens, then swap scores.
+async function scoreDuel(spec){
+  const id = game.history().length, base = id * 7919 + 101, score = {w: null, b: null};
+  A.music.duck(90000);
+  const ov = document.createElement('div'); ov.className = 'mg'; ov.id = 'mg';
+  ov.innerHTML = `<div class="mg-title">${spec.jp} ${spec.title.toUpperCase()}<small>MINIGAME · WINNER GETS A POWER-UP</small></div>
+    <div class="mg-score"><span class="gw">${GLYPH.k}${VS}</span><span id="mgSW">–</span><span class="mg-msg" id="mgMsg">GET READY</span><span id="mgSB">–</span><span class="gb">${GLYPH.k}${VS}</span></div>
+    <div class="mg-roles" id="mgRoles"></div><div class="mg-arena mg-center" id="mgArena"></div>`;
+  stageEl.appendChild(ov);
+  const msg = t => { ov.querySelector('#mgMsg').textContent = t; }, roles = t => { ov.querySelector('#mgRoles').textContent = t; }, arena = ov.querySelector('#mgArena');
+  const show = c => { ov.querySelector(c === 'w' ? '#mgSW' : '#mgSB').textContent = score[c] == null ? '–' : spec.fmt(score[c]); };
+  // beat: the score to beat when it's already known, so a run can stop once it's won
+  const playOne = async (c, seedOff, beat = null) => {
+    roles(`${SIDE(c)}: ${spec.how}`); msg(`${SIDE(c).toUpperCase()}, GET READY`); arena.innerHTML = ''; await sleep(1700);
+    score[c] = await spec.run(arena, seededRandom(base + seedOff), msg, beat); show(c); await sleep(900);
+  };
+  try {
+    if (mode === 'pvp'){ await playOne('w', 0); await playOne('b', 17, score.w); }
+    else if (mode === 'cpu'){
+      const me = playerColor, cpu = OTHER(me), cpuScore = spec.cpu();   // decided up front, revealed after
+      await playOne(me, 0, cpuScore);
+      roles(''); arena.innerHTML = ''; msg('THE CPU TRIES…'); await sleep(1500);
+      score[cpu] = cpuScore; show(cpu);
+    } else {
+      // the scores travel as minigame messages; each side keeps re-sending its own until it has the other's
+      const me = net.my, them = OTHER(me);
+      mgListener = m => { if (m.t === 'score' && m.id === id && m.from === them && m.v != null) score[them] = m.v; };
+      if (net.data && net.data.mg) mgListener(net.data.mg);
+      await playOne(me, 0);
+      roles(''); msg('WAITING FOR YOUR FRIEND…');
+      const t0 = Date.now(); let extra = 0;
+      while (Date.now() - t0 < 150000){ mgSend({id, k: 0, t: 'score', v: score[me]}); if (score[them] != null && ++extra > 2) break; await sleep(1500); }
+      show(them);
+    }
+  } finally { mgListener = null; }
+  const {w, b} = score, maxed = spec.max != null && w === spec.max && b === spec.max;   // both reached the top: both win
+  const winner = w == null || b == null ? null : maxed ? 'both' : w > b ? 'w' : b > w ? 'b' : null;
+  msg(maxed ? 'BOTH MAXED OUT!' : winner ? `${SIDE(winner).toUpperCase()} WINS` : w == null || b == null ? 'CALLED OFF' : 'A TIE');
+  A.sfx[winner ? 'heroic' : 'draw']();
+  await sleep(1600); ov.remove();
+  return winner;
+}
+// 記憶 Memory Flash: squares light up in order; tap them back. Each round adds one, up to 10. Score = the longest sequence repeated.
+// A run stops as soon as it beats a known score; if both players reach 10, both win.
+const MEMORY_FLASH = {
+  title: 'Memory Flash', jp: '記憶', how: 'squares light up in order. Tap them back in the same order. Each round adds one, up to 10.',
+  max: 10, fmt: v => String(v),
+  cpu: () => Math.min(10, Math.max(0, [4, 6, 8][level] + Math.floor(Math.random() * 3) - 1)),
+  run: (arena, rnd, msg, beat) => new Promise(async res => {
+    arena.innerHTML = `<div class="mem">${Array.from({length: 16}, (_, i) => `<button type="button" class="mem-t ${((i >> 2) + i) % 2 ? 'l' : 'd'}" data-i="${i}" disabled aria-label="Square ${i + 1}"></button>`).join('')}</div>`;
+    const tiles = [...arena.querySelectorAll('.mem-t')], seq = [];
+    let best = 0;
+    for (let len = 3; len <= 10; len++){
+      while (seq.length < len) seq.push(Math.floor(rnd() * 16));
+      tiles.forEach(t => { t.disabled = true; }); msg(`WATCH · ${len}`); await sleep(600);
+      const on = Math.max(260, 520 - len * 25);
+      for (const i of seq){ tiles[i].classList.add('lit'); A.sfx.beep(); await sleep(on); tiles[i].classList.remove('lit'); await sleep(140); }
+      tiles.forEach(t => { t.disabled = false; }); msg(`YOUR TURN · ${len}`);
+      const ok = await new Promise(done => {
+        let k = 0, timer = 0;
+        const finish = r => { clearTimeout(timer); arena.onpointerdown = null; done(r); };
+        const arm = () => { clearTimeout(timer); timer = setTimeout(() => finish(false), 5000); };   // 5 s per tap
+        arena.onpointerdown = e => {
+          const t = e.target.closest('.mem-t'); if (!t || t.disabled) return; e.preventDefault();
+          const i = +t.dataset.i, right = i === seq[k];
+          t.classList.add(right ? 'hit' : 'miss'); setTimeout(() => t.classList.remove('hit', 'miss'), 220);
+          if (!right){ A.sfx.draw(); finish(false); return; }
+          A.sfx.select(); if (++k === seq.length) finish(true); else arm();
+        };
+        arm();
+      });
+      if (!ok){ msg('MISS!'); break; }
+      best = len; A.sfx.twinkle();
+      if (best === 10){ msg('MAXED OUT!'); break; }
+      if (beat != null && best > beat){ msg('BEATEN!'); break; }
+      msg('NICE!'); await sleep(500);
+    }
+    tiles.forEach(t => { t.disabled = true; });
+    await sleep(600); res(best);
+  })
+};
+// 詰め Mate in One: one try to find the checkmate; the fastest correct answer wins. Every puzzle was checked to have a mate.
+const MATE1 = [
+  '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', 'r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1',
+  '6rk/6pp/8/6N1/8/8/8/6K1 w - - 0 1', 'rnbqkbnr/ppppp2p/5p2/6p1/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1',
+  '6k1/5ppp/8/8/8/8/8/4Q1K1 w - - 0 1', 'rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2',
+  '7k/6pp/8/8/8/8/1Q6/1K4R1 w - - 0 1', '3k4/8/3K4/8/8/8/8/R7 w - - 0 1', '2r3k1/5ppp/8/8/8/8/5PPP/2R3K1 w - - 0 1',
+  'r5k1/8/8/8/8/8/5PPP/6K1 b - - 0 1', '4k3/8/4K3/8/8/8/8/7R w - - 0 1'
+];
+const M1_MS = 30000;
+const MATE_IN_ONE = {
+  title: 'Mate in One', jp: '詰め', how: 'find the checkmate in one move. One try, 30 seconds. Fastest wins.',
+  fmt: v => v ? `${((M1_MS - v) / 1000).toFixed(1)}s` : 'miss',
+  cpu: () => Math.random() < [.55, .8, .95][level] ? Math.max(1, Math.round(M1_MS - [14000, 8000, 4500][level] * (.7 + Math.random() * .6))) : 0,
+  run: (arena, rnd, msg) => new Promise(res => {
+    const g = new Chess(MATE1[Math.floor(rnd() * MATE1.length)]), side = g.turn(), flip = side === 'b';
+    arena.innerHTML = `<div class="m1"><div class="m1-cap">${side === 'w' ? 'White' : 'Black'} to move · checkmate in one</div><div class="m1-board"></div><div class="m1-time"></div></div>`;
+    const board = arena.querySelector('.m1-board'), clockEl = arena.querySelector('.m1-time'), t0 = performance.now();
+    let sel = null, done = false;
+    const end = v => { if (done) return; done = true; clearInterval(tick); board.onpointerdown = null; setTimeout(() => res(v), 900); };
+    const draw = () => {
+      const targets = sel ? g.moves({square: sel, verbose: true}).map(m => m.to) : [];
+      board.innerHTML = '';
+      for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
+        const sq = 'abcdefgh'[flip ? 7 - f : f] + (flip ? r + 1 : 8 - r), p = g.get(sq), b = document.createElement('button');
+        b.type = 'button'; b.className = `m1-sq ${(r + f) % 2 ? 'd' : 'l'}${sq === sel ? ' sel' : ''}${targets.includes(sq) ? ' dot' : ''}`; b.dataset.sq = sq;
+        if (p){ const s = document.createElement('span'); s.className = p.color === 'w' ? 'gw' : 'gb'; s.textContent = GLYPH[p.type] + VS; b.appendChild(s); }
+        board.appendChild(b);
+      }
+    };
+    board.onpointerdown = e => {
+      const b = e.target.closest('.m1-sq'); if (!b || done) return; e.preventDefault();
+      const sq = b.dataset.sq, p = g.get(sq);
+      if (sel && g.moves({square: sel, verbose: true}).some(m => m.to === sq)){
+        const mv = g.move({from: sel, to: sq, promotion: 'q'}); sel = null; draw();
+        if (g.in_checkmate()){ A.sfx.impact(.8); msg(`CHECKMATE! ${mv.san}`); end(Math.max(1, Math.round(M1_MS - (performance.now() - t0)))); }
+        else { A.sfx.draw(); msg(`${mv.san} is not mate`); end(0); }
+        return;
+      }
+      sel = p && p.color === side ? sq : null; if (sel) A.sfx.select(); draw();
+    };
+    const tick = setInterval(() => {
+      const left = Math.max(0, M1_MS - (performance.now() - t0)); clockEl.textContent = `${(left / 1000).toFixed(1)}s`;
+      if (!left){ msg('TIME UP'); end(0); }
+    }, 100);
+    draw(); msg('FIND THE MATE!');
+  })
+};
+// The on-board HUD: the next minigame and your power-ups, usable straight from the board.
+function drawHud(){
+  const hud = $('#mgHud'), on = mgEnabled() && started && !isOver();
+  hud.hidden = !on; if (!on) return;
+  const plies = MG_EVERY - (game.history().length % MG_EVERY), moves = Math.ceil(plies / 2);
+  const rows = mode === 'pvp' ? [game.turn()] : mode === 'cpu' ? [playerColor] : net.my ? [net.my] : [];
+  hud.innerHTML = `<span class="next">⚔️ <b></b> in ${moves} move${moves === 1 ? '' : 's'}</span>` +
+    rows.flatMap(c => powers[c].map(p => `<button class="pow" type="button" data-c="${c}" data-p="${p}" ${canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${POWERS[p][0]} ${POWERS[p][1]}</button>`)).join('');
+  hud.querySelector('.next b').textContent = upcomingMinigame().name;
+}
+$('#mgHud').addEventListener('click', e => { const b = e.target.closest('.pow'); if (b) usePower(b.dataset.c, b.dataset.p); });
+
 /* ---- Power-ups: won in minigames, used on your own turn ---- */
 const POWERS = {hint: ['💡', "Sensei's Hint"], takeback: ['⏪', 'Takeback'], heist: ['⏱', 'Time Heist'], oracle: ['🐟', 'Rude Fishy']};
 let powers = {w: [], b: []}, hintMove = null, tbSeen = 0, heistSeen = 0;
 async function awardPower(winner){
+  if (winner === 'both'){
+    // online, White's screen hands out both, so the two screens don't overwrite each other's power-ups
+    for (const c of mode === 'pvp' ? ['w', 'b'] : mode === 'cpu' ? [playerColor] : net.my === 'w' ? ['w', 'b'] : []) await givePower(c);
+    return;
+  }
   if (!winner) return;
   if (mode === 'cpu' && winner !== playerColor){ toast('The CPU wins the minigame and gloats'); return; }
   if (mode === 'online' && winner !== net.my) return;   // the winner's screen picks and shares it
-  const pool = ['hint', 'takeback', 'oracle'].concat(tcOn() ? ['heist'] : []), p = pool[Math.floor(Math.random() * pool.length)];
+  await givePower(winner);
+}
+async function givePower(winner){
+  // Rude Fishy's eval bar is on screen for both players at once on a shared screen, so it isn't offered there
+  const pool = ['hint', 'takeback'].concat(mode === 'pvp' ? [] : ['oracle'], tcOn() ? ['heist'] : []), p = pool[Math.floor(Math.random() * pool.length)];
   if (powers[winner].length >= 3){ toast('Power-up slots full (3)'); return; }
   powers[winner] = powers[winner].concat(p);
   if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
@@ -2995,6 +3187,7 @@ async function usePower(c, p){
   }
 }
 function drawPowers(){
+  drawHud();
   const rows = mode === 'pvp' ? ['w', 'b'] : mode === 'cpu' ? [playerColor] : net.my ? [net.my, OTHER(net.my)] : [];
   const any = mgEnabled() && rows.length && (rows.some(c => powers[c].length) || started);
   $('#powersCard').hidden = !any;
@@ -3717,8 +3910,8 @@ function wireConn(conn){
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
     const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0} : null;
-    const MG_T = ['ready', 'slap', 'fake', 'res'], POW = Object.keys(POWERS);
-    const mg = d.mg === false ? false : d.mg && typeof d.mg === 'object' && MG_T.includes(d.mg.t) && num(d.mg.id) && num(d.mg.k) ? {t: d.mg.t, id: d.mg.id, k: d.mg.k, s: num(d.mg.s) ? d.mg.s : 0, from: wb(d.mg.from), pt: wb(d.mg.pt), why: ['hit', 'dodge', 'flinch', 'early', 'slow'].includes(d.mg.why) ? d.mg.why : null} : null;
+    const MG_T = ['ready', 'slap', 'fake', 'res', 'score'], POW = Object.keys(POWERS);
+    const mg = d.mg === false ? false : d.mg && typeof d.mg === 'object' && MG_T.includes(d.mg.t) && num(d.mg.id) && num(d.mg.k) ? {t: d.mg.t, id: d.mg.id, k: d.mg.k, s: num(d.mg.s) ? d.mg.s : 0, from: wb(d.mg.from), pt: wb(d.mg.pt), why: ['hit', 'dodge', 'flinch', 'early', 'slow'].includes(d.mg.why) ? d.mg.why : null, v: num(d.mg.v) ? Math.min(d.mg.v, 1e6) : null} : null;
     const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
     const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
     if (net.ref) net.ref.receive({fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
@@ -3966,6 +4159,7 @@ document.addEventListener('pointerdown', () => { A.init(); if (started) A.music.
 /* ================= CONTROLS ================= */
 function seg(id, attr, val){ document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val)))); }
 function newGame(){
+  mgPlayedAt = 0;
   if (mode === 'online'){ if (net.code){ if (net.my) showEnd('Rematch?', 'Same rules with sides swapped, or change them first.', '再戦'); } else { game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true); } return; }
   game.reset(); lastMove = null; selected = null; legal = []; busy = false;
   clockReset(parseTc($('#tcSel').value));
