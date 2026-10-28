@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="kessen-build" content="20261028204609">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -181,6 +182,12 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mv-cap .sub{font:italic 700 clamp(13px,1.9vw,20px)/1.35 var(--body);color:#fff;text-shadow:0 0 6px #000,2px 2px 0 #000;max-width:60ch}
 .heart{position:absolute;font-size:clamp(40px,7vw,80px);line-height:1;color:#ff8ac4;text-shadow:0 0 20px #ff8ac4,0 0 44px #fff}
 .m-count{font-family:var(--display);font-size:clamp(70px,20vw,130px);line-height:1;color:var(--gold);-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:6px 6px 0 var(--blood);font-variant-numeric:tabular-nums}
+.update-banner{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--night);border:2px solid var(--gold);box-shadow:0 0 0 4px #000,0 10px 30px rgba(0,0,0,.6);padding:10px 14px;max-width:calc(100vw - 32px)}
+.update-banner div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.update-banner b{font-family:var(--display);font-weight:400;font-size:16px}
+.update-banner span{font-size:12px;color:var(--muted)}
+.update-banner .btn{flex:none}
 .tclock{position:absolute;left:50%;top:50%;width:min(56vmin,420px);aspect-ratio:1;max-width:calc(100vw - 32px);transform:translate(-50%,-50%);filter:drop-shadow(0 0 30px rgba(255,46,77,.6))}
 .tclock svg{width:100%;height:100%;display:block}
 .mv-tbc{position:absolute;right:max(16px,4vw);bottom:calc(11vh + 18px);font-family:var(--display);font-size:clamp(14px,2.4vw,28px);color:#2a1a0a;background:var(--gold);padding:6px 34px 6px 16px;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%);white-space:nowrap}
@@ -776,9 +783,19 @@ function pickSq(ev){
   const r = renderer.domElement.getBoundingClientRect();
   ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
-  for (const h of ray.intersectObjects(tiles.concat(Object.values(pieceAt)), true)){ let o = h.object; while (o && !o.userData.sq) o = o.parent; if (o) return o.userData.sq; }
-  return null;
+  return pickAll(ev)[0] || null;
 }
+// Every square under the pointer, nearest first (a piece, then the tiles behind it).
+function pickAll(ev){
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const out = [];
+  for (const h of ray.intersectObjects(tiles.concat(Object.values(pieceAt)), true)){ let o = h.object; while (o && !o.userData.sq) o = o.parent; if (o && !out.includes(o.userData.sq)) out.push(o.userData.sq); }
+  return out;
+}
+// How far the pointer may wander during a click before it counts as a drag (trackpads and fingers wobble).
+const CLICK_SLOP = 12;
 function center(sq, y = .5){
   const v = sqPos(sq); v.y = y; v.project(camera);
   const r = renderer.domElement.getBoundingClientRect();
@@ -2008,7 +2025,7 @@ renderer.domElement.addEventListener('pointerdown', e => {
 window.addEventListener('pointermove', e => {
   if (!drag) return;
   if (!drag.active){
-    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < CLICK_SLOP) return;
     drag.active = true;
     if (drag.pre){ preSel = drag.from; preLegal = premoveTargets(drag.from, myColor()); premove = null; }
     else { selected = drag.from; legal = game.moves({square: drag.from, verbose: true}); }
@@ -2022,6 +2039,11 @@ window.addEventListener('pointerup', async e => {
   const d = drag; drag = null; controls.enabled = d.prevControls;
   if (!d.active) return;   // it was a plain click; the click handler takes it from here
   const p = boardPointAt(e), to = p && sqAtPoint(p);
+  if (to === d.from){   // dropped back where it started: treat it as a click that selects the piece
+    if (d.pre){ preSel = d.from; preLegal = premoveTargets(d.from, myColor()); premove = null; }
+    else { selected = d.from; legal = game.moves({square: d.from, verbose: true}); }
+    render(true); return;
+  }
   if (d.pre){
     const opts = preLegal.filter(m => m.to === to);
     if (to && opts.length && canPremove()){ premove = {from: d.from, to, promotion: opts.some(m => m.promotion) ? 'q' : undefined}; preSel = null; preLegal = []; toast('Premove set. Right-click or Esc to cancel'); }
@@ -2036,13 +2058,18 @@ window.addEventListener('pointerup', async e => {
   commit({from: d.from, to, promotion});
 });
 renderer.domElement.addEventListener('pointerup', async e => {
-  if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6) { downAt = null; return; }
+  if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > CLICK_SLOP) { downAt = null; return; }
   downAt = null;
   if (!canMoveNow()){
     if (canPremove()){ premoveClick(pickSq(e)); return; }
     const why = whyNot(); if (why) toast(why); return;
   }
-  const sq = pickSq(e); if (!sq) { selected = null; legal = []; render(); return; }
+  // Prefer a legal destination under the pointer even when another piece's head overlaps it on screen.
+  const hits = pickAll(e);
+  let sq = hits[0];
+  const ownAt = s => { const q = s && game.get(s); return !!q && q.color === game.turn(); };
+  if (selected && sq !== selected && !ownAt(sq) && !legal.some(m => m.to === sq)){ const t = hits.find(s => legal.some(m => m.to === s)); if (t) sq = t; }
+  if (!sq) { selected = null; legal = []; render(); return; }
   const opts = legal.filter(m => m.to === sq);
   if (selected && opts.length){
     let promotion;
@@ -2389,6 +2416,30 @@ $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
   if (!v){ clearPremove(); render(); }
   toast(v ? 'Premoves on' : 'Premoves off');
 });
+/* ---- New-version notice. Only the GitHub Pages build carries a build id; claude.ai refreshes open pages itself. ---- */
+(() => {
+  const meta = document.querySelector('meta[name="kessen-build"]'); if (!meta) return;
+  const mine = meta.content; let shown = false;
+  async function check(){
+    if (shown) return;
+    try {
+      const r = await fetch(location.pathname + '?build-check=' + Date.now(), {cache: 'no-store'}); if (!r.ok) return;
+      const m = /<meta name="kessen-build" content="([^"]+)"/.exec(await r.text());
+      if (m && m[1] !== mine){ shown = true; showUpdate(); }
+    } catch(e){ /* offline: try again later */ }
+  }
+  function showUpdate(){
+    const inGame = game.history().length > 0 && !game.game_over() && !flagged;
+    const el = document.createElement('div'); el.className = 'update-banner'; el.setAttribute('role', 'status');
+    el.innerHTML = `<div><b>New version available!</b><span>${inGame ? 'Reloading ends the game in progress. You can finish it first.' : 'Reload to get the latest features.'}</span></div>
+      <button class="btn primary" type="button" id="updReload">Reload</button><button class="chip" type="button" id="updLater">Later</button>`;
+    document.body.appendChild(el);
+    $('#updReload').onclick = () => location.reload();
+    $('#updLater').onclick = () => el.remove();
+  }
+  setTimeout(check, 15000); setInterval(check, 120000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+})();
 // Piece style picker: every look from the style sheet; the choice is remembered on this device.
 const styleSel = $('#styleSel');
 styleSel.innerHTML = Object.entries(PIECE_STYLES).map(([c, [name]]) => `<option value="${c}">${c} · ${name}${c === DEFAULT_STYLE ? ' (default)' : ''}</option>`).join('');
