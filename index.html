@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028222951">
+<meta name="kessen-build" content="20261028223338">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -1619,7 +1619,8 @@ function ytLoad(){
   };
   const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = () => {}; document.head.appendChild(s);
 }
-document.addEventListener('pointerdown', ytLoad, {once: true});
+// The player loads (paused) as soon as the page is up, so it is ready long before anyone captures en passant.
+if (document.readyState === 'complete') setTimeout(ytLoad, 1500); else addEventListener('load', () => setTimeout(ytLoad, 1500), {once: true});
 const sfxOnNow = () => $('#sfxBtn').getAttribute('aria-pressed') === 'true';
 let frVoices = [];
 const pickVoices = () => { try { frVoices = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); } catch(e){} };
@@ -1644,9 +1645,11 @@ function sayEnPassant(){
   let doneRes; const done = new Promise(r => { doneRes = r; });
   const finish = ms => setTimeout(() => { try { p.pauseVideo(); } catch(e){} box.classList.remove('on'); doneRes(); }, ms);
   const started = new Promise(res => {
-    const t0 = Date.now();
+    const t0 = Date.now(); let kicked = t0;
     const check = setInterval(() => {
       let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
+      // a late "cue" from the player's start-up can swallow the play request: ask again until it plays
+      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); try { p.seekTo(EP_FROM, true); p.playVideo(); } catch(e){} }
       if (st === 1 || yt.state === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(EP_LEN + 600); res(); }
       else if (Date.now() - t0 > 3500){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(1200); res(); }
     }, 50);
