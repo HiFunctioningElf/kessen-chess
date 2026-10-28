@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028230416">
+<meta name="kessen-build" content="20261028230853">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -1807,6 +1807,7 @@ async function dejavuFx(){
   layer.querySelector('.vhs-band').animate([{top: '-10%'}, {top: '105%'}], {duration: 700, iterations: Infinity});
   osd.animate([{opacity: 1}, {opacity: .2}], {duration: 400, iterations: Infinity, direction: 'alternate'});
   try {
+    const song = playClip(CLIPS.dejavu);   // the TV comes on now, so the song buffers during the rewind
     A.sfx.rewind(2.4); flash('#fff', 200, .4);
     let n = Math.ceil(hist.length / 2);
     await tween(2400, k => {
@@ -1817,7 +1818,6 @@ async function dejavuFx(){
     });
     movers.forEach(x => x.g.position.copy(x.a));
     // ▶ PLAY: the Initial D chorus kicks in on the credited TV while the pieces keep drifting through the same moves
-    const song = playClip(CLIPS.dejavu);
     await song.started;
     osd.getAnimations().forEach(a => a.cancel()); osd.textContent = '▶ PLAY'; osdR.textContent = 'AGAIN. AND AGAIN.';
     A.sfx.twinkle(); flash('#fff', 250, .5);
@@ -1888,8 +1888,8 @@ async function moveFx(mv){
 const CLIPS = {
   // Julien Miquel, "How to Pronounce En Passant", 0:12–0:15
   ep: {id: 'VO-YWOKX5jc', from: 12, len: 3000, title: 'How to Pronounce En Passant', channel: 'Julien Miquel'},
-  // avex, "DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】", the chorus
-  dejavu: {id: 'UT7O7FyUbxA', from: 58, len: 6000, title: 'DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】', channel: 'avex'}
+  // avex, "DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】", the chorus (starts ~2 s early: that part plays under the rewind)
+  dejavu: {id: 'UT7O7FyUbxA', from: 56, len: 8000, wait: 9000, title: 'DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】', channel: 'avex'}
 };
 const yt = {player: null, ready: false, loading: false, state: -1};
 function ytBox(){
@@ -1940,11 +1940,15 @@ function playClip(clip, fallback = () => {}){
   const p = yt.player, box = $('#epTv');
   if (!sfxOnNow() || !yt.ready || !p || !box){ if (sfxOnNow()) fallback(); return {started: Promise.resolve(), done: Promise.resolve()}; }
   ytLabel(clip); box.classList.add('on');
+  // A different video is loaded once (re-loading would restart its download); after that, nudges only press play.
+  let loaded = false;
   const kick = () => {
     try {
       const cur = p.getVideoData && p.getVideoData().video_id;
       p.unMute(); p.setVolume(100);
-      if (cur !== clip.id) p.loadVideoById({videoId: clip.id, startSeconds: clip.from}); else { p.seekTo(clip.from, true); p.playVideo(); }
+      if (cur !== clip.id && !loaded){ loaded = true; p.loadVideoById({videoId: clip.id, startSeconds: clip.from}); }
+      else if (cur === clip.id && !loaded){ loaded = true; p.seekTo(clip.from, true); p.playVideo(); }
+      else p.playVideo();
     } catch(e){}
   };
   yt.state = -1; kick();
@@ -1955,9 +1959,9 @@ function playClip(clip, fallback = () => {}){
     const check = setInterval(() => {
       let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
       // a late "cue" from the player's start-up can swallow the play request: ask again until it plays
-      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); kick(); }
+      if (st !== 1 && st !== 3 && Date.now() - kicked > 700){ kicked = Date.now(); kick(); }
       if (st === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(clip.len + 600); res(); }
-      else if (Date.now() - t0 > 4000){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(800); res(); }
+      else if (Date.now() - t0 > (clip.wait || 4000)){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(800); res(); }
     }, 50);
   });
   return {started, done};
