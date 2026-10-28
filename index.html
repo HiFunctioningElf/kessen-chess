@@ -181,6 +181,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mv-cap .sub{font:italic 700 clamp(13px,1.9vw,20px)/1.35 var(--body);color:#fff;text-shadow:0 0 6px #000,2px 2px 0 #000;max-width:60ch}
 .heart{position:absolute;font-size:clamp(40px,7vw,80px);line-height:1;color:#ff8ac4;text-shadow:0 0 20px #ff8ac4,0 0 44px #fff}
 .m-count{font-family:var(--display);font-size:clamp(70px,20vw,130px);line-height:1;color:var(--gold);-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:6px 6px 0 var(--blood);font-variant-numeric:tabular-nums}
+.tclock{position:absolute;left:50%;top:50%;width:min(56vmin,420px);aspect-ratio:1;max-width:calc(100vw - 32px);transform:translate(-50%,-50%);filter:drop-shadow(0 0 30px rgba(255,46,77,.6))}
+.tclock svg{width:100%;height:100%;display:block}
 .mv-tbc{position:absolute;right:max(16px,4vw);bottom:calc(11vh + 18px);font-family:var(--display);font-size:clamp(14px,2.4vw,28px);color:#2a1a0a;background:var(--gold);padding:6px 34px 6px 16px;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%);white-space:nowrap}
 .mini{position:absolute;font-family:var(--display);font-size:clamp(14px,2.4vw,26px);color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:3px 3px 0 var(--blood);white-space:nowrap;transform:translate(-50%,-50%)}
 
@@ -459,6 +461,9 @@ const A = (() => {
     shing(){ if (!ok()) return; const t = now(); nz(t, .18, .35, sfxBus, {f0: 7000, f1: 2500, q: 4}); osc('triangle', 2400, t + .04, .25, .06, sfxBus, {to: 1800}); },
     shot(){ if (!ok()) return; const t = now(); nz(t, .05, .7, sfxBus, {type: 'highpass', f0: 900}); osc('sine', 120, t, .3, .6, sfxBus, {to: 40}); },
     zap(){ if (!ok()) return; const t = now(); nz(t, .25, .4, sfxBus, {type: 'highpass', f0: 2500}); osc('square', 90, t, .25, .08, sfxBus, {lp: 1800}); osc('sawtooth', 1400, t, .2, .04, sfxBus, {to: 300}); },
+    ticktock(){ if (!ok()) return; let tt = now(), gap = .2; for (let i = 0; i < 14; i++){ osc('square', i % 2 ? 1500 : 1100, tt, .02, .06, sfxBus); tt += gap; gap *= .82; } },
+    alarm(){ if (!ok()) return; const t = now(); for (let i = 0; i < 22; i++) osc('triangle', i % 2 ? 2637 : 2093, t + i * .045, .04, .09, sfxBus); nz(t, 1, .06, sfxBus, {type: 'highpass', f0: 6000}); },
+    sand(){ if (!ok()) return; const t = now(); nz(t, 1.9, .2, sfxBus, {f0: 3200, f1: 1100, q: .6, a: .2}); },
     sob(){ if (!ok()) return; const t = now(); for (let i = 0; i < 4; i++){ const s = t + i * .3; osc('sawtooth', 560 - i * 35, s, .24, .05, sfxBus, {to: 400 - i * 30, lp: 1500, q: 5}); nz(s, .18, .05, sfxBus, {f0: 950, q: 6}); } },
     wail(){ if (!ok()) return; const t = now(); osc('sawtooth', 640, t, 1.4, .06, sfxBus, {to: 430, lp: 1700, q: 6, a: .08}); osc('sawtooth', 652, t, 1.4, .04, sfxBus, {to: 436, lp: 1700, q: 6, a: .08}); nz(t, 1.3, .04, sfxBus, {f0: 1000, q: 5, a: .1}); },
     ascend(){ if (!ok()) return; const t = now(); [0, 4, 7, 11, 12, 16, 19, 24].forEach((iv, i) => osc('sine', mtof(74 + iv), t + i * .24, 1.3, .05, sfxBus, {a: .15})); nz(t, 2.2, .05, sfxBus, {type: 'highpass', f0: 5000, a: .6}); },
@@ -668,14 +673,16 @@ let savedStyle = null; try { savedStyle = localStorage.getItem('kessen-piece-sty
 applyStyle(savedStyle || DEFAULT_STYLE);
 
 const pieceAt = {};
+const noHit = () => {};
 const edgeCache = new Map();
 const edgesOf = geo => { if (!edgeCache.has(geo)) edgeCache.set(geo, new THREE.EdgesGeometry(geo, 25)); return edgeCache.get(geo); };
 function makePiece(type, color){
   const g = new THREE.Group(), st = STY[color];
   for (const geo of geoSet(STY.seg || 36)[type]){
     const m = new THREE.Mesh(geo, MAT[color]); m.castShadow = true; g.add(m);
-    if (st.om){ const o = new THREE.Mesh(geo, st.om); o.userData.outline = true; g.add(o); }
-    if (st.lm){ const l = new THREE.LineSegments(edgesOf(geo), st.lm); l.userData.outline = true; g.add(l); }
+    // outlines and edge lines are decoration only: they never catch clicks (a line's default hit zone is a whole square wide)
+    if (st.om){ const o = new THREE.Mesh(geo, st.om); o.userData.outline = true; o.raycast = noHit; g.add(o); }
+    if (st.lm){ const l = new THREE.LineSegments(edgesOf(geo), st.lm); l.userData.outline = true; l.raycast = noHit; g.add(l); }
   }
   // knights stand angled so the horse profile reads from either side of the board
   if (type === 'n') g.rotation.y = color === 'w' ? Math.PI/2 - 1.1 : -Math.PI/2 + 1.1;
@@ -764,6 +771,7 @@ requestAnimationFrame(frameLoop);
 
 // picking
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+ray.params.Line.threshold = .01;
 function pickSq(ev){
   const r = renderer.domElement.getBoundingClientRect();
   ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -1802,13 +1810,62 @@ async function timeUp(c, remote){
   if (mode === 'online' && !remote && net.ref) net.ref.update({flag: c, clock: {w: clock.w, b: clock.b}}).catch(() => {});
   const winner = c === 'w' ? 'Black' : 'White';
   busy = true; busySince = Date.now();
+  const cv = renderer.domElement, sub = timeoutDraw ? `BUT ${winner.toUpperCase()} CANNOT CHECKMATE · DRAW` : `${c === 'w' ? 'WHITE' : 'BLACK'} RAN OUT OF TIME`;
   try {
-    A.music.stop(); A.sfx.klaxon(); flash('#ff2e4d', 600, .6); shake(1, 600);
-    $('#vignette').animate([{opacity: 0}, {opacity: 1}, {opacity: .3}, {opacity: 1}, {opacity: 0}], {duration: 1600});
-    const k = pieceAt[kingSq(c)];
-    if (k){ addEyes(k, camera.position, false); bubble(k, 'じ…時間がっ…!', 1500, 1.5); A.sfx.wail(); }
-    await bigText('TIME UP!!', '時間切れ', {color: 'var(--blood)', hold: 1400, sub: timeoutDraw ? `BUT ${winner.toUpperCase()} CANNOT CHECKMATE · DRAW` : `${c === 'w' ? 'WHITE' : 'BLACK'} RAN OUT OF TIME`});
-  } finally { busy = false; render(true); }
+    // 1. time freezes: colour drains, a heartbeat
+    A.music.stop(); A.sfx.heartbeat();
+    cv.style.filter = 'saturate(.15) brightness(.8)';
+    $('#vignette').animate([{opacity: 0}, {opacity: .9}, {opacity: .5}, {opacity: .9}, {opacity: 0}], {duration: 3200});
+    // 2. a giant alarm clock slams in and its hand races to zero
+    const clk = document.createElement('div'); clk.className = 'tclock';
+    const ticks = Array.from({length: 12}, (_, i) => `<line x1="100" y1="16" x2="100" y2="${i % 3 ? 26 : 32}" stroke="#111" stroke-width="${i % 3 ? 3 : 6}" transform="rotate(${i * 30} 100 100)"/>`).join('');
+    clk.innerHTML = `<svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="58" cy="22" r="20" fill="#ffc83d" stroke="#111" stroke-width="6"/><circle cx="142" cy="22" r="20" fill="#ffc83d" stroke="#111" stroke-width="6"/>
+      <circle cx="100" cy="100" r="88" fill="#fff7ea" stroke="#111" stroke-width="9"/><circle cx="100" cy="100" r="76" fill="none" stroke="#ff2e4d" stroke-width="3"/>${ticks}
+      <text x="100" y="58" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="22" fill="#111">0</text>
+      <g class="hand" style="transform-origin:100px 100px;transform-box:view-box"><line x1="100" y1="112" x2="100" y2="30" stroke="#ff2e4d" stroke-width="6" stroke-linecap="round"/></g>
+      <circle cx="100" cy="100" r="8" fill="#111"/>
+      <g class="crack" opacity="0" stroke="#111" stroke-width="3" fill="none" stroke-linejoin="round"><path d="M100 100 L128 74 L122 52 L150 30"/><path d="M100 100 L70 118 L76 146 L52 168"/><path d="M100 100 L142 122 L160 116"/><path d="M100 100 L84 70 L60 66"/></g>
+    </svg>`;
+    fxEl.appendChild(clk);
+    clk.animate([{transform: 'translate(-50%,-50%) scale(3) rotate(-25deg)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1) rotate(0deg)', opacity: 1}], {duration: 380, easing: 'cubic-bezier(.2,1.4,.4,1)', fill: 'forwards'});
+    A.sfx.impact(.6); A.sfx.ticktock();
+    await clk.querySelector('.hand').animate([{transform: 'rotate(-330deg)'}, {transform: 'rotate(-25deg)', offset: .85}, {transform: 'rotate(0deg)'}], {duration: 1400, easing: 'ease-in', fill: 'forwards'}).finished;
+    // 3. RIIIING: it rings, shakes, cracks and shatters
+    A.sfx.alarm(); A.sfx.klaxon();
+    clk.animate(Array.from({length: 10}, (_, i) => ({transform: `translate(calc(-50% + ${(i % 2 ? 1 : -1) * 14}px), calc(-50% + ${(i % 3 - 1) * 8}px)) rotate(${(i % 2 ? 1 : -1) * 6}deg)`})), {duration: 700});
+    clk.querySelector('.crack').setAttribute('opacity', '1');
+    const cr = clk.getBoundingClientRect(), cx0 = cr.left + cr.width / 2, cy0 = cr.top + cr.height / 2;
+    word({x: cx0 + cr.width * .38, y: cy0 - cr.height * .42}, 'ジリリリリ!!', {size: 40, color: '#ff2e4d', ms: 1100, rot: 10});
+    await sleep(700);
+    clk.remove(); flash('#fff', 450, .9); shake(1.2, 600); A.sfx.impact(1.1);
+    burst(cx0, cy0, {n: 70, kind: 'spark', colors: ['#fff', '#ffc83d', '#ff2e4d'], speed: 18, life: 34}); ring(cx0, cy0, 280, '#fff', 8, 26);
+    bigText('TIME UP!!', '時間切れ', {color: 'var(--blood)', hold: 1700, sub});
+    // 4. the king who ran out of time crumbles into sand
+    const kg = pieceAt[kingSq(c)];
+    if (kg){
+      camSave();
+      const K = kg.position.clone(), toCam = camera.position.clone().sub(K).setY(0).normalize();
+      await camMove(K.clone().add(toCam.multiplyScalar(2.2)).setY(1.1), K.clone().setY(.6), 450);
+      addEyes(kg, camera.position, false).whites.forEach(e => { e.scale.y = .4; });
+      bubble(kg, 'じ…時間がっ…!', 1400, 1.5); A.sfx.wail(); A.sfx.sand();
+      const sy = kg.scale.y;
+      await tween(1800, k => {
+        kg.scale.y = sy * (1 - .9 * k); kg.position.x = K.x + Math.sin(k * 80) * .012 * (1 - k);
+        for (let i = 0; i < 3; i++){
+          const s = screenOf(K.clone().add(V3((Math.random() - .5) * .5, Math.random() * 1.1 * (1 - k), (Math.random() - .5) * .5)));
+          parts.push({x: s.x, y: s.y, vx: (Math.random() - .5) * 1.2, vy: Math.random() * 1.2, life: 45, max: 45, kind: 'dust', c: Math.random() < .5 ? 'rgba(222,190,130,.9)' : 'rgba(190,150,90,.85)', s: 1.5 + Math.random() * 1.5, g: .22, drag: .98});
+        }
+        kick();
+      });
+      scene.remove(kg);
+      await sleep(400);
+    } else await sleep(1500);
+  } finally {
+    cv.style.filter = '';
+    if (camSaved) await camRestore(500);
+    busy = false; render(true);
+  }
   if (timeoutDraw) showContinue('A draw', `${c === 'w' ? 'White' : 'Black'} ran out of time, but ${winner} had no way to checkmate`);
   else showContinue(`${winner} wins on time`, 'The clock shows no mercy');
 }
@@ -1928,6 +1985,56 @@ function pickPromotion(color){
 }
 let downAt = null;
 renderer.domElement.addEventListener('pointerdown', e => { downAt = {x: e.clientX, y: e.clientY}; });
+
+/* ---- Drag and drop: press on your own piece and drag it to a square (works for premoves too) ---- */
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(BASEY + .35));
+let drag = null;
+function boardPointAt(ev){
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const p = new THREE.Vector3(); return ray.ray.intersectPlane(dragPlane, p) ? p : null;
+}
+function sqAtPoint(p){ const f = Math.round(p.x + 3.5), r = Math.round(3.5 - p.z); return f < 0 || f > 7 || r < 0 || r > 7 ? null : 'abcdefgh'[f] + (r + 1); }
+// Capture phase: runs before the orbit camera so dragging a piece never spins the board.
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  const live = canMoveNow(), pre = !live && canPremove(); if (!live && !pre) return;
+  const sq = pickSq(e), p = sq && game.get(sq), me = live ? game.turn() : myColor();
+  if (!p || p.color !== me || !pieceAt[sq]) return;
+  drag = {from: sq, x: e.clientX, y: e.clientY, active: false, pre, prevControls: controls.enabled};
+  controls.enabled = false;
+}, {capture: true});
+window.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.active){
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+    drag.active = true;
+    if (drag.pre){ preSel = drag.from; preLegal = premoveTargets(drag.from, myColor()); premove = null; }
+    else { selected = drag.from; legal = game.moves({square: drag.from, verbose: true}); }
+    A.sfx.select(); render();
+  }
+  const g = pieceAt[drag.from], p = boardPointAt(e);
+  if (g && p) g.position.set(p.x, BASEY + .35, p.z);
+});
+window.addEventListener('pointerup', async e => {
+  if (!drag) return;
+  const d = drag; drag = null; controls.enabled = d.prevControls;
+  if (!d.active) return;   // it was a plain click; the click handler takes it from here
+  const p = boardPointAt(e), to = p && sqAtPoint(p);
+  if (d.pre){
+    const opts = preLegal.filter(m => m.to === to);
+    if (to && opts.length && canPremove()){ premove = {from: d.from, to, promotion: opts.some(m => m.promotion) ? 'q' : undefined}; preSel = null; preLegal = []; toast('Premove set. Right-click or Esc to cancel'); }
+    else clearPremove();
+    render(true); return;
+  }
+  const opts = legal.filter(m => m.to === to);
+  render(true);   // snap the piece back to its square; the move then plays its own animation
+  if (!(to && opts.length && canMoveNow())){ selected = null; legal = []; render(); return; }
+  let promotion;
+  if (opts.some(m => m.promotion)){ promotion = await pickPromotion(game.turn()); if (!promotion){ selected = null; legal = []; render(); return; } }
+  commit({from: d.from, to, promotion});
+});
 renderer.domElement.addEventListener('pointerup', async e => {
   if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6) { downAt = null; return; }
   downAt = null;
