@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="1793204306">
+<meta name="kessen-build" content="20261029073414">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -2863,8 +2863,10 @@ function shouldMinigame(){
 }
 // who is a person at this screen (the CPU and an online friend are not)
 const humanHere = c => mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
-const HAND_SVG = (fill, flip) => `<svg class="mg-hands ${flip ? 'top' : 'bot'}" viewBox="0 0 220 120" aria-hidden="true"><g stroke="#000" stroke-width="5" stroke-linejoin="round">${[0, 1].map(i => `
-  <g transform="translate(${i ? 205 : 15} ${flip ? 118 : 2}) scale(${i ? -1 : 1} ${flip ? -1 : 1})" fill="${fill}" class="hand">
+// White's hands are cream with an ink outline; Black's are dark with a light outline, so they show up on the dark board.
+const HAND_INK = {w: ['#fffaf0', '#000'], b: ['#2b2350', '#fffaf0']};
+const HAND_SVG = (c, flip) => `<svg class="mg-hands ${flip ? 'top' : 'bot'}" viewBox="0 0 220 120" aria-hidden="true"><g stroke="${HAND_INK[c][1]}" stroke-width="5" stroke-linejoin="round">${[0, 1].map(i => `
+  <g transform="translate(${i ? 205 : 15} ${flip ? 118 : 2}) scale(${i ? -1 : 1} ${flip ? -1 : 1})" fill="${HAND_INK[c][0]}" class="hand">
     <rect x="8" y="46" width="74" height="62" rx="24"/><rect x="12" y="6" width="15" height="52" rx="7.5"/><rect x="30" y="0" width="15" height="58" rx="7.5"/>
     <rect x="48" y="3" width="15" height="55" rx="7.5"/><rect x="65" y="12" width="14" height="46" rx="7"/><rect x="74" y="58" width="36" height="15" rx="7.5" transform="rotate(-28 78 66)"/>
   </g>`).join('')}</g></svg>`;
@@ -2910,7 +2912,7 @@ async function redHands(){
 // Draws the hands and the controls for one attempt.
 function rhSetup(ov, att){
   const def = OTHER(att), arena = ov.querySelector('#mgArena');
-  arena.innerHTML = HAND_SVG(att === 'w' ? '#fffaf0' : '#3a2f63', true) + HAND_SVG('#fffaf0', false) + '<div class="mg-pop" id="mgPop"></div>';
+  arena.innerHTML = HAND_SVG(att, true) + HAND_SVG(def, false) + '<div class="mg-pop" id="mgPop"></div>';
   ov.querySelector('#mgRoles').textContent = `${SIDE(att)} slaps · ${SIDE(def)} dodges`;
   for (const c of ['w', 'b']){
     const box = ov.querySelector('#mgCtl_' + c), mine = humanHere(c), slapper = c === att;
@@ -4447,7 +4449,7 @@ $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
     if (shown) return;
     try {
       const r = await fetch(location.pathname + '?build-check=' + Date.now(), {cache: 'no-store'}); if (!r.ok) return;
-      const m = /<meta name="kessen-build" content="([^"]+)"/.exec(await r.text());
+      const m = /<meta name="kessen-build" content="20261029073414"]+)"/.exec(await r.text());
       if (m && m[1] !== mine){ shown = true; showUpdate(); }
     } catch(e){ /* offline: try again later */ }
   }
