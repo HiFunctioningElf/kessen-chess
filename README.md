@@ -9,13 +9,18 @@
 - **CPU**: three levels (Rookie, Rival, Final Boss). The CPU thinks in a background thread.
 - **Same screen**: two players on one device, with optional auto-flip
 - **Online friend**: click *Create game*, then *Copy invite link* and send it to your friend. Keep your tab open while you play.
-- **Random opponent**: get paired with whoever else is searching at the same time
+- **Random opponent**: get paired with whoever else is searching at the same time. *Find an online match* on the start screen jumps straight in.
 
 ## Extras
 
 - **Minigames** every 8 full moves, taking turns: Red Hands (slap first), Memory Flash (repeat the pattern) and Mate in One (fastest checkmate wins). The winner earns a power-up: Sensei's Hint, Takeback, Time Heist (clock games) or Rude Fishy (an eval bar with opinions, for 3 moves; not in same-screen games, since both players would see it). Your next minigame and your power-ups show in the corner of the board.
 - **Power Level (戦闘力)**: a just-for-fun rating saved on your device, with style bonuses for things like en passant and underpromotion.
 - Resign with a white flag, offer a draw with a handshake (or get slapped), premove up to 6 moves, and resume a game after a reload.
+- **📜 Games**: every finished game is saved on your device. Open one to step through it move by move (buttons or arrow keys). Rude Fishy (Stockfish) grades each move with names that are kinder than the usual ones: 🌌 Galaxy Brain (best move), 👨‍🍳 Chef's Kiss, 🍙 Solid Snack, 🍜 Wobbly Noodle (inaccuracy), 🌼 Oopsie Daisy (mistake) and 🍌 Banana Peel (blunder). It also shows what Rude Fishy would have played instead.
+- **Elo**: online games also update a standard Elo rating (everyone starts at 1200), shown on your fighter card along with your online wins.
+- **Fighter names** are checked as you type: 2–16 characters, no reserved or rude names.
+- **Trailer**: open the game with `#trailer` on the end of the address and press FIGHT! for a two-minute goofy montage, ready to screen-record.
+- On phones, minigames go full screen, the screen stays awake during a duel, and big hits give a little buzz.
 
 ## Donations
 
@@ -46,6 +51,8 @@ The "$X raised by Y Kessen players" counter adds up the totals that the fundrais
 | Cancer Council QLD fundraising site / Do It For Cancer | Cancer Council QLD | No public total API found. |
 | GiveNow CrowdRaiser, MyCause | Craniofacial Australia | No public total API found. |
 | fundraise.beyondblue.org.au | Beyond Blue | No public total API found. |
+
+**Donations made elsewhere.** Someone might give on a charity's own website instead of through a Kessen page. Those gifts show up in the counter only once they're listed in [`donations-ledger.json`](donations-ledger.json), the public receipts ledger. Add one entry per checked receipt: the charity's ABN, the amount in AUD, the date, and optionally how many people gave and where the (redacted) receipt can be seen. The game adds these on top of each page's live total, so never list a gift that was made through a Kessen fundraiser page, or it would count twice.
 
 Totals are cached in the browser for 10 minutes.
 

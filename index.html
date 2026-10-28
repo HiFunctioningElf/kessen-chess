@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="1793203291">
+<meta name="kessen-build" content="1793204306">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -49,6 +49,17 @@ button,input{font:inherit;color:inherit}
 main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justify-content:center;align-items:start;
   padding-block:10px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 @media (max-width:980px){main{grid-template-columns:minmax(0,1fr);justify-items:center}}
+/* phones: logo on one line, header chips wrap underneath instead of running off the edge, bigger touch targets */
+.chip{white-space:nowrap}
+@media (max-width:600px){
+  .logo{flex-wrap:wrap;align-items:center;gap:6px 8px;width:100%}
+  .logo-jp{font-size:26px}.logo-en{font-size:15px;white-space:nowrap;margin-right:auto}
+  .logo .chip,.donate-chip{margin-left:0}
+  .toggles{width:100%}
+  .chip{min-height:34px;padding:6px 11px}
+  .mghud .next{font-size:11px;white-space:nowrap}
+  .stage .hint-orbit{display:none}
+}
 
 .stage{position:relative;width:min(calc(100vw - 32px),860px);height:min(calc((100vw - 32px) * .9),78vh,720px);max-width:100%;
   border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 8px var(--blood),0 24px 60px rgba(0,0,0,.6);
@@ -227,6 +238,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .fname{font-family:var(--display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .frank{font-size:12px;color:var(--muted)}
 .frank b{color:var(--gold);font-variant-numeric:tabular-nums}
+.pcheck{font-size:12px;min-height:1.4em;margin-top:-4px;color:var(--muted)}
+.pcheck.ok{color:#7dff8a}.pcheck.bad{color:var(--blood)}
 .pcard.profcard{width:min(360px,calc(100vw - 32px));align-items:stretch}
 .profcard input{background:var(--night);border:1px solid var(--line);padding:10px;font-weight:700}
 /* six crests share the card's width instead of a fixed 68px each */
@@ -332,7 +345,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .donate-chip{color:#ffb3d6;border-color:#ff8ac4;align-self:center;margin-left:4px}
 .donate-chip .amt{margin-left:6px;color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
-#donate{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
+#donate,#hist{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
   padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
 .dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -378,13 +391,46 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .gl-proof img,.gl-proof video{max-width:min(180px,100%);max-height:120px;border:2px solid var(--line);display:block}
 .over{font-family:var(--display);color:#7dff8a;line-height:1.3}
 .over span{display:block;font-family:var(--body);font-size:13px;color:var(--muted);margin-top:2px}
+/* game history + review */
+.hl-list{display:flex;flex-direction:column;gap:8px}
+.hl-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;border:2px solid var(--line);background:var(--ink);padding:8px 10px}
+.hl-res{font-family:var(--display);font-size:13px;padding:4px 8px;border:2px solid #000;min-width:58px;text-align:center}
+.hl-res.win{background:var(--volt);color:#111}.hl-res.loss{background:var(--blood);color:#fff}.hl-res.draw{background:#d9d2f0;color:#111}
+.hl-who{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hl-meta{font-size:12px;color:var(--muted)}
+.hl-empty{color:var(--muted);margin:0}
+.rv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:680px){.rv{grid-template-columns:minmax(0,1fr)}}
+.rv-left{display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0}
+.rv-boardwrap{display:flex;gap:6px}
+.rv-eval{width:12px;background:#111;border:2px solid #000;display:flex;flex-direction:column-reverse}
+.rv-eval.flip{flex-direction:column}
+.rv-eval i{display:block;background:#fff;height:50%;transition:height .3s}
+.rv-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(360px,calc(100vw - 92px));aspect-ratio:1;border:3px solid #000}
+.rv-sq{display:grid;place-items:center;font-family:var(--chess);font-size:min(34px,8.4vw);line-height:1}
+.rv-sq.l{background:#a86a84}.rv-sq.d{background:#4a1d3e}
+.rv-sq.mv{box-shadow:inset 0 0 0 100px rgba(255,200,61,.38)}
+.rv-sq > span{display:block;transform:translateY(.15em)}
+.rv-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.rv-nav .chip{min-width:44px;min-height:36px}
+.rv-now{min-height:3.6em;text-align:center;font-size:13px;color:var(--muted);max-width:380px}
+.rv-now b{font-family:var(--display);font-weight:400;font-size:18px;display:block;color:var(--text)}
+.rv-right{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rv-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.rv-sum > div{border:2px solid var(--line);padding:6px 8px;background:var(--ink);line-height:1.6}
+.rv-sum .g{font-family:var(--chess);font-size:16px}
+.rv-prog{font-size:12px;color:var(--gold)}
+.rv-moves{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:2px 6px;align-content:start;max-height:min(420px,46vh);overflow-y:auto;font-size:14px;font-variant-numeric:tabular-nums}
+.rv-moves .n{color:var(--muted);padding:4px 0}
+.rv-moves button{background:none;border:0;color:var(--text);text-align:left;padding:4px 6px;cursor:pointer;font:inherit;display:flex;gap:4px;justify-content:space-between;min-width:0}
+.rv-moves button.on{background:var(--gold);color:#111}
 .dfoot{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
 @media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
 
 <div id="app">
   <header class="top">
-    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></div>
+    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Games</button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></div>
     <div class="toggles">
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
@@ -397,7 +443,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
-        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b></div></div>
+        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b> · Elo <b id="fElo"></b></div></div>
         <button class="chip" id="fEdit" type="button">Edit</button>
       </section>
       <section class="card powers" id="powersCard" hidden><div class="label">Power-ups</div><div id="powRows"></div></section>
@@ -460,12 +506,17 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 <div id="fx"><div id="dim"></div><div id="vignette"></div><div id="scope"><div class="ring"></div><div class="dot"></div><div class="lock">LOCK ON</div></div><div class="lb" id="lbTop"></div><div class="lb" id="lbBot"></div><div class="hazard" id="hzTop"><span>WARNING</span></div><div class="hazard" id="hzBot"><span>WARNING</span></div><div id="flash"></div></div>
 <div id="prof" hidden><div class="pcard profcard">
   <div class="label">Your fighter</div>
-  <input id="pName" maxlength="16" placeholder="Nameless Challenger" aria-label="Fighter name" autocomplete="off">
+  <input id="pName" maxlength="16" placeholder="Nameless Challenger" aria-label="Fighter name" autocomplete="off" aria-describedby="pCheck">
+  <div class="pcheck" id="pCheck" aria-live="polite"></div>
   <div class="label">Crest</div><div class="opts" id="pCrests"></div>
   <div class="label">Colour</div><div class="swatches" id="pColors"></div>
   <div class="m-actions"><button class="btn primary" id="pSave" type="button">Save</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
 </div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
+<div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="histTitle"><div class="dcard">
+  <div class="dhead"><h2 id="histTitle"><small>棋譜</small>Game history</h2><button class="chip" id="histClose" type="button">Close</button></div>
+  <div id="histBody"></div>
+</div></div>
 <div id="donate" hidden role="dialog" aria-modal="true" aria-labelledby="donTitle"><div class="dcard">
   <div class="dhead"><h2 id="donTitle"><small>応援</small>Back a good cause</h2><button class="chip" id="donClose" type="button">Close</button></div>
   <p class="dnote">Your donation goes straight to the charity. Kessen Chess never handles the money.</p>
@@ -487,6 +538,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <div class="jar-text"><b id="jarGoal"></b><span class="dnote" id="jarAmt"></span><ul class="goals" id="jarGoals"></ul><div class="over" id="jarOver" hidden></div><a class="dbtn" id="coffeeBtn" target="_blank" rel="noopener">☕ Coffee for the dev's holiday fund ↗</a><span class="dnote" id="splitNote" hidden></span></div>
     </div>
   </section>
+  <p class="dfoot">How the totals are counted: each Kessen fundraiser page's own public counter, plus donations made elsewhere that are listed with a receipt in the <a href="https://github.com/HiFunctioningElf/kessen-chess/blob/main/donations-ledger.json" target="_blank" rel="noopener">public ledger ↗</a>. Nothing is estimated.</p>
   <p class="dfoot">Kessen Chess is not affiliated with or endorsed by these charities. Charity details come from the <a href="https://www.acnc.gov.au/charity/charities" target="_blank" rel="noopener">ACNC Charity Register ↗</a>.</p>
 </div></div>
 <div id="modal">
@@ -496,7 +548,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <div class="scouter" id="mScouter" hidden></div>
     <div class="fairplay" id="mFair" hidden></div>
     <div class="m-sub" id="mSub">A 3D board, a cut-in for every capture, an alarm for every check, and a shattering king at checkmate. Play the CPU, a friend on this screen, or a friend online. All music and sound are synthesized live in your browser.</div>
-    <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button></div>
+    <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button><button class="btn" id="mMatch">Find an online match</button></div>
   </div>
 </div>
 
@@ -526,6 +578,7 @@ const PV = {p:100,n:320,b:330,r:500,q:900,k:0};
 const game = new Chess();
 let orientation = 'w', mode = 'cpu', playerColor = 'w', level = 1;
 let selected = null, legal = [], busy = false, started = false, lastMove = null, cutins = true;
+let trailerOn = false;   // the #trailer montage is playing
 const stageEl = $('#stage'), appEl = $('#app'), fxEl = $('#fx');
 
 /* ================= AUDIO (all synthesized, original) ================= */
@@ -628,7 +681,7 @@ const A = (() => {
     riser(){ if (!ok()) return; const t = now();
       nz(t, .85, .28, sfxBus, {f0:200, f1:7000, q:3, a:.6});
       osc('sawtooth', 110, t, .85, .07, sfxBus, {to: 880, a:.5, lp: 2400}); },
-    impact(p = 1){ if (!ok()) return; const t = now();
+    impact(p = 1){ buzz(Math.round(30 * p)); if (!ok()) return; const t = now();
       osc('sine', 170, t, .8, .95 * Math.min(p, 1.3), sfxBus, {to: 30, glide: .5});
       nz(t, .6, .7 * p, sfxBus, {type:'lowpass', f0:3500, f1:180});
       nz(t, .14, .35, sfxBus, {f0:9000, f1:1500, q:2});
@@ -3321,6 +3374,186 @@ async function showFairPlay(){
   const acc = await fairReview((i, n) => { if (job === fairJob) box.querySelector('.fh span:last-child').textContent = `Reviewing ${i}/${n}`; });
   if (job === fairJob) draw(acc);
 }
+/* ---- Game history (this device) and move-by-move review ----
+   Every finished game is saved here (newest first, up to 100). The review steps through the moves on a flat board, and
+   Rude Fishy (Stockfish) grades each move. The grades get silly names; the usual chess term is in each one's tooltip. */
+const HIST_KEY = 'kessen-history', HIST_MAX = 100;
+const gameLog = () => { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch(e){ return []; } };
+const saveLog = a => { try { localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, HIST_MAX))); } catch(e){} };
+let lastRecorded = '';
+function gameWinner(){
+  if (ended) return ended.winner || null;
+  if (flagged) return timeoutDraw ? null : OTHER(flagged);
+  return game.in_checkmate() ? OTHER(game.turn()) : null;
+}
+function gameReason(){
+  if (ended) return {resign: 'resignation', draw: 'agreed draw', abandon: 'opponent left'}[ended.type] || 'game over';
+  if (flagged) return timeoutDraw ? 'time out (draw)' : 'time out';
+  if (game.in_checkmate()) return 'checkmate';
+  if (game.in_stalemate()) return 'stalemate';
+  if (game.in_threefold_repetition()) return 'repetition';
+  if (game.insufficient_material()) return 'not enough pieces';
+  return 'fifty-move rule';
+}
+function recordGame(){
+  const pgn = game.pgn(), plies = game.history().length, winner = gameWinner(), me = myColor();
+  const key = pgn + '|' + winner + '|' + gameReason();
+  if (!plies || key === lastRecorded || trailerOn) return;
+  lastRecorded = key;
+  const card = mode === 'online' && net.data && me ? net.data['p' + OTHER(me)] : null;
+  const opp = mode === 'cpu' ? `CPU · ${['Rookie', 'Rival', 'Final Boss'][level]}` : mode === 'online' ? ((card && card.name) || 'Online friend') : 'Same screen';
+  const log = gameLog();
+  log.unshift({at: Date.now(), mode, me, opp, winner, reason: gameReason(), pgn, plies});
+  saveLog(log);
+  if (wakeLock) wakeLock.release().catch(() => {});   // the duel is over: the screen may sleep again
+}
+const resultOf = g => g.winner == null ? 'draw' : g.me ? (g.winner === g.me ? 'win' : 'loss') : 'draw';
+const resultText = g => g.winner == null ? 'DRAW' : g.me ? (g.winner === g.me ? 'WIN' : 'LOSS') : `${SIDE(g.winner).toUpperCase()} WINS`;
+function openHistory(){
+  A.init(); revJob++; rev = null;
+  const log = gameLog(), body = $('#histBody');
+  $('#histTitle').innerHTML = '<small>棋譜</small>Game history';
+  $('#histClose').textContent = 'Close';
+  body.innerHTML = log.length ? '<div class="hl-list"></div>' : '<p class="hl-empty">No finished games yet. Play one and it will show up here, ready to review.</p>';
+  log.forEach((g, i) => {
+    const row = document.createElement('div'); row.className = 'hl-item';
+    row.innerHTML = `<span class="hl-res ${g.me ? resultOf(g) : 'draw'}"></span><div><div class="hl-who"></div><div class="hl-meta"></div></div><button class="chip" type="button">Review</button>`;
+    row.querySelector('.hl-res').textContent = resultText(g);
+    row.querySelector('.hl-who').textContent = `vs ${g.opp}${g.me ? ` · you played ${SIDE(g.me)}` : ''}`;
+    row.querySelector('.hl-meta').textContent = `${new Date(g.at).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'})} · ${Math.ceil(g.plies / 2)} moves · ${g.reason}`;
+    row.querySelector('button').onclick = () => openReview(log[i]);
+    body.firstChild.appendChild(row);
+  });
+  $('#hist').hidden = false; $('#histClose').focus();
+}
+function closeHistory(){ revJob++; rev = null; $('#hist').hidden = true; }
+$('#histBtn').onclick = openHistory;
+$('#histClose').onclick = () => (rev ? openHistory() : closeHistory());
+$('#hist').addEventListener('click', e => { if (e.target.id === 'hist') closeHistory(); });
+// The grades. [emoji, silly name, the usual chess term]
+const GRADES = {
+  book: ['📖', 'Textbook', 'opening move'], only: ['🤷', 'No Choice', 'only legal move'], mate: ['💥', 'Finishing Move', 'checkmate'],
+  best: ['🌌', 'Galaxy Brain', 'best move'], great: ['👨‍🍳', "Chef's Kiss", 'excellent'], good: ['🍙', 'Solid Snack', 'good'],
+  inacc: ['🍜', 'Wobbly Noodle', 'inaccuracy'], mistake: ['🌼', 'Oopsie Daisy', 'mistake'], blunder: ['🍌', 'Banana Peel', 'blunder']
+};
+const GRADE_ORDER = ['mate', 'best', 'great', 'good', 'book', 'only', 'inacc', 'mistake', 'blunder'];
+let rev = null, revJob = 0;
+function openReview(g){
+  if (!g) return;
+  const c = new Chess(); if (!c.load_pgn(g.pgn)){ toast("Couldn't read that game"); return; }
+  const moves = c.history({verbose: true}); while (c.undo()){}
+  const fens = [c.fen()]; for (const m of moves){ c.move(m); fens.push(c.fen()); }
+  rev = {g, moves, fens, i: moves.length, flip: g.me === 'b', evals: g.evals || null, grades: g.grades || null};
+  $('#histTitle').innerHTML = '<small>検討</small>Game review';
+  $('#histClose').textContent = '← Games';
+  $('#histBody').innerHTML = `<div class="rv"><div class="rv-left"><div class="rv-boardwrap"><div class="rv-eval" id="rvEval"><i></i></div><div class="rv-board" id="rvBoard"></div></div>
+      <div class="rv-nav"><button class="chip" type="button" data-go="0" aria-label="First move">⏮</button><button class="chip" type="button" data-go="-1" aria-label="Previous move">◀</button><button class="chip" type="button" data-go="1" aria-label="Next move">▶</button><button class="chip" type="button" data-go="end" aria-label="Last move">⏭</button><button class="chip" type="button" data-go="flip">Flip</button></div>
+      <div class="rv-now" id="rvNow"></div></div>
+    <div class="rv-right"><div class="hl-meta" id="rvHead"></div><div class="rv-prog" id="rvProg"></div><div class="rv-sum" id="rvSum" hidden></div><div class="rv-moves" id="rvMoves"></div></div></div>`;
+  $('#rvHead').textContent = `${resultText(g)} · vs ${g.opp} · ${g.reason}`;
+  $('#histBody').querySelector('.rv-nav').onclick = e => {
+    const b = e.target.closest('[data-go]'); if (!b) return; const v = b.dataset.go;
+    if (v === 'flip'){ rev.flip = !rev.flip; drawReview(); return; }
+    revGo(v === 'end' ? rev.moves.length : v === '0' ? 0 : rev.i + +v);
+  };
+  $('#rvMoves').onclick = e => { const b = e.target.closest('[data-i]'); if (b) revGo(+b.dataset.i); };
+  $('#hist').hidden = false;
+  drawReview();
+  if (!rev.grades) gradeGame(rev);
+}
+function revGo(i){ if (!rev) return; rev.i = Math.max(0, Math.min(rev.moves.length, i)); A.sfx.select(); drawReview(); }
+// Centipawns for the side to move, with mates squashed so that "still winning" never reads as a blunder.
+const clampEval = s => Math.max(-1500, Math.min(1500, s));
+async function gradeGame(r){
+  const job = ++revJob, n = r.fens.length, evals = [];
+  for (let k = 0; k < n; k++){
+    if (job !== revJob) return;
+    const g = new Chess(r.fens[k]);
+    evals.push(g.game_over() ? {score: g.in_checkmate() ? -10000 : 0, best: null} : await sfSearch(r.fens[k], 160));
+    if (job !== revJob) return;
+    $('#rvProg').textContent = `🐟 Rude Fishy is judging every move… ${k + 1}/${n}`;
+  }
+  const grades = r.moves.map((m, k) => {
+    const e0 = evals[k], e1 = evals[k + 1];
+    if (new Chess(r.fens[k + 1]).in_checkmate()) return 'mate';
+    if (new Chess(r.fens[k]).moves().length === 1) return 'only';
+    if (!e0 || !e1) return null;
+    const loss = clampEval(e0.score) - clampEval(-e1.score), played = m.from + m.to + (m.promotion || '');
+    if (k < 8 && loss < 60) return 'book';
+    if (e0.best && e0.best === played) return 'best';
+    return loss <= 15 ? 'great' : loss <= 50 ? 'good' : loss <= 120 ? 'inacc' : loss <= 300 ? 'mistake' : 'blunder';
+  });
+  r.evals = evals.map(e => e ? {score: e.score, best: e.best} : null); r.grades = grades;
+  // keep the grades with the saved game, so the next review opens instantly
+  const log = gameLog(), hit = log.find(x => x.at === r.g.at && x.pgn === r.g.pgn);
+  if (hit){ hit.evals = r.evals; hit.grades = grades; saveLog(log); }
+  $('#rvProg').textContent = '';
+  if (rev === r) drawReview();
+}
+function uciToSan(fen, uci){
+  if (!uci) return null;
+  const m = new Chess(fen).move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q'});
+  return m ? m.san : null;
+}
+function drawReview(){
+  const r = rev; if (!r) return;
+  const pos = new Chess(r.fens[r.i]), last = r.moves[r.i - 1], board = $('#rvBoard');
+  board.innerHTML = '';
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++){
+    const sq = 'abcdefgh'[r.flip ? 7 - x : x] + (r.flip ? y + 1 : 8 - y), p = pos.get(sq), d = document.createElement('div');
+    d.className = `rv-sq ${(x + y) % 2 ? 'd' : 'l'}${last && (sq === last.from || sq === last.to) ? ' mv' : ''}`;
+    if (p){ const s = document.createElement('span'); s.className = p.color === 'w' ? 'gw' : 'gb'; s.textContent = GLYPH[p.type] + VS; d.appendChild(s); }
+    board.appendChild(d);
+  }
+  // eval bar: White's share, filling from White's side of the board
+  const e = r.evals && r.evals[r.i], bar = $('#rvEval');
+  bar.classList.toggle('flip', r.flip);
+  if (e){ const w = (r.fens[r.i].split(' ')[1] === 'w' ? 1 : -1) * clampEval(e.score); bar.firstChild.style.height = `${50 + 50 * (2 / (1 + Math.exp(-w / 400)) - 1)}%`; }
+  // what happened on this move
+  const now = $('#rvNow');
+  if (!last) now.innerHTML = '<b>Start</b>Step through with ▶ or the arrow keys.';
+  else {
+    const gr = r.grades && r.grades[r.i - 1], G = gr && GRADES[gr], prev = r.evals && r.evals[r.i - 1];
+    const better = prev && prev.best && ['inacc', 'mistake', 'blunder'].includes(gr) ? uciToSan(r.fens[r.i - 1], prev.best) : null;
+    now.innerHTML = '<b></b><span></span>';
+    now.querySelector('b').textContent = `${Math.ceil(r.i / 2)}${last.color === 'w' ? '.' : '…'} ${last.san}${G ? `  ${G[0]} ${G[1]}` : ''}`;
+    now.querySelector('span').textContent = (G ? `${SIDE(last.color)}: ${G[2]}.` : r.grades ? '' : 'Grading…') + (better ? ` Rude Fishy wanted ${better}.` : '');
+  }
+  // move list, two columns
+  const list = $('#rvMoves'); list.innerHTML = '';
+  const startBlack = r.fens[0].split(' ')[1] === 'b', cells = startBlack ? [null, ...r.moves] : r.moves;
+  for (let k = 0; k < cells.length; k += 2){
+    const num = document.createElement('span'); num.className = 'n'; num.textContent = `${k / 2 + 1}.`; list.appendChild(num);
+    for (const j of [k, k + 1]){
+      const m = cells[j], idx = startBlack ? j : j + 1;   // the position index after this move
+      if (!m){ list.appendChild(document.createElement('span')); continue; }
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = idx; if (idx === r.i) b.className = 'on';
+      const gr = r.grades && r.grades[idx - 1], G = gr && GRADES[gr];
+      b.innerHTML = '<span></span><span></span>'; b.firstChild.textContent = m.san;
+      if (G){ b.lastChild.textContent = G[0]; b.title = `${G[1]} (${G[2]})`; }
+      list.appendChild(b);
+    }
+  }
+  const on = list.querySelector('.on');   // scroll only the list (scrollIntoView would also scroll the dialog)
+  if (on && (on.offsetTop < list.scrollTop || on.offsetTop + on.offsetHeight > list.scrollTop + list.clientHeight)) list.scrollTop = on.offsetTop - list.clientHeight / 2;
+  // per-side tally
+  const sum = $('#rvSum'); sum.hidden = !r.grades;
+  if (r.grades) sum.innerHTML = ['w', 'b'].map(c => {
+    const mine = r.grades.filter((gr, k) => gr && r.moves[k].color === c);
+    const rows = GRADE_ORDER.filter(k => mine.includes(k)).map(k => `<span title="${GRADES[k][2]}">${GRADES[k][0]} ${GRADES[k][1]} ×${mine.filter(x => x === k).length}</span>`);
+    return `<div><span class="g ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span> <b>${SIDE(c)}${r.g.me === c ? ' (you)' : ''}</b><br>${rows.join('<br>') || 'Nothing to grade'}</div>`;
+  }).join('');
+}
+document.addEventListener('keydown', e => {
+  if ($('#hist').hidden) return;
+  if (e.key === 'Escape'){ closeHistory(); return; }
+  if (!rev) return;
+  if (e.key === 'ArrowLeft'){ e.preventDefault(); revGo(rev.i - 1); }
+  else if (e.key === 'ArrowRight'){ e.preventDefault(); revGo(rev.i + 1); }
+  else if (e.key === 'Home'){ e.preventDefault(); revGo(0); }
+  else if (e.key === 'End'){ e.preventDefault(); revGo(rev.moves.length); }
+});
+
 /* ---- Resign, draw offers and forfeits: games that end off the board ---- */
 const SIDE = c => (c === 'w' ? 'White' : 'Black');
 // A big cartoon glove on a long sleeve, reaching in from one player's side of the board. Fingers point along local +x.
@@ -3909,7 +4142,7 @@ function wireConn(conn){
     const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0} : null;
+    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, elo: num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1200} : null;
     const MG_T = ['ready', 'slap', 'fake', 'res', 'score'], POW = Object.keys(POWERS);
     const mg = d.mg === false ? false : d.mg && typeof d.mg === 'object' && MG_T.includes(d.mg.t) && num(d.mg.id) && num(d.mg.k) ? {t: d.mg.t, id: d.mg.id, k: d.mg.k, s: num(d.mg.s) ? d.mg.s : 0, from: wb(d.mg.from), pt: wb(d.mg.pt), why: ['hit', 'dodge', 'flinch', 'early', 'slow'].includes(d.mg.why) ? d.mg.why : null, v: num(d.mg.v) ? Math.min(d.mg.v, 1e6) : null} : null;
     const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
@@ -4168,7 +4401,7 @@ function newGame(){
   A.music.intensity(0); A.music.start();
   render(true);
   saveGame();
-  if (started){ A.sfx.fight(); flash('#fff', 300, .6); bigText('FIGHT!', '決戦', {hold: 500}); setTimeout(cpuTurn, 900); }
+  if (started && !trailerOn){ A.sfx.fight(); flash('#fff', 300, .6); bigText('FIGHT!', '決戦', {hold: 500}); setTimeout(cpuTurn, 900); }   // the trailer has its own captions
 }
 $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || busy) return;
   if (mode === 'online' && b.dataset.mode !== 'online' && net.code) leaveGame();
@@ -4253,9 +4486,10 @@ function showRules(){
 function showEnd(title, sub, jp){
   $('#mJp').textContent = jp; $('#mTitle').textContent = title; $('#mSub').textContent = sub;
   showScouter(isOver() ? rateGame() : null);
-  if (isOver()) showFairPlay(); else $('#mFair').hidden = true;
+  if (isOver()){ showFairPlay(); recordGame(); } else $('#mFair').hidden = true;
   const rules = mode === 'online' && net.my ? '<button class="btn" id="mRules">Change rules</button>' : '';
-  $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>`;
+  $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>${isOver() && gameLog()[0] ? '<button class="btn" id="mReview">Review</button>' : ''}`;
+  if ($('#mReview')) $('#mReview').onclick = () => { hideModal(); openReview(gameLog()[0]); };
   if ($('#mRules')) $('#mRules').onclick = showRules;
   $('#mRe').onclick = () => { hideModal(); newGame(); };
   $('#mLook').onclick = () => { hideModal(); clearEndFx(); };
@@ -4267,16 +4501,30 @@ const CRESTS = ['k', 'q', 'r', 'b', 'n', 'p'], CREST_COLORS = ['#ffc83d', '#ff2e
 const RANKS = [[0, 'Background Extra'], [300, 'Comic Relief'], [600, 'Side Character'], [900, 'Mysterious Transfer Student'], [1300, 'The Rival'], [1800, 'Main Character'], [2500, 'Final Boss'], [4000, 'Plot Armor'], [9001, "IT'S OVER 9000!!"]];
 const rankOf = p => RANKS.filter(([min]) => p >= min).pop()[1];
 const PROFILE_KEY = 'kessen-profile';
-let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0};
+let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0};
 try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch(e){}
 const fighterName = () => profile.name || 'Nameless Challenger';
 function saveProfile(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch(e){} drawFighter(); shareProfile(); }
 function drawFighter(){
   $('#fCrest').textContent = GLYPH[profile.crest] + VS; $('#fCrest').style.setProperty('--c', profile.color);
   $('#fName').textContent = fighterName(); $('#fRank').textContent = rankOf(profile.power); $('#fPower').textContent = profile.power.toLocaleString();
+  $('#fElo').textContent = profile.elo; $('#fElo').parentElement.title = `Online: Elo ${profile.elo} · ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
+}
+// The name checker: length, characters, reserved names and a rude-word filter (also catching 0→o, 1→i style swaps).
+const RUDE = ['fuck', 'shit', 'cunt', 'bitch', 'dick', 'cock', 'pussy', 'nigg', 'fag', 'whore', 'slut', 'rape', 'nazi', 'hitler', 'penis', 'vagina', 'porn', 'retard', 'twat', 'wank', 'bastard', 'asshole', 'tits', 'kike', 'spic', 'chink'];
+function checkName(raw){
+  const n = raw.trim().replace(/\s+/g, ' ');
+  if (!n) return {ok: true, msg: 'Blank is fine: you\'ll be "Nameless Challenger".'};
+  if (n.length < 2) return {ok: false, msg: 'At least 2 characters, please.'};
+  if (!/^[\p{L}\p{N} _.\-]+$/u.test(n)) return {ok: false, msg: 'Letters, numbers, spaces and _ - . only.'};
+  if (!/[\p{L}\p{N}]/u.test(n)) return {ok: false, msg: 'Needs at least one letter or number.'};
+  const flat = n.toLowerCase().replace(/[0@4]/g, m => ({0: 'o', '@': 'a', 4: 'a'})[m]).replace(/[1!]/g, 'i').replace(/3/g, 'e').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/[^a-z]/g, '');
+  if (/admin|moderator|official|kessenstaff|support|system/.test(flat)) return {ok: false, msg: "That one's reserved. Try another."};
+  if (RUDE.some(w => flat.includes(w))) return {ok: false, msg: 'Keep it friendly: pick another name.'};
+  return {ok: true, msg: '✓ Looks good. (Names aren\'t unique yet: that arrives with the online leaderboard.)'};
 }
 // what your friend sees online
-const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power});
+const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, elo: profile.elo});
 function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
 $('#fEdit').onclick = () => {
   let crest = profile.crest, color = profile.color;
@@ -4285,7 +4533,12 @@ $('#fEdit').onclick = () => {
   $('#pColors').innerHTML = CREST_COLORS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === color}" style="background:${c}" aria-label="Colour"></button>`).join('');
   $('#pCrests').onclick = e => { const b = e.target.closest('button'); if (!b) return; crest = b.dataset.c; $('#pCrests').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
   $('#pColors').onclick = e => { const b = e.target.closest('button'); if (!b) return; color = b.dataset.c; $('#pColors').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
-  $('#pSave').onclick = () => { profile.name = $('#pName').value.trim().slice(0, 16); profile.crest = crest; profile.color = color; saveProfile(); $('#prof').hidden = true; };
+  const check = () => {
+    const r = checkName($('#pName').value), el = $('#pCheck');
+    el.textContent = r.msg; el.className = `pcheck ${r.ok ? 'ok' : 'bad'}`; $('#pSave').disabled = !r.ok;
+  };
+  $('#pName').oninput = check; check();
+  $('#pSave').onclick = () => { if (!checkName($('#pName').value).ok) return; profile.name = $('#pName').value.trim().replace(/\s+/g, ' ').slice(0, 16); profile.crest = crest; profile.color = color; saveProfile(); $('#prof').hidden = true; };
   $('#pCancel').onclick = () => { $('#prof').hidden = true; };
   $('#prof').hidden = false; $('#pName').focus();
 };
@@ -4317,15 +4570,25 @@ function rateGame(){
   if (out === 'draw' && game.in_threefold_repetition()) lines.push(['Déjà Vu Tax', -5]);
   const before = profile.power, delta = lines.reduce((a, l) => a + l[1], 0);
   profile.power = Math.max(0, before + delta); profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
+  // Elo (online games only), against the rating your opponent's screen shared; new players move faster (K 40, then 24)
+  let elo = null;
+  if (mode === 'online'){
+    const theirs = net.data && net.data["p" + OTHER(me)], opp = theirs && Number.isFinite(theirs.elo) ? theirs.elo : 1200, mine = profile.elo;
+    const expected = 1 / (1 + 10 ** ((opp - mine) / 400)), score = out === 'win' ? 1 : out === 'draw' ? .5 : 0;
+    profile.elo = Math.max(100, Math.round(mine + (profile.onlineGames < 20 ? 40 : 24) * (score - expected)));
+    profile.onlineGames++; if (out === 'win') profile.onlineWins++;
+    elo = {before: mine, after: profile.elo};
+  }
   saveProfile();
-  return lastRating = {before, after: profile.power, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
+  return lastRating = {before, after: profile.power, elo, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
 }
 // The scouter readout on the end screen: lists the bonuses and counts the number up.
 function showScouter(r){
   const el = $('#mScouter'); if (!r){ el.hidden = true; return; }
   const sign = n => (n >= 0 ? '+' : '') + n;
   el.innerHTML = `戦闘力 POWER LEVEL<span class="big" id="scN">${r.before.toLocaleString()}</span>` + r.lines.map(([t, n]) => `${t} ${sign(n)}`).join('<br>') +
-    (r.rankUp ? `<br><span class="rk">RANK UP! ${rankOf(r.after).toUpperCase()}</span>` : '');
+    (r.rankUp ? `<br><span class="rk">RANK UP! ${rankOf(r.after).toUpperCase()}</span>` : '') +
+    (r.elo ? `<br>Elo ${r.elo.before} → <b>${r.elo.after}</b> (${(r.elo.after >= r.elo.before ? '+' : '') + (r.elo.after - r.elo.before)})` : '');
   el.hidden = false; A.sfx.beep();
   const t0 = performance.now(), n = $('#scN');
   const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1200); n.textContent = Math.round(r.before + (r.after - r.before) * k).toLocaleString(); if (k < 1) requestAnimationFrame(tick); else { n.textContent = r.after.toLocaleString(); if (r.rankUp) A.sfx.promote(); } };
@@ -4363,7 +4626,9 @@ $('#pgnBtn').onclick = () => {
   const pgn = game.pgn({max_width: 72}) || '(no moves yet)';
   try { navigator.clipboard.writeText(pgn).then(() => toast('PGN copied'), () => toast('Copy failed')); } catch(e){ toast('Copy failed'); }
 };
-$('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+$('#mGo').onclick = () => { A.init(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+// Straight into random-opponent matchmaking from the start screen
+$('#mMatch').onclick = () => { A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
   '#oracle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle'],
@@ -4376,6 +4641,42 @@ const DEMOS = {
   '#repetition-demo': ['1. Nf3 Nf6 2. Ng1 Ng8 3. Nf3 Nf6 4. Ng1', {from: 'f6', to: 'g8'}],
   '#seventh-demo': ['rnbqkbnr/pp1ppppp/2P5/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1', {from: 'c6', to: 'c7'}]
 };
+// The trailer: open the page with #trailer and press FIGHT! for a goofy one-and-a-half-minute montage to screen-record.
+async function trailer(){
+  trailerOn = true; mode = 'pvp'; seg('modeSeg', 'mode', mode);
+  const card = (main, jp, sub, o = {}) => bigText(main, jp, Object.assign({hold: 1500, size: .75, color: 'var(--gold)', sub}, o));
+  const idle = async () => { while (busy) await sleep(200); };
+  const scene = async (main, jp, sub, pos, move) => {
+    await idle(); hideModal(); clearEndFx(); newGame();
+    if (pos.includes('/')) game.load(pos); else game.load_pgn(pos);
+    const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
+    await card(main, jp, sub);
+    if (move === 'oracle'){
+      powers.w = ['oracle']; panel(); await usePower('w', 'oracle'); await sleep(3500);
+      oracle = null; $('#evalBar').hidden = true; powers.w = []; panel(); return;
+    }
+    // the ending movie is the long version: keep about 7 s of it, then skip
+    const skipper = setInterval(() => { const b = document.querySelector('.mv-skip'); if (b && (b.dataset.t = +(b.dataset.t || 0) + 1) > 14) b.click(); }, 500);
+    try { await sleep(400); await commit(move); await idle(); } finally { clearInterval(skipper); }
+    await sleep(1200);
+  };
+  try {
+    A.sfx.fight();
+    await card('KESSEN CHESS', '決戦', 'CHESS, BUT EVERY MOVE IS A SEASON FINALE', {hold: 2000, size: .9});
+    await scene('CAPTURES?', '撃破', 'THEY GET A WHOLE CUT-IN', '1. e4 d5', {from: 'e4', to: 'd5'});
+    await scene('CASTLING', '入城', 'THE KING HIDES. DRAMATICALLY.', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'});
+    await scene('EN PASSANT', '通過', "DON'T GOOGLE IT. JUST WATCH.", '1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'});
+    await scene('PROMOTION', '昇格', 'PAWN → GIANT MECH → …A HORSE??', 'k7/4P3/8/8/8/8/7p/K7 w - - 0 1', {from: 'e7', to: 'e8', promotion: 'n'});
+    await scene('DOUBLE CHECK', '両王手', 'TWICE THE PANIC', 'rn1qk2r/ppp3pp/8/8/8/8/PPPPBPPP/RNBQR1K1 w kq - 0 1', {from: 'e2', to: 'b5'});
+    await scene('POWER-UPS', '力', 'INCLUDING A FISH THAT JUDGES YOU', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle');
+    await scene('CHECKMATE', '詰み', 'THE KING DOES NOT GO QUIETLY', '1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6', {from: 'h5', to: 'f7'});
+    await idle(); hideModal(); clearEndFx(); newGame();
+    A.sfx.heroic();
+    await card('PLAY FREE', '無料', 'VS CPU · SAME SCREEN · ONLINE WITH A FRIEND', {hold: 2200});
+    await card('MINIGAMES', '遊戯', 'SLAP FIGHTS · MEMORY FLASH · MATE IN ONE', {hold: 1800, color: 'var(--blood)'});
+    await card('KESSEN CHESS', '決戦', (location.host + location.pathname).replace(/\/$/, '').toUpperCase(), {hold: 3200, size: .9});
+  } finally { trailerOn = false; }
+}
 function demo(pos, move){
   if (move === 'oracle'){ mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame(); game.load_pgn(pos); render(true); powers.w = ['oracle', 'hint']; panel(); return; }
   mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame();
@@ -4460,13 +4761,30 @@ async function readTotal(spec){
 }
 // Charity totals, summed only from numbers a platform actually returned (cached for 10 minutes per tab).
 let donTotals = {per: [], sum: null, donors: null};
+// The public receipts ledger (donations-ledger.json in the repository): donations made somewhere other than a
+// Kessen fundraiser page (for example on a charity's own site), added by hand once a receipt has been checked.
+// Each entry is matched to a charity by ABN and is added on top of that charity's live page total.
+const LEDGER_URL = 'donations-ledger.json', LEDGER_PUBLIC = 'https://github.com/HiFunctioningElf/kessen-chess/blob/main/donations-ledger.json';
+async function loadLedger(){
+  try {
+    const r = await fetch(LEDGER_URL, {cache: 'no-cache'}); if (!r.ok) return [];
+    const j = await r.json();
+    return (Array.isArray(j.entries) ? j.entries : []).filter(e => e && typeof e.abn === 'string' && Number.isFinite(e.amount) && e.amount > 0 && e.currency === 'AUD');
+  } catch(e){ return []; }
+}
 async function loadCharityTotals(){
-  if (!CHARITIES.some(c => c.total && isSet(c.page))) return;
   let cached = null; try { cached = JSON.parse(sessionStorage.getItem('kessen-don-totals') || 'null'); } catch(e){}
   let per;
   if (cached && Date.now() - cached.t < 600000) per = cached.per;
   else {
-    per = await Promise.all(CHARITIES.map(c => isSet(c.page) ? readTotal(c.total) : null));
+    const [live, ledger] = await Promise.all([Promise.all(CHARITIES.map(c => c.total && isSet(c.page) ? readTotal(c.total) : null)), loadLedger()]);
+    per = CHARITIES.map((c, i) => {
+      const mine = ledger.filter(e => e.abn.replace(/\s/g, '') === c.abn.replace(/\s/g, '')), t = live[i];
+      if (!mine.length) return t;
+      const extra = mine.reduce((a, e) => a + e.amount, 0), extraDonors = mine.reduce((a, e) => a + (Number.isInteger(e.donors) && e.donors > 0 ? e.donors : 1), 0);
+      if (t && t.currency !== 'AUD') return t;   // can't add AUD receipts to another currency
+      return {amount: (t ? t.amount : 0) + extra, currency: 'AUD', donors: t && t.donors == null ? null : (t ? t.donors : 0) + extraDonors, receipts: extra};
+    });
     try { sessionStorage.setItem('kessen-don-totals', JSON.stringify({t: Date.now(), per})); } catch(e){}
   }
   const aud = per.filter(t => t && t.currency === 'AUD');
@@ -4480,7 +4798,7 @@ function drawDonationTotals(){
   $('#donBtn').title = sum != null ? 'Donated to the charities through Kessen Chess fundraiser pages (the developer\'s holiday fund isn\'t included)' : '';
   const el = $('#donRaised'); el.hidden = sum == null;
   if (!el.hidden) el.textContent = `💝 ${fmtMoney(sum, 'AUD')} raised by ${donors != null ? `${donors.toLocaleString()} Kessen player${donors === 1 ? '' : 's'}` : 'Kessen players'}`;
-  CHARITIES.forEach((c, i) => { const t = donTotals.per[i], r = document.querySelector(`#donGrid [data-i="${i}"] .raised`); if (r) { r.hidden = !t; r.textContent = t ? `${fmtMoney(t.amount, t.currency)} raised` : ''; } });
+  CHARITIES.forEach((c, i) => { const t = donTotals.per[i], r = document.querySelector(`#donGrid [data-i="${i}"] .raised`); if (r) { r.hidden = !t; r.textContent = t ? `${fmtMoney(t.amount, t.currency)} raised` : ''; r.title = t && t.receipts ? `Includes ${fmtMoney(t.receipts, 'AUD')} from receipts in the public ledger` : ''; } });
 }
 function charityLink(c, label){
   const url = isSet(c.page) ? c.page : c.donate;
@@ -4648,6 +4966,15 @@ function start(data){
     const h = game.history({verbose:true}), l = h[h.length-1]; if (l) lastMove = {from:l.from, to:l.to}; } } catch(e){}
   render(true);
 }
+// Phones: keep the screen awake while a duel is on, and a little buzz on big hits.
+let wakeLock = null;
+async function keepAwake(){
+  if (wakeLock || !('wakeLock' in navigator) || !started || isOver() || document.hidden) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch(e){}
+}
+stageEl.addEventListener('pointerdown', keepAwake);
+document.addEventListener('visibilitychange', keepAwake);
+function buzz(ms){ try { if (navigator.vibrate && matchMedia('(pointer: coarse)').matches) navigator.vibrate(ms); } catch(e){} }
 window.claude?.hot?.snapshot?.(() => ({pgn: game.pgn(), mode, playerColor, level, orientation}));
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 })();
