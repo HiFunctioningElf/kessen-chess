@@ -250,6 +250,34 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .vhs-band{position:absolute;left:0;right:0;height:9vh;background:linear-gradient(transparent,rgba(255,255,255,.35),transparent);filter:blur(2px)}
 .vhs-osd{position:absolute;left:max(16px,4vw);top:max(16px,4vh);font:700 clamp(18px,3vw,36px)/1.2 ui-monospace,Consolas,monospace;color:#fff;letter-spacing:.1em;text-shadow:3px 0 #ff2e4d,-3px 0 #3fe0ff}
 .vhs-osd.r{left:auto;right:max(16px,4vw)}
+.powers #powRows{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.powrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}
+.powrow .who{font-family:var(--chess);font-size:18px;width:22px}
+.powrow .none{color:var(--muted);font-size:12px}
+.pow{background:var(--night);border:1px solid var(--gold);color:var(--text);padding:5px 9px;font-weight:700;font-size:12px;cursor:pointer}
+.pow:disabled{opacity:.45;cursor:not-allowed}
+.pow.theirs{border-color:var(--line);cursor:default}
+.mg{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px;background:rgba(12,10,23,.9);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.mg-title{font-family:var(--display);font-size:clamp(22px,4vw,38px);color:var(--blood);-webkit-text-stroke:1px #000;text-shadow:3px 3px 0 #000;text-align:center;line-height:1.1}
+.mg-title small{display:block;font-size:.42em;color:var(--muted);letter-spacing:.2em}
+.mg-score{display:flex;gap:16px;align-items:center;font-family:var(--display);font-size:clamp(16px,2.6vw,24px)}
+.mg-msg{min-width:8ch;text-align:center;color:var(--gold)}
+.mg-arena{position:relative;flex:1;width:min(100%,520px);min-height:150px}
+.mg-hands{position:absolute;left:50%;width:min(56%,290px);max-height:58%;transform:translateX(-50%);overflow:visible}
+.mg-hands.top{top:6%;z-index:2}
+.mg-hands.bot{bottom:4%}
+.mg-pop{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(28px,6vw,56px);color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:4px 4px 0 var(--blood);white-space:nowrap;pointer-events:none;z-index:3}
+.mg-roles{font-size:13px;color:var(--muted);text-align:center}
+.mg-ctrls{display:flex;gap:10px;width:100%;justify-content:center;flex-wrap:wrap}
+.mg-side{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:min(46%,220px);flex:1;max-width:280px}
+.mg-side .who{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center}
+.mg-side .row{display:flex;gap:6px}
+.mg-btn{flex:1;padding:14px 8px;font-family:var(--display);font-size:18px;border:3px solid #000;box-shadow:3px 3px 0 #000;cursor:pointer;color:#111;background:var(--gold)}
+.mg-btn.fake{background:#d9d2f0;font-size:15px;flex:.6}
+.mg-btn.pull{background:var(--volt)}
+.mg-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+.mg-btn:disabled{opacity:.35}
+.mg-btn kbd{display:block;font:700 10px var(--body);opacity:.7}
 @media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
 
@@ -260,6 +288,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
       <button class="chip" id="fxBtn" aria-pressed="true">Cut-ins</button>
+      <button class="chip" id="mgBtn" aria-pressed="true" title="A minigame every 8 moves; the winner gets a power-up">Minigames</button>
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
@@ -271,6 +300,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
         <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b></div></div>
         <button class="chip" id="fEdit" type="button">Edit</button>
       </section>
+      <section class="card powers" id="powersCard" hidden><div class="label">Power-ups</div><div id="powRows"></div></section>
       <section class="card status" aria-live="polite">
         <div class="turn-chip" id="turnChip"></div>
         <div><div class="eyebrow">Move <span id="moveNo">1</span></div><div class="status-text" id="statusText">White to move</div></div>
@@ -291,7 +321,6 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
             <optgroup label="Blitz"><option value="3+0">3 min</option><option value="3+2">3 | 2</option><option value="5+0">5 min</option></optgroup>
             <optgroup label="Rapid"><option value="10+0">10 min</option><option value="15+10">15 | 10</option><option value="30+0">30 min</option></optgroup>
           </select></div>
-        <div class="field"><label class="label" for="styleSel">Piece style</label><select id="styleSel" class="sel"></select></div>
         <div class="field" id="onlineField" hidden>
           <span class="label">Online duel</span>
           <div id="onIdle" class="field">
@@ -697,8 +726,10 @@ checkRing.rotation.x = -Math.PI/2; checkRing.visible = false; scene.add(checkRin
 // file / rank labels
 function label(text, x, z){
   const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
-  g.fillStyle = '#a99fc7'; g.font = '700 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 32, 34);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(.32, .32), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false}));
+  // bold cream lettering with a dark outline, readable from any angle and against the gold trim
+  g.font = '900 46px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+  g.lineWidth = 9; g.strokeStyle = '#0c0a17'; g.strokeText(text, 32, 35); g.fillStyle = '#fff1c9'; g.fillText(text, 32, 35);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(.46, .46), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false}));
   m.rotation.x = -Math.PI/2; m.position.set(x, .095, z); scene.add(m); return m;
 }
 const labels = [];
@@ -738,30 +769,7 @@ const IVC = 0xf7ead2, PUC = 0x5a3a7a, DKC = 0x0a0614, GDC = 0xffc83d;
 const classic = () => ({w: {m: toon(IVC), o: [DKC, .022]}, b: {m: toon(PUC, {emissive: 0x12041c}), o: [GDC, .022]}});
 // Each entry: [name, () => {w: {m, o: [color, width]?, e: edgeLineColor?}, b: {...}, shape?: [xz, y], seg?, rim?}]
 const PIECE_STYLES = {
-  A: ['Toon, thin outline', classic],
-  B: ['Toon, no outline', () => ({w: {m: toon(IVC)}, b: {m: toon(PUC, {emissive: 0x12041c})}})],
-  C: ['Toon, thick outline', () => ({w: {m: toon(IVC), o: [DKC, .045]}, b: {m: toon(PUC, {emissive: 0x12041c}), o: [GDC, .045]}})],
-  D: ['Hard 2-tone cel', () => ({w: {m: toon2(IVC), o: [DKC, .022]}, b: {m: toon2(PUC), o: [GDC, .022]}})],
-  E: ['Flat manga', () => ({w: {m: flatM(IVC), o: [DKC, .03]}, b: {m: flatM(PUC), o: [GDC, .03]}})],
-  F: ['Smooth glossy', () => ({w: {m: stdM(IVC, {roughness: .22})}, b: {m: stdM(PUC, {roughness: .22})}})],
-  G: ['Matte clay', () => ({w: {m: lamM(IVC)}, b: {m: lamM(PUC)}})],
-  H: ['Glossy + thin outline', () => ({w: {m: stdM(IVC, {roughness: .22}), o: [DKC, .02]}, b: {m: stdM(PUC, {roughness: .22}), o: [GDC, .02]}})],
-  I: ['Classic white vs black, cel', () => ({w: {m: toon(0xfafafa), o: [DKC, .022]}, b: {m: toon(0x1c1c22), o: [0xe8e8e8, .022]}})],
-  J: ['Classic white vs black, glossy', () => ({w: {m: stdM(0xf4f4f4, {roughness: .25})}, b: {m: stdM(0x18181c, {roughness: .2})}})],
-  K: ['Mecha red vs blue', () => ({w: {m: toon(0xe0263f), e: DKC}, b: {m: toon(0x2a5bd7), e: DKC}})],
-  L: ['Gold vs silver metal', () => ({w: {m: stdM(0xffc83d, {metalness: .65, roughness: .3})}, b: {m: stdM(0xb8bcc8, {metalness: .65, roughness: .3})}})],
-  M: ['Cream vs crimson', () => ({w: {m: toon(0xfff1dc), o: [DKC, .022]}, b: {m: toon(0xb3203a), o: [DKC, .022]}})],
-  N: ['Neon cyan vs magenta', () => ({w: {m: toon(0x0e1a24, {emissive: 0x0a3a48}), o: [0x3fe0ff, .03]}, b: {m: toon(0x1a0e20, {emissive: 0x48103a}), o: [0xff3fd0, .03]}})],
-  O: ['Pastel mint vs lavender', () => ({w: {m: toon(0xbff5df), o: [0x2a4a40, .02]}, b: {m: toon(0xc9b6ff), o: [0x3a2a5a, .02]}})],
-  P: ['Wood maple vs walnut', () => ({w: {m: lamM(0xe2b77e)}, b: {m: lamM(0x5a3620)}})],
-  Q: ['Crystal glass', () => ({w: {m: stdM(0xe8f6ff, {transparent: true, opacity: .62, roughness: .05}), e: 0xffffff}, b: {m: stdM(0x9a6bff, {transparent: true, opacity: .62, roughness: .05}), e: 0xd9c4ff}})],
   R: ['Ink sketch', () => ({w: {m: flatM(0xffffff), o: [0x000000, .04], e: 0x000000}, b: {m: flatM(0x141414), o: [0xffffff, .025], e: 0xffffff}})],
-  S: ['Chibi proportions', () => Object.assign(classic(), {shape: [1.18, .82]})],
-  T: ['Tall and elegant', () => Object.assign(classic(), {shape: [.86, 1.18]})],
-  U: ['Extra smooth', () => Object.assign(classic(), {seg: 96})],
-  V: ['Strong anime rim light', () => Object.assign(classic(), {rim: true})],
-  W: ['Luxury with gold trim', () => ({w: {m: stdM(0xf5f5f0, {roughness: .18}), o: [GDC, .022]}, b: {m: stdM(0x111114, {roughness: .18}), o: [GDC, .022]}})],
-  X: ['Blueprint lines', () => ({w: {m: flatM(0x0d2a55), e: 0xbfe6ff}, b: {m: flatM(0x2a0d3a), e: 0xffb3f0}})]
 };
 const DEFAULT_STYLE = 'R';
 const styleCache = {};
@@ -778,7 +786,7 @@ function applyStyle(code){
   hemi.intensity = STY.rim ? .3 : .42; rimR.intensity = STY.rim ? 2.4 : .55; rimC.intensity = STY.rim ? 1.8 : .4;
 }
 let savedStyle = null; try { savedStyle = localStorage.getItem('kessen-piece-style'); } catch(e){}
-applyStyle(savedStyle || DEFAULT_STYLE);
+applyStyle(DEFAULT_STYLE);   // Ink sketch is the game's one look
 
 const pieceAt = {};
 const noHit = () => {};
@@ -1561,6 +1569,7 @@ function render(force){
     const pre = preLegal.some(x => x.to === sq);
     m.dot.material.color.set(pre ? 0xb06cff : 0x3fe0ff);
     if (pre) m.dot.visible = true;
+    if (typeof hintMove !== 'undefined' && hintMove && (sq === hintMove.from || sq === hintMove.to)){ m.hl.visible = true; m.hl.material.color.set(0x7dff8a); m.hl.material.opacity = .65; }
     if (sq === preSel || premoves.some(pm => sq === pm.from || sq === pm.to)){ m.hl.visible = true; m.hl.material.color.set(0xb06cff); m.hl.material.opacity = .6; }
   }
   syncPieces(force);
@@ -1622,6 +1631,7 @@ function panel(){
   log.scrollTop = log.scrollHeight;
   $('#lvlField').hidden = mode !== 'cpu';
   $('#flipField').hidden = mode !== 'pvp';
+  if (typeof drawPowers === 'function') drawPowers();
   $('#sideField').hidden = mode === 'pvp' || (mode === 'online' && !!net.code);
   $('#onlineField').hidden = mode !== 'online';
   $('#tcField').hidden = mode === 'cpu' || (mode === 'online' && !!net.code);
@@ -2464,7 +2474,7 @@ let ended = null;     // {type: 'resign' | 'draw' | 'abandon', winner: 'w' | 'b'
 const isOver = () => game.game_over() || !!flagged || !!ended;
 const tcOn = () => clock.base > 0 && mode !== 'cpu';
 const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
-function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } drawClocks(); }
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; } drawClocks(); }
 function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
 function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
 const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
@@ -2573,7 +2583,7 @@ async function commit(input, remote, remoteClock){
     if (flagged || ended) return;
     mv = game.move(input);
     if (!mv) return;
-    noteStyle(mv);
+    noteStyle(mv); hintMove = null;
     if (tcOn()){
       clockPause();
       if (remote && remoteClock){ clock.w = remoteClock.w; clock.b = remoteClock.b; }
@@ -2608,6 +2618,12 @@ async function commit(input, remote, remoteClock){
   if (!mv) return;
   saveGame();
   if (mode === 'pvp' && autoFlip && !isOver() && orientation !== game.turn()){ orientation = game.turn(); swingTo(orientation); }
+  if (shouldMinigame()){
+    busy = true; busySince = Date.now(); clockPause(); clearPremove(); render();
+    try { await awardPower(await redHands()); } catch(e){ console.error(e); document.querySelector('#mg')?.remove(); }
+    finally { busy = false; if (tcOn() && !isOver()) clockStart(game.turn()); render(); }
+    if (isOver()) return;
+  }
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
   if (premoves.length && canMoveNow()){ tryPremove(); return; }
   // A piece picked during the opponent's turn (purple dots, no destination yet) becomes a normal selection now,
@@ -2619,6 +2635,231 @@ async function commit(input, remote, remoteClock){
   }
   cpuTurn();
 }
+/* ================= MINIGAMES: Red Hands every 8 full moves; the winner earns a power-up ================= */
+// ?mgEvery=N (testing only) makes minigames come round faster
+const MG_EVERY = Math.max(2, +new URLSearchParams(location.search).get('mgEvery') || 16), MG_WIN = 2, SLAP_MS = 380, FLINCH_MS = 450, LIVE_MS = 3000;
+const OTHER = c => (c === 'w' ? 'b' : 'w');
+let minigamesOn = true; try { minigamesOn = localStorage.getItem('kessen-minigames') !== 'off'; } catch(e){}
+$('#mgBtn').setAttribute('aria-pressed', String(minigamesOn));
+$('#mgBtn').onclick = e => toggle(e.currentTarget, v => { minigamesOn = v; try { localStorage.setItem('kessen-minigames', v ? 'on' : 'off'); } catch(err){} toast(v ? 'Minigames on' : 'Minigames off'); });
+const mgEnabled = () => mode === 'online' ? !!(net.data && net.data.mg !== false) : minigamesOn;
+function shouldMinigame(){
+  const n = game.history().length;
+  if (!mgEnabled() || !started || isOver() || !n || n % MG_EVERY) return false;
+  if (mode === 'online') return !!(net.my && net.data && net.data.w && net.data.b);
+  return true;
+}
+// who is a person at this screen (the CPU and an online friend are not)
+const humanHere = c => mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
+const HAND_SVG = (fill, flip) => `<svg class="mg-hands ${flip ? 'top' : 'bot'}" viewBox="0 0 220 120" aria-hidden="true"><g stroke="#000" stroke-width="5" stroke-linejoin="round">${[0, 1].map(i => `
+  <g transform="translate(${i ? 205 : 15} ${flip ? 118 : 2}) scale(${i ? -1 : 1} ${flip ? -1 : 1})" fill="${fill}" class="hand">
+    <rect x="8" y="46" width="74" height="62" rx="24"/><rect x="12" y="6" width="15" height="52" rx="7.5"/><rect x="30" y="0" width="15" height="58" rx="7.5"/>
+    <rect x="48" y="3" width="15" height="55" rx="7.5"/><rect x="65" y="12" width="14" height="46" rx="7"/><rect x="74" y="58" width="36" height="15" rx="7.5" transform="rotate(-28 78 66)"/>
+  </g>`).join('')}</g></svg>`;
+let rhInput = null;   // routes a (colour, action) press to the attempt in progress
+let mgListener = null; // online: the attempt in progress listens to the friend's minigame messages
+const mgSend = (m, peerMsg) => { if (net.ref) net.ref.update({mg: Object.assign({from: net.my, s: Date.now() + Math.random()}, m)}).catch(() => {}); };
+async function redHands(){
+  const first = (game.history().length / MG_EVERY) % 2 ? 'b' : 'w', score = {w: 0, b: 0};
+  A.music.duck(40000); A.sfx.fight();
+  const ov = document.createElement('div'); ov.className = 'mg'; ov.id = 'mg';
+  ov.innerHTML = `<div class="mg-title">赤い手 RED HANDS<small>MINIGAME · WINNER GETS A POWER-UP</small></div>
+    <div class="mg-score"><span class="gw">${GLYPH.k}${VS}</span><span id="mgSW">0</span><span class="mg-msg" id="mgMsg">GET READY</span><span id="mgSB">0</span><span class="gb">${GLYPH.k}${VS}</span></div>
+    <div class="mg-roles" id="mgRoles"></div>
+    <div class="mg-arena" id="mgArena"></div>
+    <div class="mg-ctrls"><div class="mg-side" id="mgCtl_w"></div><div class="mg-side" id="mgCtl_b"></div></div>`;
+  stageEl.appendChild(ov);
+  const keys = e => {
+    if (!rhInput || e.repeat) return;
+    const k = e.key.toLowerCase(), pvpKeys = {a: ['w', 'main'], s: ['w', 'fake'], l: ['b', 'main'], k: ['b', 'fake']};
+    if (mode === 'pvp' && pvpKeys[k]){ e.preventDefault(); rhInput(...pvpKeys[k]); return; }
+    const me = mode === 'cpu' ? playerColor : net.my;
+    if (mode !== 'pvp' && (k === ' ' || k === 'a' || k === 'l')){ e.preventDefault(); rhInput(me, 'main'); }
+    if (mode !== 'pvp' && (k === 'f' || k === 's' || k === 'k')){ e.preventDefault(); rhInput(me, 'fake'); }
+  };
+  document.addEventListener('keydown', keys);
+  let k = 0;
+  try {
+    while (score.w < MG_WIN && score.b < MG_WIN && k < 7 && !isOver()){
+      const att = k % 2 ? OTHER(first) : first;
+      const res = mode === 'online' ? await rhAttemptOnline(ov, att, k) : await rhAttemptLocal(ov, att);
+      if (!res) break;   // the link dropped: call it off
+      if (res.pt) score[res.pt]++;
+      $('#mgSW').textContent = score.w; $('#mgSB').textContent = score.b;
+      await sleep(1200); k++;
+    }
+  } finally { rhInput = null; mgListener = null; document.removeEventListener('keydown', keys); }
+  const winner = score.w > score.b ? 'w' : score.b > score.w ? 'b' : null;
+  $('#mgMsg').textContent = winner ? `${SIDE(winner).toUpperCase()} WINS` : 'NO WINNER';
+  A.sfx[winner ? 'heroic' : 'draw']();
+  await sleep(1300); ov.remove();
+  return winner;
+}
+// Draws the hands and the controls for one attempt.
+function rhSetup(ov, att){
+  const def = OTHER(att), arena = ov.querySelector('#mgArena');
+  arena.innerHTML = HAND_SVG(att === 'w' ? '#fffaf0' : '#3a2f63', true) + HAND_SVG('#fffaf0', false) + '<div class="mg-pop" id="mgPop"></div>';
+  ov.querySelector('#mgRoles').textContent = `${SIDE(att)} slaps · ${SIDE(def)} dodges`;
+  for (const c of ['w', 'b']){
+    const box = ov.querySelector('#mgCtl_' + c), mine = humanHere(c), slapper = c === att;
+    const keyMain = mode === 'pvp' ? (c === 'w' ? 'A' : 'L') : 'Space', keyFake = mode === 'pvp' ? (c === 'w' ? 'S' : 'K') : 'F';
+    box.innerHTML = !mine ? '' : `<div class="who">${SIDE(c)} · ${slapper ? 'slapper' : 'dodger'}</div><div class="row">${slapper
+      ? `<button class="mg-btn fake" data-a="fake" disabled>Fake<kbd>${keyFake}</kbd></button><button class="mg-btn" data-a="main" disabled>SLAP!<kbd>${keyMain}</kbd></button>`
+      : `<button class="mg-btn pull" data-a="main" disabled>PULL!<kbd>${keyMain}</kbd></button>`}</div>`;
+    box.querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); if (rhInput) rhInput(c, b.dataset.a); }));
+  }
+  const top = arena.querySelector('.top'), bot = arena.querySelector('.bot'), pop = arena.querySelector('#mgPop');
+  const enable = on => ov.querySelectorAll('.mg-btn').forEach(b => { b.disabled = !on; });
+  const say = (t, color) => { pop.textContent = t; pop.style.textShadow = `4px 4px 0 ${color || 'var(--blood)'}`; pop.animate([{transform: 'translate(-50%,-50%) scale(2)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .2}, {opacity: 1, offset: .8}, {opacity: 0}], {duration: 1100, fill: 'forwards'}); };
+  return {
+    enable, msg: t => { ov.querySelector('#mgMsg').textContent = t; },
+    slap: () => { A.sfx.whoosh(); return top.animate([{transform: 'translate(-50%,0)'}, {transform: 'translate(-50%,46%)'}], {duration: SLAP_MS, easing: 'cubic-bezier(.6,0,1,1)', fill: 'forwards'}); },
+    fake: () => { A.sfx.select(); top.animate([{transform: 'translate(-50%,0)'}, {transform: 'translate(-50%,14%)'}, {transform: 'translate(-50%,0)'}], {duration: 260}); },
+    pull: () => { bot.animate([{transform: 'translate(-50%,0)'}, {transform: 'translate(-50%,70%) rotate(4deg)'}], {duration: 140, fill: 'forwards'}); },
+    hit: () => { A.sfx.slap(); A.sfx.impact(.5); shake(.6, 300); bot.querySelectorAll('.hand').forEach(h => h.setAttribute('fill', '#ff4d6a')); say('バチン!! RED HANDS', '#ff2e4d'); },
+    result: (pt, why) => {
+      if (why === 'dodge'){ A.sfx.boing(); say('DODGED!', '#3fe0ff'); }
+      else if (why === 'flinch'){ A.sfx.laugh(); say('FLINCH!', '#ffc83d'); }
+      else if (why === 'early'){ A.sfx.laugh(); say('TOO EARLY!', '#ffc83d'); }
+      else if (why === 'slow'){ say('TOO SLOW', '#a99fc7'); }
+    }
+  };
+}
+// CPU reflexes by level (ms) and how easily it falls for a fake
+const CPU_RH = () => ({react: [450, 345, 285][level], flinch: [.4, .2, .08][level]});
+// Same screen and vs CPU: this screen referees the attempt.
+function rhAttemptLocal(ov, att){
+  const def = OTHER(att), ui = rhSetup(ov, att);
+  return new Promise(async res => {
+    ui.msg('READY…'); await sleep(900);
+    let slapT = 0, fakeT = 0, done = false, idle = 0;
+    const finish = (pt, why) => { if (done) return; done = true; clearTimeout(idle); rhInput = null; ui.enable(false); if (why === 'hit') ui.hit(); else ui.result(pt, why); res({pt, why}); };
+    const cpuDef = !humanHere(def) && mode === 'cpu', cpuAtt = !humanHere(att) && mode === 'cpu';
+    rhInput = (c, a) => {
+      if (done) return;
+      if (c === att){
+        if (a === 'main' && !slapT){
+          slapT = performance.now(); ui.slap(); setTimeout(() => finish(att, 'hit'), SLAP_MS);
+          if (cpuDef){ const r = CPU_RH().react + (Math.random() * 100 - 40); setTimeout(() => rhInput && rhInput(def, 'main'), r); }
+        }
+        if (a === 'fake' && !fakeT && !slapT){
+          fakeT = performance.now(); ui.fake();
+          if (cpuDef && Math.random() < CPU_RH().flinch) setTimeout(() => rhInput && rhInput(def, 'main'), 180 + Math.random() * 120);
+        }
+      } else if (c === def && a === 'main'){
+        const now = performance.now(); ui.pull();
+        if (slapT) finish(now - slapT < SLAP_MS ? null : att, now - slapT < SLAP_MS ? 'dodge' : 'hit');
+        else finish(att, fakeT && now - fakeT < FLINCH_MS ? 'flinch' : 'early');
+      }
+    };
+    ui.msg('GO!'); ui.enable(true); A.sfx.beep();
+    if (cpuAtt){   // the CPU waits, maybe fakes, then slaps
+      const wait = 500 + Math.random() * 2000;
+      if (Math.random() < .35) setTimeout(() => rhInput && rhInput(att, 'fake'), wait * .5);
+      setTimeout(() => rhInput && rhInput(att, 'main'), wait + 300);
+    }
+    idle = setTimeout(() => { if (!slapT) finish(null, 'slow'); }, LIVE_MS);
+  });
+}
+// Online: the dodger's screen referees (it sees the slap the moment it arrives, so lag can't steal a dodge).
+function rhAttemptOnline(ov, att, k){
+  const def = OTHER(att), ui = rhSetup(ov, att), id = game.history().length, me = net.my;
+  return new Promise(async res => {
+    let done = false, slapT = 0, fakeT = 0, idle = 0, bail = 0;
+    const end = r => { if (done) return; done = true; clearTimeout(idle); clearTimeout(bail); rhInput = null; mgListener = null; ui.enable(false); res(r); };
+    bail = setTimeout(() => end(null), 15000);   // the friend vanished
+    ui.msg('READY…'); await sleep(900);
+    if (me === def){
+      const finish = (pt, why) => { if (done) return; if (why === 'hit') ui.hit(); else ui.result(pt, why); mgSend({id, k, t: 'res', pt, why}); end({pt, why}); };
+      const onAtt = a => {
+        if (a === 'slap' && !slapT){ slapT = performance.now(); ui.slap(); setTimeout(() => finish(att, 'hit'), SLAP_MS); }
+        if (a === 'fake' && !fakeT && !slapT){ fakeT = performance.now(); ui.fake(); }
+      };
+      mgListener = m => { if (m.id === id && m.k === k && m.from === att) onAtt(m.t); };
+      rhInput = (c, a) => {
+        if (c !== def || a !== 'main' || done) return;
+        const now = performance.now(); ui.pull();
+        if (slapT) finish(now - slapT < SLAP_MS ? null : att, now - slapT < SLAP_MS ? 'dodge' : 'hit');
+        else finish(att, fakeT && now - fakeT < FLINCH_MS ? 'flinch' : 'early');
+      };
+      ui.msg('GO!'); ui.enable(true); A.sfx.beep(); mgSend({id, k, t: 'ready'});
+      idle = setTimeout(() => { if (!slapT) finish(null, 'slow'); }, LIVE_MS + 800);
+    } else {
+      // the slapper waits for the dodger to be ready, then its presses travel to the dodger, who sends back the verdict
+      mgListener = m => {
+        if (m.id !== id || m.k !== k || m.from !== def) return;
+        if (m.t === 'ready' && !rhInput){
+          ui.msg('GO!'); ui.enable(true); A.sfx.beep();
+          rhInput = (c, a) => {
+            if (c !== att) return;
+            if (a === 'main' && !slapT){ slapT = 1; ui.slap(); mgSend({id, k, t: 'slap'}); }
+            if (a === 'fake' && !fakeT && !slapT){ fakeT = 1; ui.fake(); mgSend({id, k, t: 'fake'}); }
+          };
+        }
+        if (m.t === 'res'){ if (m.why === 'hit') ui.hit(); else { if (m.why === 'dodge' || m.why === 'flinch' || m.why === 'early') ui.pull(); ui.result(m.pt, m.why); } end({pt: m.pt || null, why: m.why}); }
+      };
+      if (net.data && net.data.mg) mgListener(net.data.mg);   // the dodger may already be ready
+    }
+  });
+}
+/* ---- Power-ups: won in minigames, used on your own turn ---- */
+const POWERS = {hint: ['💡', "Sensei's Hint"], takeback: ['⏪', 'Takeback'], heist: ['⏱', 'Time Heist']};
+let powers = {w: [], b: []}, hintMove = null, tbSeen = 0, heistSeen = 0;
+async function awardPower(winner){
+  if (!winner) return;
+  if (mode === 'cpu' && winner !== playerColor){ toast('The CPU wins the minigame and gloats'); return; }
+  if (mode === 'online' && winner !== net.my) return;   // the winner's screen picks and shares it
+  const pool = ['hint', 'takeback'].concat(tcOn() ? ['heist'] : []), p = pool[Math.floor(Math.random() * pool.length)];
+  if (powers[winner].length >= 3){ toast('Power-up slots full (3)'); return; }
+  powers[winner] = powers[winner].concat(p);
+  if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
+  A.sfx.promote(); panel();
+  await bigText(`${POWERS[p][0]} ${POWERS[p][1].toUpperCase()}`, '力', {hold: 1100, size: .5, color: 'var(--gold)', sub: `${SIDE(winner).toUpperCase()} GETS A POWER-UP`});
+}
+const canUsePower = c => started && !busy && !isOver() && game.turn() === c && (mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my));
+function spendPower(c, p){ const i = powers[c].indexOf(p); if (i < 0) return false; powers[c] = powers[c].filter((_, j) => j !== i); return true; }
+async function usePower(c, p){
+  if (!canUsePower(c)) { toast("Power-ups work on your own turn"); return; }
+  if (p === 'takeback' && game.history().length < 2){ toast('Nothing to take back yet'); return; }
+  if (p === 'heist' && !(tcOn() && remaining(OTHER(c)) > 15000)){ toast('Time Heist needs clocks, and over 15 s on your opponent'); return; }
+  if (!spendPower(c, p)) return;
+  if (p === 'hint'){
+    toast('Sensei is thinking…');
+    const m = await engineMove(Object.assign({fen: game.fen(), seen: seenKeys()}, {depth: 8, ms: 1500, noise: 0, quiet: true}));
+    if (m){ hintMove = {from: m.from, to: m.to}; render(); toast(`Sensei suggests ${m.from}→${m.to}`); setTimeout(() => { hintMove = null; render(); }, 6000); }
+    if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
+    panel(); return;
+  }
+  if (p === 'takeback'){
+    game.undo(); game.undo(); clearPremove(); selected = null; legal = []; hintMove = null;
+    const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
+    render(true); A.sfx.rewind(1.2);
+    if (mode === 'online' && net.ref){ tbSeen = (net.data.tb || 0) + 1; net.ref.update({pgn: game.pgn(), n: game.history().length, tb: tbSeen, pow: powers, at: Date.now()}).catch(() => {}); }
+    saveGame();
+    await bigText('TAKEBACK', '待った', {hold: 800, size: .7, color: 'var(--volt)', sub: 'TIME REWINDS ONE MOVE'});
+    return;
+  }
+  if (p === 'heist'){
+    const run = clock.run, live = !clock.paused; clockPause();
+    clock[c] += 30000; clock[OTHER(c)] -= 30000;
+    if (run && live) clockStart(run); drawClocks();
+    if (mode === 'online' && net.ref){ heistSeen = (net.data.heist || 0) + 1; net.ref.update({clock: {w: clock.w, b: clock.b}, heist: heistSeen, pow: powers}).catch(() => {}); }
+    A.sfx.zap(); panel();
+    await bigText('TIME HEIST', '時間泥棒', {hold: 800, size: .7, color: 'var(--gold)', sub: `${SIDE(c).toUpperCase()} STEALS 30 SECONDS`});
+  }
+}
+function drawPowers(){
+  const rows = mode === 'pvp' ? ['w', 'b'] : mode === 'cpu' ? [playerColor] : net.my ? [net.my, OTHER(net.my)] : [];
+  const any = mgEnabled() && rows.length && (rows.some(c => powers[c].length) || started);
+  $('#powersCard').hidden = !any;
+  if (!any) return;
+  $('#powRows').innerHTML = rows.map(c => {
+    const mine = mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
+    const items = powers[c].map((p, i) => `<button class="pow${mine ? '' : ' theirs'}" type="button" data-c="${c}" data-p="${p}" ${mine && canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${POWERS[p][0]} ${POWERS[p][1]}</button>`).join('');
+    return `<div class="powrow"><span class="who ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span>${items || '<span class="none">Win a minigame to earn one</span>'}</div>`;
+  }).join('');
+}
+$('#powRows').addEventListener('click', e => { const b = e.target.closest('.pow'); if (b && !b.classList.contains('theirs')) usePower(b.dataset.c, b.dataset.p); });
 /* ---- Resign, draw offers and forfeits: games that end off the board ---- */
 const SIDE = c => (c === 'w' ? 'White' : 'Black');
 // A big cartoon glove on a long sleeve, reaching in from one player's side of the board. Fingers point along local +x.
@@ -3208,7 +3449,10 @@ function wireConn(conn){
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
     const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0} : null;
-    if (net.ref) net.ref.receive({pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
+    const MG_T = ['ready', 'slap', 'fake', 'res'], POW = Object.keys(POWERS);
+    const mg = d.mg === false ? false : d.mg && typeof d.mg === 'object' && MG_T.includes(d.mg.t) && num(d.mg.id) && num(d.mg.k) ? {t: d.mg.t, id: d.mg.id, k: d.mg.k, s: num(d.mg.s) ? d.mg.s : 0, from: wb(d.mg.from), pt: wb(d.mg.pt), why: ['hit', 'dodge', 'flinch', 'early', 'slow'].includes(d.mg.why) ? d.mg.why : null} : null;
+    const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
+    if (net.ref) net.ref.receive({mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
   });
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
@@ -3246,7 +3490,7 @@ async function createGame(fixedCode, quiet){
     peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
     const ref = p2pRef();
     attach(code, ref);
-    ref.update({pgn: '', n: 0, w: playerColor === 'w' ? 'host' : null, b: playerColor === 'b' ? 'host' : null, at: Date.now(), tc: parseTc($('#tcSel').value), clock: null, flag: null});
+    ref.update({pgn: '', n: 0, w: playerColor === 'w' ? 'host' : null, b: playerColor === 'b' ? 'host' : null, at: Date.now(), tc: parseTc($('#tcSel').value), clock: null, flag: null, mg: minigamesOn ? null : false});
     note(quiet ? 'Waiting for a random opponent… Keep this tab open.' : 'Send your friend the invite link (or the code). Keep this tab open while you play.');
     return true;
   }
@@ -3330,6 +3574,9 @@ function onRemote(snap){
   if (!snap.exists) return;
   const d = snap.data(), prev = net.data;
   net.data = d;
+  if (d.mg && d.mg.from !== net.my && (!prev || !prev.mg || prev.mg.s !== d.mg.s) && mgListener) mgListener(d.mg);
+  if (d.pow && JSON.stringify(d.pow) !== JSON.stringify(powers)){ powers = {w: (d.pow.w || []).slice(0, 3), b: (d.pow.b || []).slice(0, 3)}; }
+  if ((d.heist || 0) > heistSeen && d.clock){ heistSeen = d.heist; const run = clock.run, live = !clock.paused; clockPause(); clock.w = d.clock.w; clock.b = d.clock.b; if (run && live) clockStart(run); drawClocks(); toast('Your friend pulled a Time Heist!'); }
   const off = d.drawOffer || null, poff = (prev && prev.drawOffer) || null;
   if (off && off !== poff && !isOver()){ handIn(off); if (net.my && off !== net.my) showChoice(off); }
   if (!off && poff && !d.result){ hideChoice(); if ((d.slap || 0) > ((prev && prev.slap) || 0)) slapFx(); else handOut(); }
@@ -3355,16 +3602,18 @@ function onRemote(snap){
   applyRemote(d);
 }
 function applyRemote(d){
+  const tbJump = (d.tb || 0) > tbSeen;   // the friend used a Takeback: accept the shorter game
+  if (tbJump){ tbSeen = d.tb; toast('Your friend used a Takeback!'); }
   if (d.flag && !flagged && (d.n || 0) === game.history().length){ timeUp(d.flag, true); return; }
   if (d.result && !isOver() && (d.n || 0) === game.history().length){ endGame(d.result, true); return; }
   if ((d.n || 0) === game.history().length && !(d.n === 0 && (flagged || game.game_over()))){ panel(); return; }
   const tmp = new Chess(); if (d.pgn) tmp.load_pgn(d.pgn);
   const hist = tmp.history({verbose: true}), mine = game.history();
   const prefix = hist.length >= mine.length && mine.every((m, i) => hist[i] && hist[i].san === m);
-  if (net.my && mine.length && hist.length && !(prefix && hist.length > mine.length) && !(hist.length === mine.length && prefix)){
+  if (!tbJump && net.my && mine.length && hist.length && !(prefix && hist.length > mine.length) && !(hist.length === mine.length && prefix)){
     note("Your friend's game didn't match yours, so their change was ignored.", true); return;
   }
-  if (hist.length === mine.length + 1 && prefix){
+  if (!tbJump && hist.length === mine.length + 1 && prefix){
     const m = hist[hist.length - 1];
     if (net.my && m.color === net.my){ note('Ignored a move made for your pieces.', true); return; }
     commit({from: m.from, to: m.to, promotion: m.promotion}, true, d.clock || null);
@@ -3372,6 +3621,7 @@ function applyRemote(d){
   }
   if (hist.length === mine.length && hist.every((m, i) => m.san === mine[i])){ panel(); return; }
   game.reset(); if (d.pgn) game.load_pgn(d.pgn);
+  tbSeen = d.tb || 0; heistSeen = d.heist || 0;
   const l = hist[hist.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; hideModal(); clearEndFx();
   clockReset(d.tc || {base: 0, inc: 0});
@@ -3386,7 +3636,7 @@ function applyRemote(d){
 function rematchOnline({sides = 'swap', tc = null} = {}){
   if (!net.ref || !net.data) return;
   const d = net.data, swap = sides === 'swap' || (sides === 'random' && Math.random() < .5);
-  net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null}, tc ? {tc} : {})).catch(() => note('Could not start the rematch. Try again.', true));
+  net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null, pow: null, tb: 0, heist: 0}, tc ? {tc} : {})).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
 /* ---- Random opponent: join someone already waiting in a matchmaking room, or open one and wait ---- */
@@ -3513,15 +3763,6 @@ $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
   setTimeout(check, 15000); setInterval(check, 120000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
 })();
-// Piece style picker: every look from the style sheet; the choice is remembered on this device.
-const styleSel = $('#styleSel');
-styleSel.innerHTML = Object.entries(PIECE_STYLES).map(([c, [name]]) => `<option value="${c}">${c} · ${name}${c === DEFAULT_STYLE ? ' (default)' : ''}</option>`).join('');
-styleSel.value = styleCode;
-styleSel.addEventListener('change', () => {
-  if (busy){ styleSel.value = styleCode; toast('Change the style between moves'); return; }
-  applyStyle(styleSel.value); try { localStorage.setItem('kessen-piece-style', styleCode); } catch(e){}
-  render(true);
-});
 
 function hideModal(){ $('#modal').hidden = true; $('#mScouter').hidden = true; clearInterval(contTimer); }
 // Online: change the time control and who plays which side before the rematch starts.
@@ -3654,6 +3895,7 @@ $('#pgnBtn').onclick = () => {
 $('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
+  '#minigame-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 d6 6. O-O O-O 7. Re1 a6 8. Bb3', {from: 'c5', to: 'a7'}],
   '#ep-demo': ['1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'}],
   '#castle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'}],
   '#stalemate-demo': ['k7/8/1K6/8/8/8/8/2Q5 w - - 0 1', {from: 'c1', to: 'c7'}],
