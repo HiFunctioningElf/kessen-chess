@@ -237,7 +237,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
             <form class="joinrow" id="joinForm"><input id="joinCode" maxlength="6" placeholder="Code" autocomplete="off" aria-label="Game code"><button class="btn" type="submit" style="flex:none">Join</button></form>
           </div>
           <div id="onActive" class="field" hidden>
-            <div class="codebox"><span class="label">Code</span><strong id="codeOut"></strong><button class="chip" id="copyCode">Copy</button></div>
+            <div class="codebox" id="codeBox"><span class="label">Code</span><strong id="codeOut"></strong><button class="chip" id="copyCode">Copy</button></div>
             <div class="players" id="players"></div>
             <button class="btn" id="leaveBtn">Leave game</button>
           </div>
@@ -1295,6 +1295,11 @@ function render(force){
     if (sq === selected){ m.hl.visible = true; m.hl.material.color.set(0x3fe0ff); m.hl.material.opacity = .6; }
     const lm = legal.find(x => x.to === sq);
     if (lm){ if (lm.captured) m.ring.visible = true; else m.dot.visible = true; }
+    // premoves show in purple
+    const pre = preLegal.some(x => x.to === sq);
+    m.dot.material.color.set(pre ? 0xb06cff : 0x3fe0ff);
+    if (pre) m.dot.visible = true;
+    if (sq === preSel || (premove && (sq === premove.from || sq === premove.to))){ m.hl.visible = true; m.hl.material.color.set(0xb06cff); m.hl.material.opacity = .6; }
   }
   syncPieces(force);
   const ck = game.in_check() ? kingSq(game.turn()) : null;
@@ -1680,7 +1685,7 @@ async function drawFx(){
   showEnd('A draw', `${why}. Neither king yields today.`, '引分');
 }
 function clearEndFx(){
-  A.sfx.stopOutro();
+  A.sfx.stopOutro(); clearPremove();
   const s = $('#sun'); if (s) s.remove();
   $('#dim').getAnimations().forEach(a => a.cancel());
   if (orbit || !controls.enabled) setCamSide(orientation);
@@ -1779,8 +1784,44 @@ async function commit(input, remote, remoteClock){
   }
   if (!mv) return;
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
+  if (premove && canMoveNow()){ tryPremove(); return; }
   cpuTurn();
 }
+/* ---- Premoves: queue one move during the opponent's turn (vs CPU or online); it plays the instant your turn starts ---- */
+let premove = null, preSel = null, preLegal = [];
+const myColor = () => mode === 'cpu' ? playerColor : mode === 'online' ? net.my : null;
+function canPremove(){
+  const me = myColor();
+  if (!me || !started || game.game_over() || flagged || !$('#promo').hidden) return false;
+  if (mode === 'online' && !(net.data && net.data.w && net.data.b)) return false;
+  return game.turn() !== me;
+}
+// Moves this piece could make if it were its side's turn in the current position.
+function premoveTargets(sq, color){
+  const f = game.fen().split(' '); f[1] = color; f[3] = '-';
+  const g = new Chess(); if (!g.load(f.join(' '))) return [];
+  return g.moves({square: sq, verbose: true});
+}
+function clearPremove(){ premove = null; preSel = null; preLegal = []; }
+function premoveClick(sq){
+  const me = myColor(), opts = preLegal.filter(m => m.to === sq);
+  if (preSel && opts.length){
+    premove = {from: preSel, to: sq, promotion: opts.some(m => m.promotion) ? 'q' : undefined};
+    preSel = null; preLegal = []; A.sfx.select(); toast('Premove set. Right-click or Esc to cancel'); render(); return;
+  }
+  const p = sq && game.get(sq);
+  if (p && p.color === me && sq !== preSel){ preSel = sq; preLegal = premoveTargets(sq, me); premove = null; A.sfx.select(); }
+  else clearPremove();
+  render();
+}
+function tryPremove(){
+  const pm = premove; clearPremove();
+  if (!pm || !canMoveNow()){ render(); return; }
+  if (!game.moves({square: pm.from, verbose: true}).some(m => m.to === pm.to)){ toast('Premove cancelled: no longer legal'); render(); return; }
+  commit(pm);
+}
+renderer.domElement.addEventListener('contextmenu', e => { if (premove || preSel){ e.preventDefault(); clearPremove(); render(); toast('Premove cleared'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && (premove || preSel) && $('#promo').hidden){ clearPremove(); render(); } });
 function cpuTurn(){
   if (mode !== 'cpu' || game.game_over() || game.turn() === playerColor || !started) return;
   busy = true; busySince = Date.now(); panel();
@@ -1824,7 +1865,10 @@ renderer.domElement.addEventListener('pointerdown', e => { downAt = {x: e.client
 renderer.domElement.addEventListener('pointerup', async e => {
   if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6) { downAt = null; return; }
   downAt = null;
-  if (!canMoveNow()){ const why = whyNot(); if (why) toast(why); return; }
+  if (!canMoveNow()){
+    if (canPremove()){ premoveClick(pickSq(e)); return; }
+    const why = whyNot(); if (why) toast(why); return;
+  }
   const sq = pickSq(e); if (!sq) { selected = null; legal = []; render(); return; }
   const opts = legal.filter(m => m.to === sq);
   if (selected && opts.length){
@@ -2040,7 +2084,7 @@ function attach(code, ref){
   net.code = code; net.ref = ref; net.data = null; net.my = null;
   game.reset(); lastMove = null; selected = null; legal = []; clearEndFx(); syncPieces(true);
   clockReset({base: 0, inc: 0});   // the game document says which time control applies
-  $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeOut').textContent = code;
+  $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeBox').hidden = false; $('#codeOut').textContent = code;
   note('Send this code to your friend. They open this page, choose Online friend and join with it.');
   hideModal(); started = true; A.music.start();
   net.unsub = ref.onSnapshot(s => onRemote(s), () => note('Lost the live connection to this game. Leave and rejoin to reconnect.', true));
@@ -2077,9 +2121,17 @@ function onRemote(snap){
   net.data = d;
   const my = d.w === net.myId ? 'w' : d.b === net.myId ? 'b' : null;
   if (my !== net.my){ net.my = my; orientation = my || 'w'; setCamSide(orientation); }
-  if ((!prev || !prev.w || !prev.b) && d.w && d.b){
-    if (prev){ A.sfx.join(); bigText('FIGHT!', '決戦', {hold: 500}); }
-    if (net.kind === 'p2p') note('Connected to your friend. Keep this tab open while you play.');
+  const seated = !!(d.w && d.b);
+  $('#codeBox').hidden = seated;   // once both players are in, the code is no longer needed
+  if ((!prev || !prev.w || !prev.b) && seated){
+    // Make the arrival impossible to miss on both screens.
+    const side = net.my === 'w' ? 'WHITE' : net.my === 'b' ? 'BLACK' : '';
+    A.sfx.join(); A.sfx.fight(); flash('#fff', 500, .8); shake(.6, 400);
+    const r = renderer.domElement.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2, {n: 60, kind: 'spark', colors: ['#ffc83d', '#ff2e4d', '#3fe0ff', '#fff'], speed: 16, life: 34});
+    const [en, jp] = net.myId === 'host' || (prev && net.kind === 'db') ? ['A CHALLENGER APPEARS!', '挑戦者現る!'] : ['DUEL ACCEPTED!', '参戦!'];
+    bigText(en, jp, {hold: 1600, size: .55, color: 'var(--gold)', sub: side ? `YOU PLAY ${side} · ${side === 'WHITE' ? 'YOU MOVE FIRST' : 'WHITE MOVES FIRST'}` : 'YOU ARE WATCHING'});
+    note(net.kind === 'p2p' ? 'Your friend is here! Keep this tab open while you play.' : 'Your friend is here!');
   }
   drawPlayers();
   const tc = d.tc || {base: 0, inc: 0};
