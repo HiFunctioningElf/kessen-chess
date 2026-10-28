@@ -76,6 +76,14 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .btn{flex:1;background:var(--night);border:1px solid var(--line);padding:10px 12px;font-weight:700;cursor:pointer;letter-spacing:.04em}
 .btn:hover{border-color:var(--gold)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+.evalbar{position:absolute;left:10px;top:12%;bottom:12%;z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;width:56px}
+.eb-track{position:relative;flex:1;width:24px;background:#141414;border:2px solid #000;box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(255,200,61,.35);overflow:hidden}
+.eb-fill{position:absolute;left:0;right:0;bottom:0;height:50%;background:#fffaf0;transition:height .6s cubic-bezier(.2,.9,.3,1)}
+.eb-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-90deg);font:800 12px ui-monospace,Consolas,monospace;color:#ff2e4d;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap}
+.eb-cap{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:700;text-align:center;color:var(--gold);line-height:1.2}
+.eb-cap a{color:var(--muted);font-weight:400;text-decoration:underline}
+.eb-quip{position:absolute;left:62px;bottom:0;width:max-content;max-width:190px;background:#fff;color:#111;border:3px solid #000;border-radius:12px;padding:5px 9px;font:700 12px/1.3 var(--body);box-shadow:3px 3px 0 #000}
+.eb-quip:empty{display:none}
 .choice{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);z-index:4;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 4px #000;padding:12px 14px;max-width:calc(100% - 24px)}
 .choice b{font-family:var(--display);font-weight:400;font-size:18px}
 .choice .actions{width:100%}
@@ -293,7 +301,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     </div>
   </header>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap">🐟 Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
@@ -749,7 +757,9 @@ function geoSet(seg){
     p: [lathe(BASE.concat([[.13,.3],[.1,.42],[.17,.46],[.1,.5],[.15,.56],[.16,.63],[.13,.71],[.06,.75],[0,.76]]))],
     r: [lathe(BASE.concat([[.21,.25],[.18,.6],[.25,.64],[.25,.8],[.17,.8],[.17,.74],[0,.74]]))]
         .concat([0,1,2,3].map(k => new THREE.BoxGeometry(.11, .12, .11).translate(Math.cos(k*Math.PI/2 + Math.PI/4)*.19, .86, Math.sin(k*Math.PI/2 + Math.PI/4)*.19))),
-    b: [lathe(BASE.concat([[.15,.3],[.11,.6],[.19,.64],[.1,.68],[.15,.78],[.13,.9],[.06,.98],[0,1]])), new THREE.SphereGeometry(.05, 12, 8).translate(0, 1.03, 0)],
+    // bishop: wide collar, tall pointed mitre, the diagonal mitre slit (a clear slash when seen from above) and a finial
+    b: [lathe(BASE.concat([[.15,.3],[.11,.58],[.22,.62],[.22,.67],[.12,.7],[.18,.82],[.16,.95],[.09,1.06],[0,1.11]])),
+        new THREE.BoxGeometry(.05, .2, .42).translate(0, .98, 0).rotateY(Math.PI / 4), new THREE.SphereGeometry(.06, 12, 8).translate(0, 1.15, 0)],
     q: [lathe(BASE.concat([[.17,.32],[.12,.72],[.23,.78],[.14,.84],[.21,.98],[0,.94]])), new THREE.SphereGeometry(.07, 14, 10).translate(0, 1.0, 0)]
         .concat([0,1,2,3,4,5,6,7].map(k => new THREE.SphereGeometry(.038, 10, 8).translate(Math.cos(k*Math.PI/4)*.2, 1.0, Math.sin(k*Math.PI/4)*.2))),
     k: [lathe(BASE.concat([[.18,.32],[.13,.8],[.24,.86],[.15,.92],[.21,1.06],[0,1.08]])),
@@ -2474,7 +2484,7 @@ let ended = null;     // {type: 'resign' | 'draw' | 'abandon', winner: 'w' | 'b'
 const isOver = () => game.game_over() || !!flagged || !!ended;
 const tcOn = () => clock.base > 0 && mode !== 'cpu';
 const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
-function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; } drawClocks(); }
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; oracle = null; const eb = document.querySelector('#evalBar'); if (eb) eb.hidden = true; } drawClocks(); }
 function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
 function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
 const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
@@ -2616,7 +2626,7 @@ async function commit(input, remote, remoteClock){
     if (mv && tcOn() && !isOver()) clockStart(game.turn());
   }
   if (!mv) return;
-  saveGame();
+  saveGame(); oracleTick();
   if (mode === 'pvp' && autoFlip && !isOver() && orientation !== game.turn()){ orientation = game.turn(); swingTo(orientation); }
   if (shouldMinigame()){
     busy = true; busySince = Date.now(); clockPause(); clearPremove(); render();
@@ -2803,13 +2813,13 @@ function rhAttemptOnline(ov, att, k){
   });
 }
 /* ---- Power-ups: won in minigames, used on your own turn ---- */
-const POWERS = {hint: ['💡', "Sensei's Hint"], takeback: ['⏪', 'Takeback'], heist: ['⏱', 'Time Heist']};
+const POWERS = {hint: ['💡', "Sensei's Hint"], takeback: ['⏪', 'Takeback'], heist: ['⏱', 'Time Heist'], oracle: ['🐟', 'Rude Fishy']};
 let powers = {w: [], b: []}, hintMove = null, tbSeen = 0, heistSeen = 0;
 async function awardPower(winner){
   if (!winner) return;
   if (mode === 'cpu' && winner !== playerColor){ toast('The CPU wins the minigame and gloats'); return; }
   if (mode === 'online' && winner !== net.my) return;   // the winner's screen picks and shares it
-  const pool = ['hint', 'takeback'].concat(tcOn() ? ['heist'] : []), p = pool[Math.floor(Math.random() * pool.length)];
+  const pool = ['hint', 'takeback', 'oracle'].concat(tcOn() ? ['heist'] : []), p = pool[Math.floor(Math.random() * pool.length)];
   if (powers[winner].length >= 3){ toast('Power-up slots full (3)'); return; }
   powers[winner] = powers[winner].concat(p);
   if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
@@ -2833,10 +2843,17 @@ async function usePower(c, p){
   if (p === 'takeback'){
     game.undo(); game.undo(); clearPremove(); selected = null; legal = []; hintMove = null;
     const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
-    render(true); A.sfx.rewind(1.2);
+    render(true); A.sfx.rewind(1.2); oracleUpdate();
     if (mode === 'online' && net.ref){ tbSeen = (net.data.tb || 0) + 1; net.ref.update({pgn: game.pgn(), n: game.history().length, tb: tbSeen, pow: powers, at: Date.now()}).catch(() => {}); }
     saveGame();
     await bigText('TAKEBACK', '待った', {hold: 800, size: .7, color: 'var(--volt)', sub: 'TIME REWINDS ONE MOVE'});
+    return;
+  }
+  if (p === 'oracle'){
+    oracle = {color: c, plies: 6}; A.sfx.twinkle(); A.sfx.choir();
+    if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
+    panel(); oracleUpdate();
+    await bigText('RUDE FISHY', '無礼な魚', {hold: 900, size: .6, color: '#3fe0ff', sub: 'AN HONEST (TOO HONEST) EVAL BAR FOR 3 MOVES'});
     return;
   }
   if (p === 'heist'){
@@ -2860,6 +2877,61 @@ function drawPowers(){
   }).join('');
 }
 $('#powRows').addEventListener('click', e => { const b = e.target.closest('.pow'); if (b && !b.classList.contains('theirs')) usePower(b.dataset.c, b.dataset.p); });
+/* ---- Rude Fishy: an evaluation bar (and opinions) for 3 moves. Stockfish (https://github.com/official-stockfish/Stockfish, GPLv3, via
+   the stockfish.js browser build on cdnjs) does the thinking; if it can't load, the game's own engine estimates instead. ---- */
+let oracle = null, sfWorker = null, sfBroken = false, sfOnLine = null, oracleJob = 0;
+const SF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
+function getStockfish(){
+  if (sfWorker || sfBroken) return sfWorker;
+  try {
+    sfWorker = new Worker(URL.createObjectURL(new Blob([`importScripts('${SF_URL}');`], {type: 'text/javascript'})));
+    sfWorker.onmessage = e => { if (sfOnLine) sfOnLine(String(e.data)); };
+    sfWorker.onerror = () => { sfBroken = true; sfWorker = null; if (sfOnLine) sfOnLine('bestmove (none)'); };
+    sfWorker.postMessage('uci'); sfWorker.postMessage('isready');
+  } catch(e){ sfBroken = true; sfWorker = null; }
+  return sfWorker;
+}
+// Evaluation from White's point of view: {cp} in centipawns or {mate} in moves (negative = Black mates).
+function analyse(fen){
+  const flip = fen.split(' ')[1] === 'b' ? -1 : 1;
+  const viaEngine = async () => { const r = await engineMove({fen, seen: [], depth: 3, ms: 900, noise: 0, quiet: true}); return {cp: r ? flip * r.score : 0, src: 'kessen'}; };
+  const w = getStockfish(); if (!w) return viaEngine();
+  return new Promise(res => {
+    let last = null;
+    const done = v => { sfOnLine = null; clearTimeout(t); res(v); };
+    const t = setTimeout(() => done(last || null), 2500);
+    sfOnLine = line => {
+      const m = / score (cp|mate) (-?\d+)/.exec(line);
+      if (m) last = m[1] === 'cp' ? {cp: flip * +m[2], src: 'sf'} : {mate: flip * +m[2], src: 'sf'};
+      if (line.startsWith('bestmove')) done(last);
+    };
+    w.postMessage('position fen ' + fen); w.postMessage('go movetime 900');
+  }).then(v => v || viaEngine());
+}
+const oracleVisible = () => oracle && (mode === 'pvp' || oracle.color === myColor());
+async function oracleUpdate(){
+  const bar = $('#evalBar');
+  if (!oracleVisible() || isOver()){ bar.hidden = true; return; }
+  bar.hidden = false; $('#ebLeft').textContent = `${Math.ceil(oracle.plies / 2)} move${oracle.plies > 2 ? 's' : ''} left`;
+  const job = ++oracleJob, v = await analyse(game.fen());
+  if (job !== oracleJob || !oracleVisible()) return;
+  const cp = v.mate != null ? (v.mate > 0 ? 3000 : -3000) : v.cp, view = orientation === 'b' ? -1 : 1;
+  const pct = 50 + 50 * (2 / (1 + Math.exp(-cp / 400)) - 1);
+  $('#ebFill').style.height = `${view > 0 ? pct : 100 - pct}%`;
+  $('#ebNum').textContent = v.mate != null ? `M${Math.abs(v.mate)}` : (cp > 0 ? '+' : '') + (cp / 100).toFixed(1);
+  $('#ebSrc').hidden = v.src !== 'sf';
+  // ...and an opinion, from the point of view of whoever summoned it
+  const me = oracle.color === 'w' ? 1 : -1, mine = cp * me, mate = v.mate != null ? v.mate * me : null;
+  $('#ebQuip').textContent = mate != null ? (mate > 0 ? `Mate in ${mate}. Even a fish sees it.` : `You get mated in ${-mate}. Blub.`)
+    : mine >= 300 ? "Even you can't lose this. Probably." : mine >= 100 ? "You're better. Somehow." : mine > -100 ? 'Dead even. How boring.'
+    : mine > -300 ? 'Oof. Bad move, champ.' : "It's over. I'd resign. 🐟";
+}
+// after every move: count down, refresh or retire the bar
+function oracleTick(){
+  if (!oracle) return;
+  if (--oracle.plies <= 0){ oracle = null; $('#evalBar').hidden = true; toast('Rude Fishy swims off, unimpressed 🐟'); return; }
+  oracleUpdate();
+}
 /* ---- Resign, draw offers and forfeits: games that end off the board ---- */
 const SIDE = c => (c === 'w' ? 'White' : 'Black');
 // A big cartoon glove on a long sleeve, reaching in from one player's side of the board. Fingers point along local +x.
@@ -3298,7 +3370,7 @@ function kessenEngine(){
     }
     let rootMoves = order(g.moves({verbose: true}));
     if (!rootMoves.length) return null;
-    let best = rootMoves[0], reached = 0;
+    let best = rootMoves[0], reached = 0, bestScore = 0;
     path.push(key(g));
     for (let d = 1; d <= maxDepth; d++){
       try {
@@ -3310,13 +3382,13 @@ function kessenEngine(){
           scored.push([m, sc]);
           if (sc > bestSc){ bestSc = sc; bestM = m; }
         }
-        best = bestM; reached = d;
+        best = bestM; reached = d; bestScore = bestSc;
         rootMoves = scored.sort((a, b) => b[1] - a[1]).map(x => x[0]);   // best first for the next, deeper pass
         if (bestSc > MATE - 100) break;   // found a forced mate
       } catch (e){ if (e !== 'time') throw e; break; }
       if (d >= 3 && Date.now() > deadline - budget * .45) break;   // the next depth would not finish in time
     }
-    return {from: best.from, to: best.to, promotion: best.promotion, depth: reached, nodes};
+    return {from: best.from, to: best.to, promotion: best.promotion, depth: reached, nodes, score: bestScore};
   }
   return think;
 }
@@ -3575,7 +3647,11 @@ function onRemote(snap){
   const d = snap.data(), prev = net.data;
   net.data = d;
   if (d.mg && d.mg.from !== net.my && (!prev || !prev.mg || prev.mg.s !== d.mg.s) && mgListener) mgListener(d.mg);
-  if (d.pow && JSON.stringify(d.pow) !== JSON.stringify(powers)){ powers = {w: (d.pow.w || []).slice(0, 3), b: (d.pow.b || []).slice(0, 3)}; }
+  if (d.pow && JSON.stringify(d.pow) !== JSON.stringify(powers)){
+    const them = net.my ? OTHER(net.my) : null, before = them ? powers[them].slice() : [];
+    powers = {w: (d.pow.w || []).slice(0, 3), b: (d.pow.b || []).slice(0, 3)};
+    if (them){ const left = powers[them].slice(); for (const p of left){ const i = before.indexOf(p); if (i >= 0) before.splice(i, 1); } if (before.length && POWERS[before[0]]) toast(`Your friend used ${POWERS[before[0]][0]} ${POWERS[before[0]][1]}!`); }
+  }
   if ((d.heist || 0) > heistSeen && d.clock){ heistSeen = d.heist; const run = clock.run, live = !clock.paused; clockPause(); clock.w = d.clock.w; clock.b = d.clock.b; if (run && live) clockStart(run); drawClocks(); toast('Your friend pulled a Time Heist!'); }
   const off = d.drawOffer || null, poff = (prev && prev.drawOffer) || null;
   if (off && off !== poff && !isOver()){ handIn(off); if (net.my && off !== net.my) showChoice(off); }
@@ -3895,6 +3971,7 @@ $('#pgnBtn').onclick = () => {
 $('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
+  '#oracle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle'],
   '#minigame-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 d6 6. O-O O-O 7. Re1 a6 8. Bb3', {from: 'c5', to: 'a7'}],
   '#ep-demo': ['1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'}],
   '#castle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'}],
@@ -3905,6 +3982,7 @@ const DEMOS = {
   '#seventh-demo': ['rnbqkbnr/pp1ppppp/2P5/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1', {from: 'c6', to: 'c7'}]
 };
 function demo(pos, move){
+  if (move === 'oracle'){ mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame(); game.load_pgn(pos); render(true); powers.w = ['oracle', 'hint']; panel(); return; }
   mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame();
   if (pos.includes('/')) game.load(pos); else game.load_pgn(pos);
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
