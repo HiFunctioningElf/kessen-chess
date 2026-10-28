@@ -75,6 +75,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .btn{flex:1;background:var(--night);border:1px solid var(--line);padding:10px 12px;font-weight:700;cursor:pointer;letter-spacing:.04em}
 .btn:hover{border-color:var(--gold)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+.choice{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);z-index:4;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 4px #000;padding:12px 14px;max-width:calc(100% - 24px)}
+.choice b{font-family:var(--display);font-weight:400;font-size:18px}
+.choice .actions{width:100%}
 .btn.primary{background:var(--gold);color:var(--ink);border-color:var(--gold);font-family:var(--display);font-weight:400}
 .sel{background:var(--night);border:1px solid var(--line);padding:9px 10px;font-weight:700;width:100%}
 .clock{position:absolute;right:10px;z-index:2;display:flex;align-items:center;gap:8px;background:rgba(12,10,23,.88);border:2px solid var(--line);padding:4px 12px;
@@ -241,7 +244,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     </div>
   </header>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
     <aside class="panel">
       <section class="card status" aria-live="polite">
         <div class="turn-chip" id="turnChip"></div>
@@ -271,12 +274,14 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
           <div id="onActive" class="field" hidden>
             <div class="codebox" id="codeBox"><span class="label">Code</span><strong id="codeOut"></strong><button class="chip" id="copyCode">Copy</button></div>
             <div class="players" id="players"></div>
+            <button class="btn primary" id="claimBtn" hidden>Claim the win (your friend left)</button>
             <button class="btn" id="leaveBtn">Leave game</button>
           </div>
           <div class="note" id="onNote">Create a game and send your friend the code. They open this same page, pick Online friend and join with it.</div>
         </div>
         <div class="note" id="modeNote">Changing opponent or side starts a new duel.</div>
         <div class="actions"><button class="btn primary" id="newBtn">New duel</button><button class="btn" id="undoBtn">Undo</button><button class="btn" id="flipBtn">Flip view</button></div>
+        <div class="actions"><button class="btn" id="drawBtn">Offer draw</button><button class="btn" id="resignBtn">Resign</button></div>
       </section>
       <section class="card">
         <div class="label">Fallen</div>
@@ -539,6 +544,7 @@ const A = (() => {
       [38, 45, 50, 53, 56, 62].forEach(m => [-9, 9].forEach(dt => osc('sawtooth', mtof(m), t, 3, .035, sfxBus, {a: .7, lp: 900, q: 5, detune: dt})));
       [0, .5, 1, 1.5].forEach(d => osc('sine', 70, t + d, .5, .5, sfxBus, {to: 40})); nz(t, 3, .08, sfxBus, {type: 'lowpass', f0: 300, a: .6}); },
     glare(){ if (!ok()) return; const t = now(); nz(t, .08, .25, sfxBus, {f0: 4000, f1: 1500, q: 3}); osc('triangle', 1600, t, .06, .05, sfxBus, {to: 900}); },
+    flop(){ if (!ok()) return; const t = now(); nz(t, .35, .5, sfxBus, {type: 'lowpass', f0: 700, f1: 200}); osc('sine', 90, t, .25, .3, sfxBus, {to: 50}); },
     bonk(){ if (!ok()) return; const t = now(); osc('sine', 340, t, .18, .8, sfxBus, {to: 110}); nz(t, .12, .6, sfxBus, {type: 'lowpass', f0: 1400}); for (let i = 0; i < 6; i++) nz(t + .03 + i * .025, .02, .25, sfxBus, {f0: 3000 + Math.random() * 2500, q: 4}); },
     boing(){ if (!ok()) return; const t = now(); osc('sine', 180, t, .7, .35, sfxBus, {to: 980, glide: .6}); osc('triangle', 186, t, .7, .1, sfxBus, {to: 990, glide: .6}); },
     ding(){ if (!ok()) return; const t = now(); [1, 2.76, 5.4].forEach((r, i) => osc('sine', 1320 * r, t, 1.1 - i * .3, .09 / (i + 1), sfxBus)); }
@@ -1519,7 +1525,7 @@ function render(force){
   panel();
 }
 function canMoveNow(){
-  if (!started || busy || game.game_over() || flagged || !$('#promo').hidden) return false;
+  if (!started || busy || isOver() || !$('#promo').hidden) return false;
   if (mode === 'cpu') return game.turn() === playerColor;
   if (mode === 'online') return !!(net.code && net.my && net.data && net.data.w && net.data.b && game.turn() === net.my);
   return true;
@@ -1529,9 +1535,10 @@ function panel(){
   $('#turnChip').innerHTML = `<span class="${t === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span>`;
   $('#moveNo').textContent = Math.floor(game.history().length / 2) + 1;
   let s = `${side} to move`;
-  if (flagged) s = timeoutDraw ? 'Draw. Time ran out, but no mate was possible' : `${flagged === 'w' ? 'Black' : 'White'} wins on time`;
+  if (ended) s = ended.type === 'draw' ? 'Draw agreed' : `${ended.winner === 'w' ? 'White' : 'Black'} wins. ${ended.type === 'resign' ? `${ended.winner === 'w' ? 'Black' : 'White'} resigned` : 'Opponent left'}`;
+  else if (flagged) s = timeoutDraw ? 'Draw. Time ran out, but no mate was possible' : `${flagged === 'w' ? 'Black' : 'White'} wins on time`;
   else if (game.in_checkmate()) s = `Checkmate. ${t === 'w' ? 'Black' : 'White'} wins`;
-  else if (game.game_over()) s = 'Draw';
+  else if (game.game_over()) s = `Draw. ${drawReason()}`;
   else if (mode === 'online'){
     if (!net.code) s = 'Create or join an online game';
     else if (!net.my) s = `Watching. ${side} to move`;
@@ -1556,6 +1563,7 @@ function panel(){
   $('#onlineField').hidden = mode !== 'online';
   $('#tcField').hidden = mode === 'cpu' || (mode === 'online' && !!net.code);
   $('#undoBtn').disabled = mode === 'online';
+  $('#resignBtn').disabled = $('#drawBtn').disabled = !canEndNow() && !busy;
   $('#newBtn').textContent = mode === 'online' ? 'Rematch' : 'New duel';
   $('#newBtn').disabled = mode === 'online' && !(net.code && net.my);
 }
@@ -2377,6 +2385,7 @@ async function drawFx(){
 }
 function clearEndFx(){
   A.sfx.stopOutro(); clearPremove();
+  if (typeof towelObj !== 'undefined'){ if (towelObj){ scene.remove(towelObj); towelObj = null; } removeOfferFx(); hideChoice(); }
   const s = $('#sun'); if (s) s.remove();
   $('#dim').getAnimations().forEach(a => a.cancel());
   if (orbit || !controls.enabled) setCamSide(orientation);
@@ -2388,9 +2397,11 @@ let pendingRemote = null;
 // Times are milliseconds. A side's clock runs only on its turn, and pauses while animations play.
 const clock = {base: 0, inc: 0, w: 0, b: 0, run: null, since: 0, paused: true};
 let flagged = null;   // 'w' or 'b' once that side has run out of time
+let ended = null;     // {type: 'resign' | 'draw' | 'abandon', winner: 'w' | 'b' | null} when a game ends off the board
+const isOver = () => game.game_over() || !!flagged || !!ended;
 const tcOn = () => clock.base > 0 && mode !== 'cpu';
 const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
-function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; timeoutDraw = false; drawClocks(); }
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; drawClocks(); }
 function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
 function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
 const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
@@ -2411,11 +2422,12 @@ function drawClocks(){
 let lastTickSec = null;
 setInterval(() => {
   drawClocks();
-  if (!tcOn() || !clock.run || clock.paused || flagged) return;
+  if (!tcOn() || !clock.run || clock.paused || flagged || ended) return;
   const r = remaining(clock.run);
   if (r < 10000){ const s = Math.ceil(r / 1000); if (s !== lastTickSec){ lastTickSec = s; A.sfx.select(); } }
-  // Online, only a player's own screen may call their timeout: it holds the true time for that clock.
-  if (r <= 0 && (mode !== 'online' || clock.run === net.my)) timeUp(clock.run, false);
+  // Online, a player's own screen calls their timeout (it holds the true time for that clock). If that screen has gone
+  // quiet (tab closed, offline), the opponent's screen calls it after a 5-second grace, so a game can't hang forever.
+  if (r <= 0 && (mode !== 'online' || clock.run === net.my || r <= -5000)) timeUp(clock.run, false);
 }, 100);
 // Chess.com rule: running out of time is a draw if the opponent has no way to checkmate (lone king, or king + one minor piece).
 function cannotMate(color){
@@ -2424,7 +2436,7 @@ function cannotMate(color){
 }
 let timeoutDraw = false;
 async function timeUp(c, remote){
-  if (flagged || game.game_over()) return;
+  if (isOver()) return;
   flagged = c; clockPause(); clock[c] = 0; clock.run = null; selected = null; legal = []; render(); drawClocks();
   timeoutDraw = cannotMate(c === 'w' ? 'b' : 'w');
   if (mode === 'online' && !remote && net.ref) net.ref.update({flag: c, clock: {w: clock.w, b: clock.b}}).catch(() => {});
@@ -2495,7 +2507,7 @@ async function commit(input, remote, remoteClock){
   busy = true; busySince = Date.now(); selected = null; legal = []; render();
   let mv = null;
   try {
-    if (flagged) return;
+    if (flagged || ended) return;
     mv = game.move(input);
     if (!mv) return;
     if (tcOn()){
@@ -2527,7 +2539,7 @@ async function commit(input, remote, remoteClock){
     render(true);
   } finally {
     busy = false; panel();
-    if (mv && tcOn() && !game.game_over() && !flagged) clockStart(game.turn());
+    if (mv && tcOn() && !isOver()) clockStart(game.turn());
   }
   if (!mv) return;
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
@@ -2541,6 +2553,180 @@ async function commit(input, remote, remoteClock){
   }
   cpuTurn();
 }
+/* ---- Resign, draw offers and forfeits: games that end off the board ---- */
+const SIDE = c => (c === 'w' ? 'White' : 'Black');
+// A big cartoon glove on a long sleeve, reaching in from one player's side of the board. Fingers point along local +x.
+const GLOVE = {skin: toon(0xffffff), line: outlineMat(0x000000, .025), sleeve: {w: toon(0xffc83d), b: toon(0x7a2cff)}};
+function makeHand(side){
+  const root = new THREE.Group(), add = (geo, mat, x, y, z, rz = 0, outline = true) => {
+    const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.z = rz; m.castShadow = true; root.add(m);
+    if (outline){ const o = new THREE.Mesh(geo, GLOVE.line); o.position.copy(m.position); o.rotation.copy(m.rotation); o.raycast = noHit; root.add(o); }
+    return m;
+  };
+  add(new THREE.BoxGeometry(.42, .5, .17), GLOVE.skin, 0, 0, 0);                                   // palm, upright for a handshake
+  [.17, .06, -.05, -.16].forEach(y => add(new THREE.CylinderGeometry(.058, .058, .3, 10), GLOVE.skin, .34, y, 0, Math.PI / 2));   // fingers
+  add(new THREE.CylinderGeometry(.06, .06, .26, 10), GLOVE.skin, .14, .3, .02, -.6);               // thumb, up and forward
+  add(new THREE.CylinderGeometry(.22, .24, .2, 16), GLOVE.skin, -.28, 0, 0, Math.PI / 2);          // cuff
+  add(new THREE.CylinderGeometry(.15, .17, 7, 14), GLOVE.sleeve[side], -3.85, 0, 0, Math.PI / 2, false);   // the long arm
+  root.rotation.y = side === 'w' ? Math.PI / 2 : -Math.PI / 2;   // white reaches in from +z, black from -z
+  root.scale.setScalar(1.7);
+  scene.add(root); return root;
+}
+const handZ = (side, reach) => (side === 'w' ? 1 : -1) * (9.5 - reach);   // reach 0 = off the board, 9 = tips at the centre
+let offerFx = null;   // {side, hand}: the offering glove while a draw offer stands
+async function handIn(side){
+  if (offerFx || !cutins) return;
+  const hand = makeHand(side); offerFx = {side, hand};
+  hand.position.set(-.12 * (side === 'w' ? 1 : -1), 1.35, handZ(side, 0));
+  A.sfx.whoosh();
+  await tween(650, k => { hand.position.z = handZ(side, 8.6 * easeIO(k)); hand.position.y = 1.35 + Math.sin(Math.PI * k) * .3; });
+  word(hand.position.clone().setY(2.2), 'DRAW…?', {size: 34, color: '#3fe0ff', ms: 1300, rot: -6});
+  tween(1600, k => { hand.rotation.z = Math.sin(k * Math.PI * 4) * .06; });   // a hopeful little wiggle
+}
+function removeOfferFx(){ if (offerFx){ scene.remove(offerFx.hand); offerFx = null; } }
+async function handOut(){
+  const o = offerFx; if (!o) return; offerFx = null;
+  const z0 = o.hand.position.z;
+  await tween(500, k => { o.hand.position.z = z0 + (handZ(o.side, 0) - z0) * easeIn(k); });
+  scene.remove(o.hand);
+}
+async function shakeFx(side){
+  if (!offerFx) await handIn(side || 'w');
+  const o = offerFx; if (!o) return;
+  offerFx = null;
+  const other = o.side === 'w' ? 'b' : 'w', h2 = makeHand(other);
+  h2.position.set(-.12 * (other === 'w' ? 1 : -1), 1.35, handZ(other, 0));
+  A.sfx.whoosh();
+  await tween(550, k => { h2.position.z = handZ(other, 8.6 * easeIO(k)); });
+  A.sfx.slap(); camShake = Math.max(camShake, .1);
+  for (let i = 0; i < 3; i++){ await tween(220, k => { const y = 1.35 + Math.sin(k * Math.PI * 2) * .28; o.hand.position.y = y; h2.position.y = y; }); A.sfx.hoof(); }
+  const c = screenOf(V3(0, 1.4, 0)); burst(c.x, c.y, {n: 26, kind: 'spark', colors: ['#ffc83d', '#fff'], speed: 8, life: 30});
+  word(V3(0, 2.3, 0), 'ガシッ!', {size: 40, color: '#ffc83d'});
+  await bigText('DRAW AGREED', '和解', {hold: 1300, size: .75, color: 'var(--volt)', sub: 'A GENTLEMANLY HANDSHAKE'});
+  const z1 = o.hand.position.z, z2 = h2.position.z;
+  await tween(500, k => { o.hand.position.z = z1 + (handZ(o.side, 0) - z1) * easeIn(k); h2.position.z = z2 + (handZ(other, 0) - z2) * easeIn(k); });
+  scene.remove(o.hand); scene.remove(h2);
+}
+// The other player's glove sweeps in and slaps the offer away; the game carries on.
+async function slapFx(){
+  const o = offerFx; if (!o || !cutins){ removeOfferFx(); return; }
+  offerFx = null;
+  const other = o.side === 'w' ? 'b' : 'w', h2 = makeHand(other), sx = 2.4;
+  h2.position.set(sx, 1.5, handZ(other, 7.4)); h2.rotation.x = 1.2;
+  A.sfx.whoosh();
+  await tween(200, k => { h2.position.x = sx - (sx + .2) * easeIn(k); h2.rotation.y += 0; });
+  A.sfx.slap(); A.sfx.impact(.5); shake(.6, 300); flash('#fff', 200, .5);
+  const c = screenOf(o.hand.position); burst(c.x, c.y, {n: 30, kind: 'spark', colors: ['#ff2e4d', '#fff'], speed: 12, life: 24}); ring(c.x, c.y, 120, '#fff', 6);
+  word(o.hand.position.clone().setY(2.3), 'バチン!!', {size: 46, color: '#ff2e4d', rot: 10});
+  const z0 = o.hand.position.z;
+  tween(700, k => { o.hand.position.z = z0 + (handZ(o.side, -3) - z0) * easeIn(k); o.hand.rotation.x += .5; o.hand.position.x -= .06; }).then(() => scene.remove(o.hand));
+  await tween(400, k => { h2.position.x = -.2 - 2 * k; h2.position.z = handZ(other, 7.4 - 7.4 * k); });
+  scene.remove(h2);
+  toast('Draw declined. The duel goes on');
+}
+// Throwing in the towel: it flies in from the resigning side, unfolds, and drapes over the board and every piece.
+let towelObj = null, towelMap = null;
+// A bath towel: off-white terry with two blue stripes near each end.
+function towelTex(){
+  if (towelMap) return towelMap;
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#f7f3ea'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 1400; i++){ x.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.035)' : 'rgba(255,255,255,.5)'; x.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+  x.fillStyle = '#3f8fd8'; [18, 34, 214, 230].forEach(y => x.fillRect(0, y, 256, 8));
+  towelMap = new THREE.CanvasTexture(c); return towelMap;
+}
+const PIECE_H = {p: .9, n: 1, b: 1.12, r: 1, q: 1.15, k: 1.3};
+async function towelFx(loser){
+  if (towelObj) scene.remove(towelObj);
+  const N = 44, geo = new THREE.PlaneGeometry(9.6, 9.6, N, N), pos = geo.attributes.position;
+  const cloth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: towelTex(), side: THREE.DoubleSide}));
+  cloth.rotation.x = -Math.PI / 2; cloth.castShadow = cloth.receiveShadow = true; scene.add(cloth); towelObj = cloth;
+  // where each vertex comes to rest: on the board, or tented over the pieces under it
+  const tops = Object.values(pieceAt).map(g => ({x: g.position.x, z: g.position.z, h: PIECE_H[g.userData.type] || .8}));
+  const rest = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++){
+    const x = pos.getX(i), z = -pos.getY(i); let h = .14;
+    for (const t of tops){ const d = Math.hypot(x - t.x, z - t.z); h = Math.max(h, t.h - d * d * 1.1); }
+    rest[i] = h;
+  }
+  const flutter = (t, amp) => { for (let i = 0; i < pos.count; i++){ const x = pos.getX(i), y = pos.getY(i); pos.setZ(i, Math.sin(x * 1.3 + t * 9) * Math.cos(y * 1.1 + t * 7) * amp); } pos.needsUpdate = true; geo.computeVertexNormals(); };
+  const zs = loser === 'w' ? 7.5 : -7.5;
+  A.sfx.whoosh();
+  await tween(900, k => {   // flight: a crumpled ball that opens up mid-air
+    const e = easeIO(k); cloth.position.set(0, 1.6 + Math.sin(Math.PI * k) * 3.2, zs * (1 - e));
+    cloth.scale.setScalar(.06 + .94 * Math.pow(k, 1.6)); cloth.rotation.z = (1 - k) * 4; flutter(k, .6 * (1 - k) + .15);
+  });
+  cloth.rotation.z = 0; const y0 = cloth.position.y;
+  await tween(650, k => {   // drop and drape
+    const e = easeIn(k); cloth.position.y = y0 * (1 - e);
+    for (let i = 0; i < pos.count; i++){ const x = pos.getX(i), y = pos.getY(i); pos.setZ(i, rest[i] * e + Math.sin(x * 1.3 + k * 9) * Math.cos(y * 1.1) * .15 * (1 - e)); }
+    pos.needsUpdate = true; geo.computeVertexNormals();
+  });
+  A.sfx.flop(); shake(.4, 300); camShake = Math.max(camShake, .1);
+  word(V3(0, 1.8, 0), 'バサッ!', {size: 44, color: '#ffffff', rot: -8});
+}
+async function resultFx(res){
+  if (!cutins){ await bigText(res.type === 'draw' ? 'DRAW' : `${SIDE(res.winner).toUpperCase()} WINS`, res.type === 'draw' ? '和解' : '勝利', {hold: 900, size: .8, color: 'var(--gold)'}); return; }
+  A.music.stop();
+  if (res.type === 'resign'){
+    await towelFx(res.winner === 'w' ? 'b' : 'w');
+    A.sfx.trombone();
+    await bigText('THROWS IN THE TOWEL', '投了', {hold: 1500, size: .4, color: 'var(--blood)', sub: `${SIDE(res.winner).toUpperCase()} WINS`});
+    return;
+  }
+  if (res.type === 'draw'){ await shakeFx(res.by); return; }
+  A.sfx.fight();   // abandon
+  await bigText('YOU WIN', '不戦勝', {hold: 1500, size: .8, color: 'var(--gold)', sub: 'YOUR FRIEND LEFT THE ARENA'});
+}
+async function endGame(res, remote){
+  if (isOver()) return;
+  ended = res; clockPause(); clock.run = null; clearPremove(); selected = null; legal = []; render(); drawClocks();
+  if (mode === 'online' && !remote && net.ref) net.ref.update({result: res, drawOffer: null}).catch(() => {});
+  busy = true; busySince = Date.now();
+  try { await resultFx(res); } catch(e){ console.error(e); } finally { busy = false; render(true); }
+  if (res.type === 'draw') showContinue('A draw', 'Both sides agreed to call it even');
+  else if (res.type === 'resign') showContinue(`${SIDE(res.winner)} wins`, `${SIDE(res.winner === 'w' ? 'b' : 'w')} resigned`);
+  else showContinue(`${SIDE(res.winner)} wins`, 'Your friend left the arena');
+}
+const canEndNow = () => started && !busy && !isOver() && game.history().length > 0 && (mode !== 'online' || !!(net.my && net.data && net.data.w && net.data.b));
+$('#resignBtn').onclick = () => {
+  if (!canEndNow()){ toast(isOver() ? 'This duel is already over' : 'Make a move first'); return; }
+  const me = mode === 'cpu' ? playerColor : mode === 'online' ? net.my : game.turn();
+  if (!confirm(`Resign as ${SIDE(me)}?`)) return;
+  endGame({type: 'resign', winner: me === 'w' ? 'b' : 'w'});
+};
+function showChoice(offerer){
+  $('#choiceTitle').textContent = mode === 'online' ? 'Your friend offers a draw' : `${SIDE(offerer === 'w' ? 'b' : 'w')}, ${SIDE(offerer)} offers a draw`;
+  $('#drawChoice').hidden = false;
+}
+const hideChoice = () => { $('#drawChoice').hidden = true; };
+let pvpOffer = null;
+$('#drawBtn').onclick = async () => {
+  if (!canEndNow()){ toast(isOver() ? 'This duel is already over' : 'Make a move first'); return; }
+  if (offerFx || !$('#drawChoice').hidden){ toast('A draw offer is already on the table'); return; }
+  if (mode === 'pvp'){ pvpOffer = game.turn(); handIn(pvpOffer); showChoice(pvpOffer); return; }
+  if (mode === 'cpu'){
+    await handIn(playerColor); await sleep(700);
+    // the CPU shakes unless it is clearly ahead on material
+    const cpu = playerColor === 'w' ? 'b' : 'w', mat = c => game.board().flat().reduce((a, p) => a + (p && p.color === c ? PV[p.type] : 0), 0);
+    if (isOver()) return removeOfferFx();
+    if (mat(cpu) - mat(playerColor) <= 100) endGame({type: 'draw', winner: null, by: playerColor});
+    else { await slapFx(); toast('The CPU smells victory'); }
+    return;
+  }
+  handIn(net.my); net.ref.update({drawOffer: net.my}).catch(() => {}); toast('Draw offered. It stands until your friend moves');
+};
+$('#shakeBtn').onclick = () => {
+  hideChoice();
+  const by = mode === 'online' ? net.data && net.data.drawOffer : pvpOffer;
+  if (by && !isOver()) endGame({type: 'draw', winner: null, by});
+};
+$('#slapBtn').onclick = () => {
+  hideChoice();
+  if (mode === 'online' && net.ref) net.ref.update({drawOffer: null, slap: ((net.data && net.data.slap) || 0) + 1}).catch(() => {});
+  slapFx();
+};
+$('#claimBtn').onclick = () => { if (mode === 'online' && net.my && !isOver()) endGame({type: 'abandon', winner: net.my}); };
 /* ---- Premoves: queue one move during the opponent's turn (vs CPU or online); it plays the instant your turn starts ---- */
 let premove = null, preSel = null, preLegal = [];
 const myColor = () => mode === 'cpu' ? playerColor : mode === 'online' ? net.my : null;
@@ -2548,7 +2734,7 @@ let premovesOn = true; try { premovesOn = localStorage.getItem('kessen-premoves'
 function canPremove(){
   if (!premovesOn) return false;
   const me = myColor();
-  if (!me || !started || game.game_over() || flagged || !$('#promo').hidden) return false;
+  if (!me || !started || isOver() || !$('#promo').hidden) return false;
   if (mode === 'online' && !(net.data && net.data.w && net.data.b)) return false;
   return game.turn() !== me;
 }
@@ -2597,7 +2783,7 @@ setInterval(() => { if (busy && Date.now() - busySince > 90000){ busy = false; r
 function whyNot(){
   if (!started) return 'Press FIGHT! to start';
   if (busy) return '';
-  if (game.game_over() || flagged) return 'This duel is over. Press New duel to play again';
+  if (isOver()) return 'This duel is over. Press New duel to play again';
   if (mode === 'cpu' && game.turn() !== playerColor) return 'The CPU is thinking';
   if (mode === 'online'){
     if (!net.code) return 'Create or join an online game first';
@@ -2864,7 +3050,7 @@ function engineMove(job){
    - on claude.ai: the artifact's shared database (games/<code>)
    - anywhere else (e.g. GitHub Pages): a direct browser-to-browser link via PeerJS */
 const net = {kind: null, db: null, user: null, myId: null, ready: false, code: null, ref: null, unsub: null, my: null, data: null, peer: null, conn: null,
-  push(){ const ref = this.ref; ref.update({pgn: game.pgn(), n: game.history().length, at: Date.now(), clock: tcOn() ? {w: clock.w, b: clock.b} : null}).catch(() => note('That move did not reach your friend. Check your connection.', true)); }
+  push(){ const ref = this.ref; ref.update({pgn: game.pgn(), n: game.history().length, at: Date.now(), clock: tcOn() ? {w: clock.w, b: clock.b} : null, drawOffer: this.data && this.data.drawOffer === this.my ? this.my : null}).catch(() => note('That move did not reach your friend. Check your connection.', true)); }
 };
 const note = (t, warn) => { const n = $('#onNote'); n.textContent = t; n.classList.toggle('warn', !!warn); };
 const CODE_CH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -2904,7 +3090,7 @@ function p2pRef(){
   };
 }
 const p2pSend = () => { if (net.conn && net.conn.open && net.data){ try { net.conn.send({t: 'state', d: net.data}); } catch(e){} } };
-let lastHeard = 0, reconnecting = false, linkOk = null;
+let lastHeard = 0, reconnecting = false, linkOk = null, lostSince = 0;
 setInterval(() => {
   if (net.kind !== 'p2p' || !net.code) return;
   p2pSend();
@@ -2912,6 +3098,8 @@ setInterval(() => {
   if (net.myId === 'guest' && (!open || quiet)) reconnectGuest();
   if (net.data && net.data.w && net.data.b){
     const ok = open && !quiet;
+    if (!ok && !lostSince) lostSince = Date.now(); if (ok) lostSince = 0;
+    $('#claimBtn').hidden = !(lostSince && Date.now() - lostSince > 45000 && net.my && !isOver());
     if (ok !== linkOk){ linkOk = ok; note(ok ? 'Connected to your friend. Keep this tab open while you play.' : net.myId === 'host' ? 'Connection lost. Waiting for your friend to reconnect…' : 'Connection lost. Reconnecting to your friend…', !ok); }
   }
 }, 2500);
@@ -2944,7 +3132,9 @@ function wireConn(conn){
     const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
     const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
     const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
-    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, v: num(d.v) ? d.v : 0});
+    const wb = v => (v === 'w' || v === 'b' ? v : null);
+    const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
+    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
   });
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
@@ -3054,6 +3244,9 @@ function onRemote(snap){
   if (!snap.exists) return;
   const d = snap.data(), prev = net.data;
   net.data = d;
+  const off = d.drawOffer || null, poff = (prev && prev.drawOffer) || null;
+  if (off && off !== poff && !isOver()){ handIn(off); if (net.my && off !== net.my) showChoice(off); }
+  if (!off && poff && !d.result){ hideChoice(); if ((d.slap || 0) > ((prev && prev.slap) || 0)) slapFx(); else handOut(); }
   const my = d.w === net.myId ? 'w' : d.b === net.myId ? 'b' : null;
   if (my !== net.my){ net.my = my; orientation = my || 'w'; setCamSide(orientation); }
   const seated = !!(d.w && d.b);
@@ -3076,6 +3269,7 @@ function onRemote(snap){
 }
 function applyRemote(d){
   if (d.flag && !flagged && (d.n || 0) === game.history().length){ timeUp(d.flag, true); return; }
+  if (d.result && !isOver() && (d.n || 0) === game.history().length){ endGame(d.result, true); return; }
   if ((d.n || 0) === game.history().length && !(d.n === 0 && (flagged || game.game_over()))){ panel(); return; }
   const tmp = new Chess(); if (d.pgn) tmp.load_pgn(d.pgn);
   const hist = tmp.history({verbose: true}), mine = game.history();
@@ -3092,13 +3286,14 @@ function applyRemote(d){
   if (d.clock){ clock.w = d.clock.w; clock.b = d.clock.b; }
   if (tcOn() && hist.length && !game.game_over() && !d.flag) clockStart(game.turn());
   if (d.flag) flagged = d.flag;
+  if (d.result) ended = d.result;
   if (!hist.length){ A.music.intensity(0); A.music.start(); }
   render(true);
 }
 function rematchOnline(){
   if (!net.ref || !net.data) return;
   const d = net.data;
-  net.ref.update({pgn: '', n: 0, w: d.b || null, b: d.w || null, at: Date.now(), clock: null, flag: null}).catch(() => note('Could not start the rematch. Try again.', true));
+  net.ref.update({pgn: '', n: 0, w: d.b || null, b: d.w || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null}).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
 $('#joinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); joinGame($('#joinCode').value); });
@@ -3133,7 +3328,7 @@ $('#lvlSeg').addEventListener('click', e => { const b = e.target.closest('button
 $('#newBtn').onclick = () => { if (!busy){ A.init(); started = true; hideModal(); newGame(); } };
 $('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; setCamSide(orientation); };
 $('#undoBtn').onclick = () => {
-  if (busy || mode === 'online' || flagged || !game.history().length) return;
+  if (busy || mode === 'online' || flagged || ended || !game.history().length) return;
   game.undo(); if (mode === 'cpu' && game.turn() !== playerColor) game.undo();
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; clearEndFx();
@@ -3164,7 +3359,7 @@ $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
     } catch(e){ /* offline: try again later */ }
   }
   function showUpdate(){
-    const inGame = game.history().length > 0 && !game.game_over() && !flagged;
+    const inGame = game.history().length > 0 && !isOver();
     const el = document.createElement('div'); el.className = 'update-banner'; el.setAttribute('role', 'status');
     el.innerHTML = `<div><b>New version available!</b><span>${inGame ? 'Reloading ends the game in progress. You can finish it first.' : 'Reload to get the latest features.'}</span></div>
       <button class="btn primary" type="button" id="updReload">Reload</button><button class="chip" type="button" id="updLater">Later</button>`;
