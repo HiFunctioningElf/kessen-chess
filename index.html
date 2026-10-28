@@ -207,6 +207,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
       <button class="chip" id="fxBtn" aria-pressed="true">Cut-ins</button>
+      <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
   <main>
@@ -230,6 +231,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
             <optgroup label="Blitz"><option value="3+0">3 min</option><option value="3+2">3 | 2</option><option value="5+0">5 min</option></optgroup>
             <optgroup label="Rapid"><option value="10+0">10 min</option><option value="15+10">15 | 10</option><option value="30+0">30 min</option></optgroup>
           </select></div>
+        <div class="field"><label class="label" for="styleSel">Piece style</label><select id="styleSel" class="sel"></select></div>
         <div class="field" id="onlineField" hidden>
           <span class="label">Online duel</span>
           <div id="onIdle" class="field">
@@ -538,7 +540,7 @@ stageEl.prepend(renderer.domElement);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 Object.assign(controls, {enableDamping: true, dampingFactor: .08, enablePan: false, minDistance: 7, maxDistance: 18, maxPolarAngle: 1.3, minPolarAngle: .25, rotateSpeed: .6});
 
-scene.add(new THREE.HemisphereLight(0xfff1e0, 0x2a1840, .42));
+const hemi = new THREE.HemisphereLight(0xfff1e0, 0x2a1840, .42); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, .72); sun.position.set(4, 11, 6); sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, {left: -6, right: 6, top: 6, bottom: -6}); sun.shadow.bias = -.0008; scene.add(sun);
 const rimR = new THREE.PointLight(0xff2e4d, .55, 22); rimR.position.set(-7, 3, -6); scene.add(rimR);
@@ -549,9 +551,9 @@ grad.minFilter = grad.magFilter = THREE.NearestFilter; grad.generateMipmaps = fa
 const toon = (c, extra = {}) => new THREE.MeshToonMaterial(Object.assign({color: c, gradientMap: grad}, extra));
 function outlineMat(color, w){ const m = new THREE.MeshBasicMaterial({color, side: THREE.BackSide});
   m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', `vec3 transformed = position + normal * ${w.toFixed(3)};`); }; return m; }
+// MAT.w / MAT.b always hold the active piece style's body materials (see applyStyle below).
 const MAT = {
-  w: toon(0xf7ead2), b: toon(0x5a3a7a, {emissive: 0x12041c}),
-  ow: outlineMat(0x0a0614, .022), ob: outlineMat(0xffc83d, .022),
+  w: null, b: null,
   check: toon(0xff2e4d, {emissive: 0x660014}),
   holy: toon(0xffd34d, {emissive: 0x8a5a00})
 };
@@ -589,35 +591,96 @@ function label(text, x, z){
 const labels = [];
 for (let i = 0; i < 8; i++){ labels.push(label('abcdefgh'[i], i - 3.5, 4.25), label(String(i + 1), -4.25, 3.5 - i)); }
 
-// Piece geometry (lathe profiles + extruded knight head)
-const lathe = pts => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 36);
+// Piece geometry (lathe profiles + extruded knight head), built per lathe resolution
 const BASE = [[0,0],[.37,0],[.37,.07],[.31,.11],[.31,.15],[.25,.19]];
-const GEO = {
-  p: [lathe(BASE.concat([[.13,.3],[.1,.42],[.17,.46],[.1,.5],[.15,.56],[.16,.63],[.13,.71],[.06,.75],[0,.76]]))],
-  r: [lathe(BASE.concat([[.21,.25],[.18,.6],[.25,.64],[.25,.8],[.17,.8],[.17,.74],[0,.74]]))]
-      .concat([0,1,2,3].map(k => new THREE.BoxGeometry(.11, .12, .11).translate(Math.cos(k*Math.PI/2 + Math.PI/4)*.19, .86, Math.sin(k*Math.PI/2 + Math.PI/4)*.19))),
-  b: [lathe(BASE.concat([[.15,.3],[.11,.6],[.19,.64],[.1,.68],[.15,.78],[.13,.9],[.06,.98],[0,1]])), new THREE.SphereGeometry(.05, 12, 8).translate(0, 1.03, 0)],
-  q: [lathe(BASE.concat([[.17,.32],[.12,.72],[.23,.78],[.14,.84],[.21,.98],[0,.94]])), new THREE.SphereGeometry(.07, 14, 10).translate(0, 1.0, 0)]
-      .concat([0,1,2,3,4,5,6,7].map(k => new THREE.SphereGeometry(.038, 10, 8).translate(Math.cos(k*Math.PI/4)*.2, 1.0, Math.sin(k*Math.PI/4)*.2))),
-  k: [lathe(BASE.concat([[.18,.32],[.13,.8],[.24,.86],[.15,.92],[.21,1.06],[0,1.08]])),
-      new THREE.BoxGeometry(.07, .26, .07).translate(0, 1.2, 0), new THREE.BoxGeometry(.2, .07, .07).translate(0, 1.23, 0)],
-  n: (() => {
-    const pts = [[-.2,0],[.2,0],[.17,.16],[.07,.3],[.27,.38],[.32,.5],[.24,.57],[.1,.7],[.05,.84],[-.03,.74],[-.17,.62],[-.23,.38]];
-    const s = new THREE.Shape(); s.moveTo(...pts[0]); pts.slice(1).forEach(p => s.lineTo(...p)); s.lineTo(...pts[0]);
-    const head = new THREE.ExtrudeGeometry(s, {depth: .18, bevelEnabled: true, bevelThickness: .04, bevelSize: .03, bevelSegments: 2}).translate(0, .26, -.09);
-    head.computeVertexNormals();
-    return [lathe([[0,0],[.37,0],[.37,.07],[.31,.11],[.31,.15],[.25,.19],[.22,.28],[0,.28]]), head];
-  })()
+const geoSets = {};
+function geoSet(seg){
+  if (geoSets[seg]) return geoSets[seg];
+  const lathe = pts => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
+  const pts = [[-.2,0],[.2,0],[.17,.16],[.07,.3],[.27,.38],[.32,.5],[.24,.57],[.1,.7],[.05,.84],[-.03,.74],[-.17,.62],[-.23,.38]];
+  const s = new THREE.Shape(); s.moveTo(...pts[0]); pts.slice(1).forEach(p => s.lineTo(...p)); s.lineTo(...pts[0]);
+  const head = new THREE.ExtrudeGeometry(s, {depth: .18, bevelEnabled: true, bevelThickness: .04, bevelSize: .03, bevelSegments: 2}).translate(0, .26, -.09);
+  head.computeVertexNormals();
+  return geoSets[seg] = {
+    p: [lathe(BASE.concat([[.13,.3],[.1,.42],[.17,.46],[.1,.5],[.15,.56],[.16,.63],[.13,.71],[.06,.75],[0,.76]]))],
+    r: [lathe(BASE.concat([[.21,.25],[.18,.6],[.25,.64],[.25,.8],[.17,.8],[.17,.74],[0,.74]]))]
+        .concat([0,1,2,3].map(k => new THREE.BoxGeometry(.11, .12, .11).translate(Math.cos(k*Math.PI/2 + Math.PI/4)*.19, .86, Math.sin(k*Math.PI/2 + Math.PI/4)*.19))),
+    b: [lathe(BASE.concat([[.15,.3],[.11,.6],[.19,.64],[.1,.68],[.15,.78],[.13,.9],[.06,.98],[0,1]])), new THREE.SphereGeometry(.05, 12, 8).translate(0, 1.03, 0)],
+    q: [lathe(BASE.concat([[.17,.32],[.12,.72],[.23,.78],[.14,.84],[.21,.98],[0,.94]])), new THREE.SphereGeometry(.07, 14, 10).translate(0, 1.0, 0)]
+        .concat([0,1,2,3,4,5,6,7].map(k => new THREE.SphereGeometry(.038, 10, 8).translate(Math.cos(k*Math.PI/4)*.2, 1.0, Math.sin(k*Math.PI/4)*.2))),
+    k: [lathe(BASE.concat([[.18,.32],[.13,.8],[.24,.86],[.15,.92],[.21,1.06],[0,1.08]])),
+        new THREE.BoxGeometry(.07, .26, .07).translate(0, 1.2, 0), new THREE.BoxGeometry(.2, .07, .07).translate(0, 1.23, 0)],
+    n: [lathe([[0,0],[.37,0],[.37,.07],[.31,.11],[.31,.15],[.25,.19],[.22,.28],[0,.28]]), head]
+  };
+}
+
+/* ---- Piece styles: the 24 looks from the style sheet. R (ink sketch) is the default. ---- */
+const G2 = new THREE.DataTexture(new Uint8Array([110, 245]), 2, 1, THREE.LuminanceFormat);
+G2.minFilter = G2.magFilter = THREE.NearestFilter; G2.generateMipmaps = false; G2.needsUpdate = true;
+const toon2 = (c, x = {}) => new THREE.MeshToonMaterial(Object.assign({color: c, gradientMap: G2}, x));
+const stdM = (c, x = {}) => new THREE.MeshStandardMaterial(Object.assign({color: c, roughness: .3, metalness: 0}, x));
+const lamM = c => new THREE.MeshLambertMaterial({color: c});
+const flatM = c => new THREE.MeshBasicMaterial({color: c});
+const IVC = 0xf7ead2, PUC = 0x5a3a7a, DKC = 0x0a0614, GDC = 0xffc83d;
+const classic = () => ({w: {m: toon(IVC), o: [DKC, .022]}, b: {m: toon(PUC, {emissive: 0x12041c}), o: [GDC, .022]}});
+// Each entry: [name, () => {w: {m, o: [color, width]?, e: edgeLineColor?}, b: {...}, shape?: [xz, y], seg?, rim?}]
+const PIECE_STYLES = {
+  A: ['Toon, thin outline', classic],
+  B: ['Toon, no outline', () => ({w: {m: toon(IVC)}, b: {m: toon(PUC, {emissive: 0x12041c})}})],
+  C: ['Toon, thick outline', () => ({w: {m: toon(IVC), o: [DKC, .045]}, b: {m: toon(PUC, {emissive: 0x12041c}), o: [GDC, .045]}})],
+  D: ['Hard 2-tone cel', () => ({w: {m: toon2(IVC), o: [DKC, .022]}, b: {m: toon2(PUC), o: [GDC, .022]}})],
+  E: ['Flat manga', () => ({w: {m: flatM(IVC), o: [DKC, .03]}, b: {m: flatM(PUC), o: [GDC, .03]}})],
+  F: ['Smooth glossy', () => ({w: {m: stdM(IVC, {roughness: .22})}, b: {m: stdM(PUC, {roughness: .22})}})],
+  G: ['Matte clay', () => ({w: {m: lamM(IVC)}, b: {m: lamM(PUC)}})],
+  H: ['Glossy + thin outline', () => ({w: {m: stdM(IVC, {roughness: .22}), o: [DKC, .02]}, b: {m: stdM(PUC, {roughness: .22}), o: [GDC, .02]}})],
+  I: ['Classic white vs black, cel', () => ({w: {m: toon(0xfafafa), o: [DKC, .022]}, b: {m: toon(0x1c1c22), o: [0xe8e8e8, .022]}})],
+  J: ['Classic white vs black, glossy', () => ({w: {m: stdM(0xf4f4f4, {roughness: .25})}, b: {m: stdM(0x18181c, {roughness: .2})}})],
+  K: ['Mecha red vs blue', () => ({w: {m: toon(0xe0263f), e: DKC}, b: {m: toon(0x2a5bd7), e: DKC}})],
+  L: ['Gold vs silver metal', () => ({w: {m: stdM(0xffc83d, {metalness: .65, roughness: .3})}, b: {m: stdM(0xb8bcc8, {metalness: .65, roughness: .3})}})],
+  M: ['Cream vs crimson', () => ({w: {m: toon(0xfff1dc), o: [DKC, .022]}, b: {m: toon(0xb3203a), o: [DKC, .022]}})],
+  N: ['Neon cyan vs magenta', () => ({w: {m: toon(0x0e1a24, {emissive: 0x0a3a48}), o: [0x3fe0ff, .03]}, b: {m: toon(0x1a0e20, {emissive: 0x48103a}), o: [0xff3fd0, .03]}})],
+  O: ['Pastel mint vs lavender', () => ({w: {m: toon(0xbff5df), o: [0x2a4a40, .02]}, b: {m: toon(0xc9b6ff), o: [0x3a2a5a, .02]}})],
+  P: ['Wood maple vs walnut', () => ({w: {m: lamM(0xe2b77e)}, b: {m: lamM(0x5a3620)}})],
+  Q: ['Crystal glass', () => ({w: {m: stdM(0xe8f6ff, {transparent: true, opacity: .62, roughness: .05}), e: 0xffffff}, b: {m: stdM(0x9a6bff, {transparent: true, opacity: .62, roughness: .05}), e: 0xd9c4ff}})],
+  R: ['Ink sketch', () => ({w: {m: flatM(0xffffff), o: [0x000000, .04], e: 0x000000}, b: {m: flatM(0x141414), o: [0xffffff, .025], e: 0xffffff}})],
+  S: ['Chibi proportions', () => Object.assign(classic(), {shape: [1.18, .82]})],
+  T: ['Tall and elegant', () => Object.assign(classic(), {shape: [.86, 1.18]})],
+  U: ['Extra smooth', () => Object.assign(classic(), {seg: 96})],
+  V: ['Strong anime rim light', () => Object.assign(classic(), {rim: true})],
+  W: ['Luxury with gold trim', () => ({w: {m: stdM(0xf5f5f0, {roughness: .18}), o: [GDC, .022]}, b: {m: stdM(0x111114, {roughness: .18}), o: [GDC, .022]}})],
+  X: ['Blueprint lines', () => ({w: {m: flatM(0x0d2a55), e: 0xbfe6ff}, b: {m: flatM(0x2a0d3a), e: 0xffb3f0}})]
 };
-const pieceAt = {};
-function makePiece(type, color){
-  const g = new THREE.Group();
-  for (const geo of GEO[type]){
-    const m = new THREE.Mesh(geo, MAT[color]); m.castShadow = true; g.add(m);
-    const o = new THREE.Mesh(geo, color === 'w' ? MAT.ow : MAT.ob); o.userData.outline = true; g.add(o);
+const DEFAULT_STYLE = 'R';
+const styleCache = {};
+let STY = null, styleCode = DEFAULT_STYLE;
+function applyStyle(code){
+  if (!PIECE_STYLES[code]) code = DEFAULT_STYLE;
+  styleCode = code;
+  if (!styleCache[code]){
+    const s = PIECE_STYLES[code][1]();
+    for (const c of ['w', 'b']){ const st = s[c]; st.om = st.o ? outlineMat(st.o[0], st.o[1]) : null; st.lm = st.e != null ? new THREE.LineBasicMaterial({color: st.e}) : null; }
+    styleCache[code] = s;
   }
-  if (type === 'n') g.rotation.y = color === 'w' ? Math.PI/2 : -Math.PI/2;
-  g.scale.setScalar(.92);
+  STY = styleCache[code]; MAT.w = STY.w.m; MAT.b = STY.b.m;
+  hemi.intensity = STY.rim ? .3 : .42; rimR.intensity = STY.rim ? 2.4 : .55; rimC.intensity = STY.rim ? 1.8 : .4;
+}
+let savedStyle = null; try { savedStyle = localStorage.getItem('kessen-piece-style'); } catch(e){}
+applyStyle(savedStyle || DEFAULT_STYLE);
+
+const pieceAt = {};
+const edgeCache = new Map();
+const edgesOf = geo => { if (!edgeCache.has(geo)) edgeCache.set(geo, new THREE.EdgesGeometry(geo, 25)); return edgeCache.get(geo); };
+function makePiece(type, color){
+  const g = new THREE.Group(), st = STY[color];
+  for (const geo of geoSet(STY.seg || 36)[type]){
+    const m = new THREE.Mesh(geo, MAT[color]); m.castShadow = true; g.add(m);
+    if (st.om){ const o = new THREE.Mesh(geo, st.om); o.userData.outline = true; g.add(o); }
+    if (st.lm){ const l = new THREE.LineSegments(edgesOf(geo), st.lm); l.userData.outline = true; g.add(l); }
+  }
+  // knights stand angled so the horse profile reads from either side of the board
+  if (type === 'n') g.rotation.y = color === 'w' ? Math.PI/2 - 1.1 : -Math.PI/2 + 1.1;
+  const [sx, sy] = STY.shape || [1, 1];
+  g.scale.set(.92 * sx, .92 * sy, .92 * sx);
   g.userData.color = color; g.userData.type = type;
   return g;
 }
@@ -759,7 +822,7 @@ function fly(from, to, dash, durOverride){
   const g = pieceAt[from]; if (!g) return Promise.resolve();
   const a = sqPos(from), b = sqPos(to), dist = a.distanceTo(b);
   const h = dash ? 1.1 : .4 + dist * .14, dur = durOverride || (dash ? 540 : 420), side = b.x > a.x ? -1 : 1;
-  const ghosts = RM ? [] : ghostMats.map(mat => { const c = g.clone(true); c.traverse(o => { if (o.isMesh){ o.material = mat; o.castShadow = false; } }); c.userData = {}; scene.add(c); return c; });
+  const ghosts = RM ? [] : ghostMats.map(mat => { const c = g.clone(true); c.traverse(o => { if (o.isMesh){ o.material = mat; o.castShadow = false; } else if (o.isLineSegments) o.visible = false; }); c.userData = {}; scene.add(c); return c; });
   const hist = [];
   return tween(dur, k => {
     const e = dash ? (k < .35 ? -.1 * Math.sin(k / .35 * Math.PI) : easeIn((k - .35) / .65)) : easeIO(k);
@@ -1612,7 +1675,7 @@ async function outroMovie(isMate){
         cv.style.filter = ''; ke.face.visible = false;
         A.sfx.ascend();
         const ghost = new THREE.MeshBasicMaterial({color: 0xdff2ff, transparent: true, opacity: 1});
-        king.children.forEach(c => { if (c.isMesh){ if (c.userData.outline) c.visible = false; else c.material = ghost; } });
+        king.children.forEach(c => { if (c.userData.outline) c.visible = false; else if (c.isMesh) c.material = ghost; });
         $('#dim').animate([{opacity: 0}, {opacity: .8}], {duration: 800, fill: 'forwards'});
         const y0 = king.position.y, r0x = king.rotation.x, r0z = king.rotation.z;
         await tween(1800, k => {
@@ -1790,7 +1853,9 @@ async function commit(input, remote, remoteClock){
 /* ---- Premoves: queue one move during the opponent's turn (vs CPU or online); it plays the instant your turn starts ---- */
 let premove = null, preSel = null, preLegal = [];
 const myColor = () => mode === 'cpu' ? playerColor : mode === 'online' ? net.my : null;
+let premovesOn = true; try { premovesOn = localStorage.getItem('kessen-premoves') !== 'off'; } catch(e){}
 function canPremove(){
+  if (!premovesOn) return false;
   const me = myColor();
   if (!me || !started || game.game_over() || flagged || !$('#promo').hidden) return false;
   if (mode === 'online' && !(net.data && net.data.w && net.data.b)) return false;
@@ -1804,6 +1869,7 @@ function premoveTargets(sq, color){
 }
 function clearPremove(){ premove = null; preSel = null; preLegal = []; }
 function premoveClick(sq){
+  if (!canPremove()){ clearPremove(); render(); return; }
   const me = myColor(), opts = preLegal.filter(m => m.to === sq);
   if (preSel && opts.length){
     premove = {from: preSel, to: sq, promotion: opts.some(m => m.promotion) ? 'q' : undefined};
@@ -2210,6 +2276,21 @@ const toggle = (btn, fn) => { const v = btn.getAttribute('aria-pressed') !== 'tr
 $('#musicBtn').onclick = e => toggle(e.currentTarget, v => { A.init(); A.music.setOn(v); });
 $('#sfxBtn').onclick = e => toggle(e.currentTarget, v => A.sfx.setOn(v));
 $('#fxBtn').onclick = e => toggle(e.currentTarget, v => { cutins = v; });
+$('#preBtn').setAttribute('aria-pressed', String(premovesOn));
+$('#preBtn').onclick = e => toggle(e.currentTarget, v => {
+  premovesOn = v; try { localStorage.setItem('kessen-premoves', v ? 'on' : 'off'); } catch(err){}
+  if (!v){ clearPremove(); render(); }
+  toast(v ? 'Premoves on' : 'Premoves off');
+});
+// Piece style picker: every look from the style sheet; the choice is remembered on this device.
+const styleSel = $('#styleSel');
+styleSel.innerHTML = Object.entries(PIECE_STYLES).map(([c, [name]]) => `<option value="${c}">${c} · ${name}${c === DEFAULT_STYLE ? ' (default)' : ''}</option>`).join('');
+styleSel.value = styleCode;
+styleSel.addEventListener('change', () => {
+  if (busy){ styleSel.value = styleCode; toast('Change the style between moves'); return; }
+  applyStyle(styleSel.value); try { localStorage.setItem('kessen-piece-style', styleCode); } catch(e){}
+  render(true);
+});
 
 function hideModal(){ $('#modal').hidden = true; clearInterval(contTimer); }
 function showEnd(title, sub, jp){
