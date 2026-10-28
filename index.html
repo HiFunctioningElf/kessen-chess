@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028223338">
+<meta name="kessen-build" content="20261028224728">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -217,6 +217,16 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .eptv-meta b{font-weight:700;font-size:14px}
 .eptv-meta span{color:#606060}
 .eptv-meta a{color:#065fd4;pointer-events:auto;text-decoration:none;font-weight:700}
+.dsplit{position:absolute;inset:0}
+.dsplit .half{position:absolute;inset:0;display:flex;align-items:center;gap:3vw;padding-inline:7vw}
+.dsplit .l{clip-path:polygon(0 0,58% 0,42% 100%,0 100%);background:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 3px,transparent 3px 26px),linear-gradient(135deg,#2a0610,#ff2e4d);justify-content:flex-start}
+.dsplit .r{clip-path:polygon(58% 0,100% 0,100% 100%,42% 100%);background:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 3px,transparent 3px 26px),linear-gradient(135deg,#06303c,#3fe0ff);justify-content:flex-end}
+.dsplit .tag{font-family:var(--display);font-weight:400;font-size:clamp(22px,4vw,52px);color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:4px 4px 0 #000}
+.dsplit .seam{position:absolute;inset:0;width:100%;height:100%}
+.vhs{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 2px,transparent 2px 4px)}
+.vhs-band{position:absolute;left:0;right:0;height:9vh;background:linear-gradient(transparent,rgba(255,255,255,.35),transparent);filter:blur(2px)}
+.vhs-osd{position:absolute;left:max(16px,4vw);top:max(16px,4vh);font:700 clamp(18px,3vw,36px)/1.2 ui-monospace,Consolas,monospace;color:#fff;letter-spacing:.1em;text-shadow:3px 0 #ff2e4d,-3px 0 #3fe0ff}
+.vhs-osd.r{left:auto;right:max(16px,4vw)}
 @media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
 
@@ -511,6 +521,24 @@ const A = (() => {
     },
     flex(){ if (!ok()) return; const t = now(); osc('sawtooth', 95, t, .45, .12, sfxBus, {to: 70, lp: 600, q: 4}); osc('sine', 1700, t + .05, .12, .06, sfxBus, {to: 2600}); [62, 66, 69, 74].forEach(m => osc('sawtooth', mtof(m), t + .1, .9, .04, sfxBus, {lp: 3000})); },
     kyun(){ if (!ok()) return; const t = now(); osc('sine', 620, t, .25, .12, sfxBus, {to: 1240}); osc('triangle', 1250, t + .22, .5, .07, sfxBus); [88, 92, 95].forEach((m, i) => osc('sine', mtof(m), t + .3 + i * .08, .5, .05, sfxBus)); },
+    // sad trombone: wah wah wah wahhh, the last note sagging with a wobble
+    trombone(){ if (!ok()) return; const t = now();
+      [[58, 0, .42], [57, .5, .42], [56, 1, .42], [55, 1.5, 1.7]].forEach(([m, dt, d], i) => {
+        const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(mtof(m), t + dt);
+        if (i === 3){ const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 5.5; lg.gain.setValueAtTime(0, t + dt); lg.gain.linearRampToValueAtTime(mtof(m) * .035, t + dt + .45); l.connect(lg); lg.connect(o.frequency); l.start(t + dt); l.stop(t + dt + d + .1); o.frequency.linearRampToValueAtTime(mtof(m - 1), t + dt + d); }
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 3; f.frequency.setValueAtTime(350, t + dt); f.frequency.linearRampToValueAtTime(1500, t + dt + .14); f.frequency.linearRampToValueAtTime(600, t + dt + d);
+        const g = ctx.createGain(); g.gain.setValueAtTime(.0001, t + dt); g.gain.exponentialRampToValueAtTime(.2, t + dt + .05); g.gain.setValueAtTime(.2, t + dt + d * .8); g.gain.exponentialRampToValueAtTime(.0001, t + dt + d);
+        o.connect(f); f.connect(g); g.connect(sfxBus); o.start(t + dt); o.stop(t + dt + d + .05);
+      }); },
+    sip(){ if (!ok()) return; const t = now(); nz(t, .45, .2, sfxBus, {f0: 1700, f1: 700, q: 5, a: .05}); },
+    rewind(d = 2){ if (!ok()) return; const t = now(); for (let i = 0; i < 12; i++) osc('sawtooth', 1900 - i * 70, t + i * d / 12, d / 12 * .9, .03, sfxBus, {to: 2700 - i * 70, lp: 4200}); nz(t, d, .1, sfxBus, {type: 'highpass', f0: 3000}); osc('sine', 60, t, d, .15, sfxBus, {to: 120}); },
+    sputter(){ if (!ok()) return; const t = now(); for (let i = 0; i < 7; i++){ const s = t + i * .14 + Math.random() * .05; nz(s, .07, .4, sfxBus, {type: 'lowpass', f0: 700}); osc('square', 80 + Math.random() * 40, s, .06, .07, sfxBus, {lp: 900}); } },
+    powerdown(){ if (!ok()) return; const t = now(); osc('sawtooth', 560, t, 1.3, .1, sfxBus, {to: 38, glide: 1.2, lp: 1600}); osc('square', 280, t, 1.3, .04, sfxBus, {to: 30, glide: 1.2, lp: 900}); nz(t + .2, .5, .2, sfxBus, {f0: 2600, q: 3}); },
+    gasp(){ if (!ok()) return; const t = now(); for (let i = 0; i < 7; i++) nz(t + Math.random() * .1, .8, .09, sfxBus, {f0: 450 + Math.random() * 300, f1: 1000 + Math.random() * 400, q: 7, a: .1}); },
+    ominous(){ if (!ok()) return; const t = now();
+      [38, 45, 50, 53, 56, 62].forEach(m => [-9, 9].forEach(dt => osc('sawtooth', mtof(m), t, 3, .035, sfxBus, {a: .7, lp: 900, q: 5, detune: dt})));
+      [0, .5, 1, 1.5].forEach(d => osc('sine', 70, t + d, .5, .5, sfxBus, {to: 40})); nz(t, 3, .08, sfxBus, {type: 'lowpass', f0: 300, a: .6}); },
+    glare(){ if (!ok()) return; const t = now(); nz(t, .08, .25, sfxBus, {f0: 4000, f1: 1500, q: 3}); osc('triangle', 1600, t, .06, .05, sfxBus, {to: 900}); },
     bonk(){ if (!ok()) return; const t = now(); osc('sine', 340, t, .18, .8, sfxBus, {to: 110}); nz(t, .12, .6, sfxBus, {type: 'lowpass', f0: 1400}); for (let i = 0; i < 6; i++) nz(t + .03 + i * .025, .02, .25, sfxBus, {f0: 3000 + Math.random() * 2500, q: 4}); },
     boing(){ if (!ok()) return; const t = now(); osc('sine', 180, t, .7, .35, sfxBus, {to: 980, glide: .6}); osc('triangle', 186, t, .7, .1, sfxBus, {to: 990, glide: .6}); },
     ding(){ if (!ok()) return; const t = now(); [1, 2.76, 5.4].forEach((r, i) => osc('sine', 1320 * r, t, 1.1 - i * .3, .09 / (i + 1), sfxBus)); }
@@ -1308,6 +1336,7 @@ async function promoFx(mv){
   const g = pieceAt[mv.to]; if (!g) return;
   const pname = NAME[mv.promotion].toUpperCase();
   if (!cutins){ A.sfx.promote(); const c = center(mv.to, .8); burst(c.x, c.y, {n: 40, kind: 'spark', colors: ['#ffc83d', '#fff'], speed: 10, life: 40}); await bigText('PROMOTION!', '昇格', {hold: 500, color: 'var(--gold)', size: .7}); return; }
+  if (mv.promotion !== 'q') return underPromoFx(mv);
   const p = sqPos(mv.to), toCam = camera.position.clone().sub(p).setY(0).normalize();
   A.music.duck(9000); camSave();
   const hud = document.createElement('div'); hud.innerHTML = '<div class="hud-frame"></div><div class="hud"></div>'; fxEl.appendChild(hud);
@@ -1402,6 +1431,67 @@ async function promoFx(mv){
     bars(['#hzTop', '#hzBot'], false); $('#hangar').getAnimations().forEach(x => x.cancel()); hud.remove();
     await camRestore(700);
     render(true);
+  }
+}
+
+// UNDERPROMOTION: the mecha transformation starts, sputters out, parts fall off, and the pawn just... becomes a knight. "...really?"
+async function underPromoFx(mv){
+  const g = pieceAt[mv.to]; if (!g) return;
+  const p = sqPos(mv.to), toCam = camera.position.clone().sub(p).setY(0).normalize(), pname = NAME[mv.promotion].toUpperCase();
+  A.music.duck(9000); camSave();
+  const hud = document.createElement('div'); hud.innerHTML = '<div class="hud-frame"></div><div class="hud"></div>'; fxEl.appendChild(hud);
+  const hudText = hud.querySelector('.hud');
+  const typeLines = async lines => { for (const ln of lines){ hudText.innerHTML += ln + '\n'; A.sfx.beep(); await sleep(170); } };
+  const temp = [];
+  try {
+    // 1. same proud start as a real promotion
+    bars(['#hzTop', '#hzBot'], true); A.sfx.klaxon();
+    typeLines(['<b>!! PROMOTION PROTOCOL ENGAGED !!</b>', `UNIT ........... PAWN-${mv.to.toUpperCase()}`, 'REACTOR ........ ONLINE']);
+    await camMove(p.clone().add(toCam.clone().multiplyScalar(2.6)).setY(.55), p.clone().setY(.95), 800);
+    $('#hangar').animate([{opacity: 0}, {opacity: 1}], {duration: 500, fill: 'forwards'});
+    g.visible = false;
+    const M = buildMech(mv.color), mech = M.mech;
+    mech.position.set(p.x, BASEY, p.z); mech.rotation.y = Math.atan2(toCam.x, toCam.z); scene.add(mech); temp.push(mech);
+    const pawn = makePiece('p', mv.color); mech.add(pawn);
+    A.sfx.servo();
+    await tween(700, k => { pawn.position.y = easeIO(k) * MECH_LIFT; });
+    typeLines(['ARMOR .......... DEPLOY']);
+    const docked = [];
+    for (const step of M.steps.slice(0, 2)){
+      A.sfx.servo();
+      await tween(240, k => step.parts.forEach(o => { o.position.lerpVectors(o.userData.from, o.userData.rest, easeIn(k)); o.visible = true; }));
+      A.sfx.clank(); camShake = Math.max(camShake, .14); docked.push(...step.parts);
+      await sleep(120);
+    }
+    // 2. ...it sputters out
+    typeLines([`TRANSFORM ...... ${pname}-TYPE??`, '<b>ERROR: INSUFFICIENT AMBITION</b>']);
+    A.sfx.sputter();
+    $('#hangar').animate([{opacity: 1}, {opacity: .2}, {opacity: .9}, {opacity: .1}, {opacity: .7}, {opacity: 0}], {duration: 1100, fill: 'forwards'});
+    for (let i = 0; i < 4; i++){
+      const s = screenOf(p.clone().setY(.5 + Math.random() * .6));
+      burst(s.x, s.y, {n: 10, kind: 'spark', colors: ['#ffc83d', '#fff'], speed: 7, life: 14});
+      burst(s.x, s.y, {n: 6, kind: 'dust', colors: ['rgba(90,90,100,.7)', 'rgba(60,60,70,.6)'], speed: 2, size: 7, life: 40, g: -.06});
+      await tween(150, k => { mech.rotation.z = Math.sin(k * 30) * .05; });
+    }
+    mech.rotation.z = 0;
+    A.sfx.powerdown(); bars(['#hzTop', '#hzBot'], false);
+    // 3. the parts clatter off onto the floor
+    docked.forEach(o => { const w = new THREE.Vector3(); o.getWorldPosition(w); const q = new THREE.Quaternion(); o.getWorldQuaternion(q); scene.add(o); o.position.copy(w); o.quaternion.copy(q); temp.push(o); });
+    const vel = docked.map(() => V3((Math.random() - .5) * .04, .02, (Math.random() - .5) * .04));
+    await tween(700, k => docked.forEach((o, i) => { vel[i].y -= .006; o.position.add(vel[i]); if (o.position.y < .15){ o.position.y = .15; vel[i].y *= -.3; } o.rotation.x += .08; }));
+    A.sfx.clank();
+    // 4. the pawn plops down and, with a sad little puff, is a knight now
+    await tween(300, k => { pawn.position.y = MECH_LIFT * (1 - easeIn(k)); });
+    const ps = screenOf(p.clone().setY(.4));
+    burst(ps.x, ps.y, {n: 26, kind: 'dust', colors: ['rgba(255,255,255,.7)', 'rgba(200,200,210,.6)'], speed: 4, size: 6, life: 34});
+    mech.remove(pawn); scene.add(g); g.visible = true; g.position.copy(p); g.scale.setScalar(.92);
+    A.sfx.gasp(); await sleep(250);
+    bubble(g, '…', 1300, 1.3);
+    await bigText('...really?', 'え…?', {color: '#a99fc7', hold: 1300, size: .55, rot: -2, sub: `PAWN ⇒ ${pname}`});
+  } finally {
+    temp.forEach(o => scene.remove(o));
+    bars(['#hzTop', '#hzBot'], false); $('#hangar').getAnimations().forEach(x => x.cancel()); hud.remove();
+    await camRestore(700); render(true);
   }
 }
 
@@ -1572,6 +1662,192 @@ async function castleFx(mv){
   } finally {
     bars(['#lbTop', '#lbBot'], false); card.remove();
     await camRestore(650);
+  }
+}
+/* ================= MOMENTS: double check, stalemate, threefold repetition, a pawn on the 7th rank ================= */
+const SQUARES = [...'abcdefgh'].flatMap(f => [1, 2, 3, 4, 5, 6, 7, 8].map(r => f + r));
+// Does the piece on `sq` attack `target` (rays stop at the first piece in the way)?
+function attacks(sq, target, src = game){
+  const p = src.get(sq); if (!p) return false;
+  const f0 = sq.charCodeAt(0) - 97, r0 = +sq[1] - 1, df = target.charCodeAt(0) - 97 - f0, dr = +target[1] - 1 - r0, adf = Math.abs(df), adr = Math.abs(dr);
+  if (!adf && !adr) return false;
+  if (p.type === 'p') return adf === 1 && dr === (p.color === 'w' ? 1 : -1);
+  if (p.type === 'n') return adf * adr === 2;
+  if (p.type === 'k') return Math.max(adf, adr) === 1;
+  const straight = !adf || !adr, diag = adf === adr;
+  if ((p.type === 'r' && !straight) || (p.type === 'b' && !diag) || (p.type === 'q' && !straight && !diag)) return false;
+  const sf = Math.sign(df), sr = Math.sign(dr);
+  for (let i = 1; i < Math.max(adf, adr); i++) if (src.get(String.fromCharCode(97 + f0 + sf * i) + (r0 + sr * i + 1))) return false;
+  return true;
+}
+// Squares of the pieces giving check to the side to move.
+function checkers(){ const k = kingSq(game.turn()), them = game.turn() === 'w' ? 'b' : 'w'; return SQUARES.filter(s => { const p = game.get(s); return p && p.color === them && attacks(s, k); }); }
+// Frames a point from the side the camera is already on.
+function closeShot(c, dist, h, ty, ms){
+  const dir = camera.position.clone().sub(c).setY(0); if (dir.lengthSq() < 1e-4) dir.set(0, 0, 1); dir.normalize();
+  return camMove(c.clone().addScaledVector(dir, dist).setY(h), c.clone().setY(ty), ms);
+}
+// DOUBLE CHECK: anime split screen of both attackers; the king's eyes dart between them and it faints
+async function doubleCheckFx(atks){
+  const ks = kingSq(game.turn()), kg = pieceAt[ks], K = sqPos(ks);
+  A.sfx.check(); A.music.intensity(1); A.music.duck(7000);
+  const el = document.createElement('div'); el.className = 'dsplit';
+  const gl = s => { const p = game.get(s); return `<span class="cut-glyph ${p.color}">${GLYPH[p.type]}${VS}</span>`; };
+  el.innerHTML = `<div class="half l">${gl(atks[0])}<b class="tag">CHECK!</b></div><div class="half r"><b class="tag">CHECK!</b>${gl(atks[1])}</div>
+    <svg class="seam" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="58,0 52,28 57,46 47,68 42,100" fill="none" stroke="#000" stroke-width="16" vector-effect="non-scaling-stroke"/><polyline points="58,0 52,28 57,46 47,68 42,100" fill="none" stroke="#fff" stroke-width="7" vector-effect="non-scaling-stroke"/></svg>`;
+  fxEl.insertBefore(el, $('#flash'));
+  const [L, R] = el.querySelectorAll('.half');
+  try {
+    A.sfx.impact(.9); shake(.8, 400);
+    L.animate([{transform: 'translateX(-100%)'}, {transform: 'translateX(0)'}], {duration: 280, easing: 'ease-out', fill: 'both'});
+    await R.animate([{transform: 'translateX(100%)'}, {transform: 'translateX(0)'}], {duration: 280, delay: 120, easing: 'ease-out', fill: 'both'}).finished;
+    A.sfx.zap(); flash('#fff', 200, .5);
+    await bigText('DOUBLE CHECK!!', '両王手', {hold: 900, size: .7, color: 'var(--blood)'});
+    L.animate([{transform: 'translateX(0)'}, {transform: 'translateX(-100%)'}], {duration: 250, fill: 'forwards'});
+    await R.animate([{transform: 'translateX(0)'}, {transform: 'translateX(100%)'}], {duration: 250, fill: 'forwards'}).finished;
+  } finally { el.remove(); }
+  if (!kg) return;
+  camSave();
+  try {
+    await closeShot(K, 2.5, 1.4, .8, 550);
+    // eyes snap back and forth between the two attackers, sweating
+    const toA = s => { const d = sqPos(s).sub(K).setY(0); return Math.atan2(-d.z, d.x) - kg.rotation.y; };
+    const eyes = addEyes(kg, camera.position, false), a0 = toA(atks[0]), a1 = toA(atks[1]);
+    weep(eyes, 1600); bubble(kg, '!?', 800, 1.6);
+    let dart = -1;
+    await tween(1500, k => { const i = Math.floor(k * 8); if (i !== dart){ dart = i; eyes.face.rotation.y = i % 2 ? a1 : a0; A.sfx.glare(); } });
+    eyes.face.rotation.y = (a0 + a1) / 2;
+    // ...and faints, flat on its back
+    eyes.whites.forEach(w => { w.scale.y = .15; });
+    bubble(kg, 'きゅう…', 900, 1.5); A.sfx.whistle();
+    const tc = camera.position.clone().sub(K).setY(0).normalize(), back = V3(-tc.z, 0, tc.x);   // falls sideways, so it reads in profile
+    await tween(650, k => { const e = easeIn(k); kg.rotation.x = back.z * 1.5 * e; kg.rotation.z = -back.x * 1.5 * e; kg.position.y = BASEY + .12 * e; });
+    A.sfx.impact(.5); shake(.6, 300); word(K.clone().setY(.9), 'バタン!', {size: 40, color: '#ff2e4d'});
+    const stars = [0, 1, 2].map(() => { const s = document.createElement('div'); s.className = 'star'; s.textContent = '✦'; s.style.fontSize = '26px'; fxEl.appendChild(s); return s; });
+    A.sfx.twinkle();
+    await tween(1300, k => stars.forEach((s, i) => { const a = k * 9 + i * 2.1, p = screenOf(K.clone().add(V3(Math.cos(a) * .35, .5, Math.sin(a) * .35))); s.style.left = p.x + 'px'; s.style.top = p.y + 'px'; }));
+    stars.forEach(s => s.remove());
+    // snaps back awake: there's a game to finish
+    eyes.whites.forEach(w => { w.scale.y = 1.3; }); bubble(kg, 'ハッ!', 700, 1.5); A.sfx.boing();
+    await tween(280, k => { kg.rotation.x = back.z * 1.5 * (1 - k); kg.rotation.z = -back.x * 1.5 * (1 - k); kg.position.y = BASEY + .12 * (1 - k) + Math.sin(Math.PI * k) * .3; });
+    await sleep(300);
+  } finally { await camRestore(550); render(true); }
+}
+let checkerTex = null;
+function picnicTex(){
+  if (checkerTex) return checkerTex;
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++){ x.fillStyle = (i + j) % 2 ? '#d7263d' : '#fff4e6'; x.fillRect(i * 8, j * 8, 8, 8); }
+  checkerTex = new THREE.CanvasTexture(c); checkerTex.magFilter = THREE.NearestFilter; return checkerTex;
+}
+function makeTeaSet(){
+  const china = toon(0xfafafa), rim = toon(0x4aa3df), set = new THREE.Group();
+  const pot = new THREE.Mesh(new THREE.SphereGeometry(.13, 18, 12), china); pot.scale.y = .8; pot.position.y = .1; set.add(pot);
+  const lid = new THREE.Mesh(new THREE.SphereGeometry(.03, 10, 8), rim); lid.position.y = .21; set.add(lid);
+  const spout = new THREE.Mesh(new THREE.CylinderGeometry(.015, .03, .14, 8), china); spout.position.set(.14, .13, 0); spout.rotation.z = -.9; set.add(spout);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(.05, .012, 6, 14), china); handle.position.set(-.13, .11, 0); set.add(handle);
+  const cup = new THREE.Group(); cup.position.set(.05, 0, .28); set.add(cup);
+  const saucer = new THREE.Mesh(new THREE.CylinderGeometry(.08, .07, .012, 16), rim); cup.add(saucer);
+  const mug = new THREE.Mesh(new THREE.CylinderGeometry(.05, .038, .07, 14), china); mug.position.y = .045; cup.add(mug);
+  set.userData.cup = cup; return set;
+}
+// STALEMATE: the trapped king shrugs, sits down for a picnic with tea, both armies lie down, sad trombone
+async function stalemateFx(){
+  const ks = kingSq(game.turn()), kg = pieceAt[ks], K = sqPos(ks); if (!kg) return;
+  A.music.stop(); camSave(); const temp = [];
+  try {
+    await closeShot(K, 2.6, 1.5, .55, 700);
+    // looks around for a move... nothing
+    const eyes = addEyes(kg, camera.position, false), r0 = eyes.face.rotation.y;
+    bubble(kg, '…?', 900, 1.15);
+    await tween(1000, k => { eyes.face.rotation.y = r0 + Math.sin(k * Math.PI * 4) * .8; });
+    eyes.face.rotation.y = r0;
+    // shrug
+    bubble(kg, '¯\\_(ツ)_/¯', 1300, 1.15); A.sfx.boing();
+    await tween(650, k => { kg.position.y = BASEY + Math.sin(Math.PI * k) * .14; kg.rotation.z = Math.sin(k * Math.PI * 2) * .12; });
+    kg.rotation.z = 0;
+    // a picnic blanket unrolls, the king sits, tea appears
+    const toCam = camera.position.clone().sub(K).setY(0).normalize(), side = V3(-toCam.z, 0, toCam.x);
+    const blanket = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.1), new THREE.MeshLambertMaterial({map: picnicTex()}));
+    blanket.rotation.x = -Math.PI / 2; blanket.rotation.z = Math.atan2(toCam.x, toCam.z); blanket.position.set(K.x, BASEY + .006, K.z).addScaledVector(toCam, .15); blanket.receiveShadow = true; scene.add(blanket); temp.push(blanket);
+    A.sfx.whoosh();
+    await tween(400, k => { blanket.scale.set(.01 + .99 * easeIO(k), 1, 1); });
+    const sy = kg.scale.y;
+    await tween(380, k => { kg.scale.y = sy * (1 - .36 * easeIO(k)); kg.rotation.x = -toCam.z * .1 * k; kg.rotation.z = toCam.x * .1 * k; });
+    const tea = makeTeaSet(); tea.position.copy(K).addScaledVector(side, .45).addScaledVector(toCam, .25); tea.position.y = BASEY; tea.lookAt(K.x, BASEY, K.z); scene.add(tea); temp.push(tea);
+    A.sfx.twinkle();
+    await tween(300, k => { tea.scale.setScalar(.01 + .99 * easeIO(k)); });
+    bubble(kg, 'Tea time ☕', 1500, 1.05); A.sfx.sip();
+    const cw = new THREE.Vector3(); tea.userData.cup.getWorldPosition(cw);
+    for (let i = 0; i < 10; i++){ const s = screenOf(cw.clone().setY(.2)); parts.push({x: s.x + (Math.random() - .5) * 8, y: s.y, vx: (Math.random() - .5) * .4, vy: -.8 - Math.random() * .6, life: 50, max: 50, kind: 'dust', c: 'rgba(255,255,255,.55)', s: 2.5, g: -.005, drag: .99}); }
+    kick();
+    await sleep(1000);
+    // wide shot: both armies awkwardly lie down too, wah wah wahhh
+    camMove(V3(0, 0, 0).addScaledVector(toCam, 9.5).setY(7.5), V3(0, 0, 0), 900);
+    A.sfx.trombone();
+    Object.values(pieceAt).filter(o => o !== kg).forEach((o, i) => setTimeout(() => {
+      const ax = Math.random() < .5, s = Math.random() < .5 ? 1 : -1, y0 = o.position.y;
+      tween(520, k => { const e = easeIO(k); if (ax) o.rotation.x = s * Math.PI / 2 * e; else o.rotation.z = s * Math.PI / 2 * e; o.position.y = y0 + .2 * e; });
+    }, 200 + i * 60));
+    await sleep(1300);
+    bigText('STALEMATE', '膠着', {color: 'var(--volt)', hold: 1700, size: .8, sub: 'NO LEGAL MOVES · TEA TIME'});
+    await sleep(2500);
+  } finally { temp.forEach(o => scene.remove(o)); await camRestore(500); }
+}
+// THREEFOLD REPETITION: a VHS rewind, the repeating pieces jitter back and forth, "Déjà vu…"
+async function dejavuFx(){
+  const hist = game.history({verbose: true}), cv = renderer.domElement;
+  const movers = hist.slice(-2).map(m => ({g: pieceAt[m.to], a: sqPos(m.to), b: sqPos(m.from)})).filter(x => x.g);
+  A.music.stop();
+  const layer = document.createElement('div'); layer.className = 'movie';
+  layer.innerHTML = '<div class="vhs"></div><div class="vhs-band"></div><div class="vhs-osd">◀◀ REWIND</div><div class="vhs-osd r"></div>';
+  fxEl.appendChild(layer);
+  const [osd, osdR] = layer.querySelectorAll('.vhs-osd');
+  cv.style.filter = 'saturate(1.7) contrast(1.25) hue-rotate(-12deg)';
+  layer.querySelector('.vhs-band').animate([{top: '-10%'}, {top: '105%'}], {duration: 700, iterations: Infinity});
+  osd.animate([{opacity: 1}, {opacity: .2}], {duration: 400, iterations: Infinity, direction: 'alternate'});
+  try {
+    A.sfx.rewind(2.4); flash('#fff', 200, .4);
+    let n = Math.ceil(hist.length / 2);
+    await tween(2400, k => {
+      const ph = Math.floor(k * 16) % 2;
+      movers.forEach(x => { x.g.position.copy(ph ? x.b : x.a); x.g.position.x += (Math.random() - .5) * .06; x.g.position.z += (Math.random() - .5) * .06; });
+      osdR.textContent = `MOVE ${n - (Math.floor(k * 16) % 4 < 2 ? 0 : 2)}`;
+      camShake = Math.max(camShake, .04);
+    });
+    movers.forEach(x => x.g.position.copy(x.a));
+    osd.getAnimations().forEach(a => a.cancel()); osd.textContent = '▶ PLAY'; osdR.textContent = 'AGAIN. AND AGAIN.';
+    say('Déjà vu…', {rate: .75, pitch: .95}); A.sfx.twinkle();
+    await bigText('Déjà vu…', '既視感', {color: 'var(--volt)', hold: 1600, size: .7, rot: -3, sub: 'THREEFOLD REPETITION'});
+  } finally { layer.remove(); cv.style.filter = ''; }
+}
+// A PAWN ON THE 7TH RANK: an ominous choir, the pawn sweats, and the whole enemy back rank turns to stare
+async function seventhFx(mv){
+  const g = pieceAt[mv.to]; if (!g) return;
+  const P = sqPos(mv.to), fwd = V3(0, 0, mv.color === 'w' ? -1 : 1), back = mv.color === 'w' ? '8' : '1';
+  const starers = SQUARES.filter(s => s[1] === back).map(s => pieceAt[s]).filter(o => o && o.userData.color !== mv.color);
+  A.music.duck(5500); camSave();
+  try {
+    // over the pawn's shoulder, looking up at the back rank
+    let side = V3(1, 0, 0); if (side.dot(camera.position.clone().sub(P)) < 0) side.negate();
+    camMove(P.clone().addScaledVector(fwd, -1.7).addScaledVector(side, 1.3).setY(1.35), P.clone().addScaledVector(fwd, .9).setY(.5), 700);
+    A.sfx.ominous();
+    $('#dim').animate([{opacity: 0}, {opacity: .75}], {duration: 700, fill: 'forwards'});
+    await sleep(500);
+    const pe = addEyes(g, P.clone().addScaledVector(fwd, 2), false);
+    weep(pe, 2600); bubble(g, 'ゴクリ…', 1200, 1.2);
+    // one by one, every piece on the back rank turns its head toward the pawn
+    for (const o of starers){
+      const e = addEyes(o, P, true), r1 = e.face.rotation.y;
+      tween(260, k => { e.face.rotation.y = r1 + 1.4 * (1 - easeIO(k)); });
+      A.sfx.glare(); await sleep(140);
+    }
+    for (let i = 0; i < 4; i++) word(P.clone().addScaledVector(fwd, 1.2).add(V3((i - 1.5) * .9, 1.3 + (i % 2) * .3, 0)), 'ゴゴゴ', {size: 30, color: '#7a2cff', ms: 1800, rot: -10 + i * 6});
+    await sleep(700);
+    await bigText('7TH RANK', '王手前夜', {color: '#7a2cff', hold: 1100, size: .6, rot: -4, sub: 'ONE STEP FROM GLORY'});
+  } finally {
+    $('#dim').getAnimations().forEach(a => a.cancel());
+    await camRestore(600); render(true);
   }
 }
 async function moveFx(mv){
@@ -2216,9 +2492,16 @@ async function commit(input, remote, remoteClock){
     lastMove = {from: mv.from, to: mv.to}; render();
     if (mv.promotion) await promoFx(mv);
     if (game.in_checkmate()) await (cutins ? outroMovie(true) : mateFx());
-    else if (game.game_over()) await (cutins ? outroMovie(false) : drawFx());
-    else if (game.in_check()) await checkFx();
-    else A.music.intensity(0);
+    else if (game.game_over()){
+      if (cutins && game.in_stalemate()) await stalemateFx();
+      else if (cutins && game.in_threefold_repetition()) await dejavuFx();
+      await (cutins ? outroMovie(false) : drawFx());
+    }
+    else if (game.in_check()){ const atk = checkers(); await (cutins && atk.length > 1 ? doubleCheckFx(atk) : checkFx()); }
+    else {
+      A.music.intensity(0);
+      if (cutins && mv.piece === 'p' && mv.to[1] === (mv.color === 'w' ? '7' : '2')) await seventhFx(mv);
+    }
   } catch (err){
     // An effect failed: never leave the board frozen. Restore the camera and redraw from the real game state.
     console.error(err);
@@ -2769,10 +3052,19 @@ function showEnd(title, sub, jp){
 }
 $('#mGo').onclick = () => { A.init(); started = true; hideModal(); newGame(); if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
-const DEMOS = {'#ep-demo': ['1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'}], '#castle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'}]};
-function demo(pgn, move){
+const DEMOS = {
+  '#ep-demo': ['1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'}],
+  '#castle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'}],
+  '#stalemate-demo': ['k7/8/1K6/8/8/8/8/2Q5 w - - 0 1', {from: 'c1', to: 'c7'}],
+  '#underpromo-demo': ['k7/4P3/8/8/8/8/8/K7 w - - 0 1', {from: 'e7', to: 'e8', promotion: 'n'}],
+  '#doublecheck-demo': ['rn1qk2r/ppp3pp/8/8/8/8/PPPPBPPP/RNBQR1K1 w kq - 0 1', {from: 'e2', to: 'b5'}],
+  '#repetition-demo': ['1. Nf3 Nf6 2. Ng1 Ng8 3. Nf3 Nf6 4. Ng1', {from: 'f6', to: 'g8'}],
+  '#seventh-demo': ['rnbqkbnr/pp1ppppp/2P5/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1', {from: 'c6', to: 'c7'}]
+};
+function demo(pos, move){
   mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame();
-  game.load_pgn(pgn); const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = {from: l.from, to: l.to}; render(true);
+  if (pos.includes('/')) game.load(pos); else game.load_pgn(pos);
+  const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
   setTimeout(() => { if (canMoveNow()) commit(move); }, 1800);
 }
 
