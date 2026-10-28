@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029005332">
+<meta name="kessen-build" content="20261029012633">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -226,11 +226,14 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .fname{font-family:var(--display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .frank{font-size:12px;color:var(--muted)}
 .frank b{color:var(--gold);font-variant-numeric:tabular-nums}
-.profcard{width:min(360px,calc(100vw - 32px));align-items:stretch}
+.pcard.profcard{width:min(360px,calc(100vw - 32px));align-items:stretch}
 .profcard input{background:var(--night);border:1px solid var(--line);padding:10px;font-weight:700}
-.profcard .opts{justify-content:center}
-.profcard .opts button[aria-pressed="true"]{background:var(--gold)}
-.swatches{display:flex;gap:8px;justify-content:center}
+/* six crests share the card's width instead of a fixed 68px each */
+.pcard.profcard .opts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.pcard.profcard .opts button{width:auto;height:auto;aspect-ratio:1;padding:0;font-size:clamp(26px,8vw,40px)}
+.pcard.profcard .opts button[aria-pressed="true"]{background:var(--gold)}
+.pcard.profcard .m-actions .btn{flex:1;font-size:16px;padding:12px}
+.swatches{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .swatches button{width:34px;height:34px;border:2px solid #000;cursor:pointer;border-radius:50%}
 .swatches button[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px}
 .scouter{font:700 15px/1.5 ui-monospace,Consolas,monospace;color:#7dff8a;background:rgba(10,30,14,.92);border:2px solid #7dff8a;box-shadow:inset 0 0 18px rgba(125,255,138,.25);padding:10px 12px;text-align:left;text-shadow:0 0 6px rgba(125,255,138,.7)}
@@ -247,8 +250,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .pl .pw{font-size:11px;color:var(--gold);margin-left:auto}
 .pcard{background:var(--night);border:3px solid var(--gold);padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center}
 .pcard .opts{display:flex;gap:8px}
-.pcard button{width:68px;height:68px;background:#ead9b5;border:2px solid #000;cursor:pointer;font-family:var(--chess);font-size:52px;line-height:1;display:grid;place-items:center}
-.pcard button:hover{background:var(--gold)}
+/* piece tiles (promotion picker and crests) only: Save/Cancel and the colour swatches keep their own sizes */
+.pcard .opts button{width:68px;height:68px;background:#ead9b5;border:2px solid #000;cursor:pointer;font-family:var(--chess);font-size:52px;line-height:1;display:grid;place-items:center}
+.pcard .opts button:hover{background:var(--gold)}
 .tricolor{position:absolute;inset:0;background:linear-gradient(90deg,#0055a4 0 33.4%,#fff 33.4% 66.6%,#ef4135 66.6%);mix-blend-mode:screen;opacity:0}
 .pastry{position:absolute;top:0;font-size:clamp(26px,4vw,44px);line-height:1;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.5))}
 .eptv{position:fixed;right:max(16px,3vw);top:calc(11vh + 14px);z-index:65;width:min(280px,calc(100vw - 32px));background:#111;border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 #000;
@@ -298,12 +302,63 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mg-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
 .mg-btn:disabled{opacity:.35}
 .mg-btn kbd{display:block;font:700 10px var(--body);opacity:.7}
+/* ---- Donations panel, Penny Dropper and the coffee jar ---- */
+.donate-chip{color:#ffb3d6;border-color:#ff8ac4;align-self:center;margin-left:4px}
+.donate-chip .amt{margin-left:6px;color:var(--gold);font-variant-numeric:tabular-nums}
+.donate-chip .amt:empty{display:none}
+#donate{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
+  padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dhead h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,5vw,34px);line-height:1.1;text-wrap:balance}
+.dhead h2 small{display:block;font-size:.5em;color:var(--blood);letter-spacing:.3em;margin-bottom:4px}
+.dnote{margin:0;color:var(--muted);line-height:1.5;font-size:14px}
+.draised{font-family:var(--display);font-size:18px;line-height:1.3;color:var(--gold);font-variant-numeric:tabular-nums}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.charity{border:2px solid var(--line);background:var(--ink);padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color .2s,box-shadow .2s}
+.charity.picked{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 26px rgba(255,200,61,.45)}
+.charity .ctop{display:flex;align-items:center;gap:10px;min-width:0}
+.charity .em{font-size:28px;line-height:1;flex:none}
+.charity b{font-family:var(--display);font-weight:400;font-size:15px;line-height:1.2;overflow-wrap:anywhere}
+.charity .cause{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.charity .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.charity .meta a,.dfoot a,.split-note a{color:var(--volt)}
+.charity .raised{font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.charity .act{margin-top:auto;padding-top:4px}
+.dbtn{display:inline-block;text-align:center;background:var(--gold);color:var(--ink);border:2px solid #000;font-family:var(--display);padding:8px 12px;text-decoration:none;box-shadow:3px 3px 0 #000;align-self:flex-start}
+.dbtn:hover{background:#ffd76a}
+.dbtn.soon{background:transparent;color:var(--muted);border-color:var(--line);box-shadow:none;font-family:var(--body);font-weight:700;cursor:default}
+.dsec{border-top:2px dashed var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.dsec h3{margin:0;font-family:var(--display);font-weight:400;font-size:20px}
+.plinko-wrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+#plinko{width:min(320px,100%);aspect-ratio:320/360;background:var(--ink);border:2px solid var(--line);display:block}
+.plinko-side{flex:1;min-width:200px;display:flex;flex-direction:column;gap:10px}
+.plinko-side .btn{flex:none}
+.presult{line-height:1.5;display:flex;flex-direction:column;gap:8px}
+.presult b{font-family:var(--display);font-weight:400;color:var(--gold)}
+.jar-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.jar{width:120px;flex:none}
+.jar svg{width:100%;height:auto;display:block}
+.jar-text{flex:1;min-width:200px;display:flex;flex-direction:column;gap:6px}
+.jar-text b{font-family:var(--display);font-weight:400;font-size:17px;line-height:1.25}
+.goals{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.goals li{display:flex;flex-direction:column;gap:5px;min-width:0}
+.gl-top{display:flex;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;font-weight:700;font-size:14px}
+.gl-amt{color:var(--gold);font-variant-numeric:tabular-nums}
+.gl-bar{height:8px;background:var(--ink);border:1px solid var(--line)}
+.gl-bar i{display:block;height:100%;background:var(--gold)}
+.gl-proof{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;font-size:13px}
+.gl-proof a{color:var(--volt)}
+.gl-proof img,.gl-proof video{max-width:min(180px,100%);max-height:120px;border:2px solid var(--line);display:block}
+.over{font-family:var(--display);color:#7dff8a;line-height:1.3}
+.over span{display:block;font-family:var(--body);font-size:13px;color:var(--muted);margin-top:2px}
+.dfoot{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
 @media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
 
 <div id="app">
   <header class="top">
-    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span></div>
+    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></div>
     <div class="toggles">
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
@@ -385,6 +440,29 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   <div class="m-actions"><button class="btn primary" id="pSave" type="button">Save</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
 </div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
+<div id="donate" hidden role="dialog" aria-modal="true" aria-labelledby="donTitle"><div class="dcard">
+  <div class="dhead"><h2 id="donTitle"><small>応援</small>Back a good cause</h2><button class="chip" id="donClose" type="button">Close</button></div>
+  <p class="dnote">Your donation goes straight to the charity. Kessen Chess never handles the money.</p>
+  <div class="draised" id="donRaised" hidden></div>
+  <div class="dgrid" id="donGrid"></div>
+  <section class="dsec">
+    <h3>🪙 Penny Dropper</h3>
+    <p class="dnote">Can't choose? Drop a penny and let fate pick a charity. Just for fun: no money involved.</p>
+    <div class="plinko-wrap">
+      <canvas id="plinko" aria-label="Penny Dropper board"></canvas>
+      <div class="plinko-side"><button class="btn primary" id="dropBtn" type="button">Drop a penny 🪙</button><div class="presult" id="pResult" aria-live="polite"></div></div>
+    </div>
+  </section>
+  <section class="dsec" id="coffeeSec" hidden>
+    <h3>🏝️ Developer's holiday fund</h3>
+    <p class="dnote">Shout the dev a coffee. It all goes into the penny jar toward these goals.</p>
+    <div class="jar-wrap">
+      <div class="jar" id="jar" role="img"></div>
+      <div class="jar-text"><b id="jarGoal"></b><span class="dnote" id="jarAmt"></span><ul class="goals" id="jarGoals"></ul><div class="over" id="jarOver" hidden></div><a class="dbtn" id="coffeeBtn" target="_blank" rel="noopener">☕ Coffee for the dev's holiday fund ↗</a><span class="dnote" id="splitNote" hidden></span></div>
+    </div>
+  </section>
+  <p class="dfoot">Kessen Chess is not affiliated with or endorsed by these charities. Charity details come from the <a href="https://www.acnc.gov.au/charity/charities" target="_blank" rel="noopener">ACNC Charity Register ↗</a>.</p>
+</div></div>
 <div id="modal">
   <div class="mcard">
     <div class="m-jp" id="mJp">決戦</div>
@@ -833,6 +911,7 @@ function makePiece(type, color){
   return g;
 }
 let syncedFen = '';
+let promoHold = null;   // square of a promotion whose transformation hasn't played yet
 function syncPieces(force, src = game){
   const fen = src.fen();
   if (!force && fen === syncedFen) return;
@@ -841,7 +920,8 @@ function syncPieces(force, src = game){
   const b = src.board();
   for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
     const p = b[r][f]; if (!p) continue;
-    const sq = 'abcdefgh'[f] + (8 - r), g = makePiece(p.type, p.color);
+    // a pawn that is mid-promotion keeps looking like a pawn until its transformation reveals the new piece
+    const sq = 'abcdefgh'[f] + (8 - r), g = makePiece(sq === promoHold ? 'p' : p.type, p.color);
     g.position.copy(sqPos(sq)); g.userData.sq = sq; scene.add(g); pieceAt[sq] = g;
   }
 }
@@ -1418,17 +1498,26 @@ function buildMech(color){
 }
 
 // PROMOTION: full mecha launch sequence. Alarm, armor, eyes, thrusters, hero landing.
+// Swap the stand-in pawn for the real promoted piece, kept hidden until the transformation reveals it.
+function promoReveal(mv){
+  const stand = pieceAt[mv.to]; promoHold = null;
+  if (!stand) return {g: null, stand: null};
+  if (stand.userData.type === mv.promotion) return {g: stand, stand: null};
+  const g = makePiece(mv.promotion, mv.color); g.position.copy(stand.position); g.userData.sq = mv.to; g.visible = false;
+  scene.add(g); pieceAt[mv.to] = g;
+  return {g, stand};
+}
 async function promoFx(mv){
-  const g = pieceAt[mv.to]; if (!g) return;
+  if (cutins && mv.promotion !== 'q') return underPromoFx(mv);
+  const {g, stand} = promoReveal(mv); if (!g) return;
   const pname = NAME[mv.promotion].toUpperCase();
   if (!cutins){ A.sfx.promote(); const c = center(mv.to, .8); burst(c.x, c.y, {n: 40, kind: 'spark', colors: ['#ffc83d', '#fff'], speed: 10, life: 40}); await bigText('PROMOTION!', '昇格', {hold: 500, color: 'var(--gold)', size: .7}); return; }
-  if (mv.promotion !== 'q') return underPromoFx(mv);
   const p = sqPos(mv.to), toCam = camera.position.clone().sub(p).setY(0).normalize();
   A.music.duck(9000); camSave();
   const hud = document.createElement('div'); hud.innerHTML = '<div class="hud-frame"></div><div class="hud"></div>'; fxEl.appendChild(hud);
   const hudText = hud.querySelector('.hud');
   const typeLines = async lines => { for (const ln of lines){ hudText.innerHTML += ln + '\n'; A.sfx.beep(); await sleep(170); } };
-  const temp = [];
+  const temp = stand ? [stand] : [];
   try {
     // 1. red alert
     bars(['#hzTop', '#hzBot'], true); A.sfx.klaxon();
@@ -1437,7 +1526,7 @@ async function promoFx(mv){
     await camMove(p.clone().add(toCam.clone().multiplyScalar(2.6)).setY(.55), p.clone().setY(.95), 900);
     $('#hangar').animate([{opacity: 0}, {opacity: 1}], {duration: 500, fill: 'forwards'});
     // 2. the pawn rises on a launch pad inside an empty mecha frame
-    g.visible = false;
+    g.visible = false; if (stand) scene.remove(stand);
     const M = buildMech(mv.color), mech = M.mech;
     mech.position.set(p.x, BASEY, p.z); mech.rotation.y = Math.atan2(toCam.x, toCam.z); scene.add(mech); temp.push(mech);
     const pawn = makePiece('p', mv.color); pawn.position.set(0, 0, 0); mech.add(pawn);
@@ -1522,20 +1611,20 @@ async function promoFx(mv){
 
 // UNDERPROMOTION: the mecha transformation starts, sputters out, parts fall off, and the pawn just... becomes a knight. "...really?"
 async function underPromoFx(mv){
-  const g = pieceAt[mv.to]; if (!g) return;
+  const {g, stand} = promoReveal(mv); if (!g) return;
   const p = sqPos(mv.to), toCam = camera.position.clone().sub(p).setY(0).normalize(), pname = NAME[mv.promotion].toUpperCase();
   A.music.duck(9000); camSave();
   const hud = document.createElement('div'); hud.innerHTML = '<div class="hud-frame"></div><div class="hud"></div>'; fxEl.appendChild(hud);
   const hudText = hud.querySelector('.hud');
   const typeLines = async lines => { for (const ln of lines){ hudText.innerHTML += ln + '\n'; A.sfx.beep(); await sleep(170); } };
-  const temp = [];
+  const temp = stand ? [stand] : [];
   try {
     // 1. same proud start as a real promotion
     bars(['#hzTop', '#hzBot'], true); A.sfx.klaxon();
     typeLines(['<b>!! PROMOTION PROTOCOL ENGAGED !!</b>', `UNIT ........... PAWN-${mv.to.toUpperCase()}`, 'REACTOR ........ ONLINE']);
     await camMove(p.clone().add(toCam.clone().multiplyScalar(2.6)).setY(.55), p.clone().setY(.95), 800);
     $('#hangar').animate([{opacity: 0}, {opacity: 1}], {duration: 500, fill: 'forwards'});
-    g.visible = false;
+    g.visible = false; if (stand) scene.remove(stand);
     const M = buildMech(mv.color), mech = M.mech;
     mech.position.set(p.x, BASEY, p.z); mech.rotation.y = Math.atan2(toCam.x, toCam.z); scene.add(mech); temp.push(mech);
     const pawn = makePiece('p', mv.color); mech.add(pawn);
@@ -2273,7 +2362,7 @@ function mvCaption(layer, idx, color, jp, en, quote){
 let movieSkip = false;
 const beat = ms => movieSkip ? Promise.resolve() : sleep(ms);
 async function flashback(h, n, layer, replay, hist){
-  replay.reset(); for (let i = 0; i < h.i; i++) replay.move(hist[i]);
+  replay.load(replay.startFen); for (let i = 0; i < h.i; i++) replay.move(hist[i]);
   syncPieces(true, replay);
   const m = h.m, T = sqPos(m.to);
   const a = (m.color === 'w' ? Math.PI / 2 : -Math.PI / 2) + [.9, -.9, .5, -.5][n % 4], ht = [1.1, 1.6, .75, 1.3][n % 4];
@@ -2313,7 +2402,7 @@ function tbcArrow(layer, text, delay){
 const drawReason = () => game.in_stalemate() ? 'Stalemate' : game.in_threefold_repetition() ? 'Threefold repetition' : game.insufficient_material() ? 'Insufficient material' : '50-move rule';
 // Draw finale: the last move, then the two kings face off at sunset, acknowledge each other and bow.
 async function drawFinale(last, hist, replay, layer){
-  replay.reset(); for (let i = 0; i < hist.length - 1; i++) replay.move(hist[i]);
+  replay.load(replay.startFen); for (let i = 0; i < hist.length - 1; i++) replay.move(hist[i]);
   syncPieces(true, replay);
   const T = sqPos(last.to);
   controls.target.set(T.x, .45, T.z); camera.position.set(T.x + 2.2, 1.2, T.z + (last.color === 'w' ? 2.2 : -2.2)); camera.lookAt(controls.target);
@@ -2349,6 +2438,8 @@ async function drawFinale(last, hist, replay, layer){
 async function outroMovie(isMate){
   const hist = game.history({verbose: true}), last = hist[hist.length - 1], loser = game.turn(), winner = loser === 'w' ? 'Black' : 'White';
   const hl = pickHighlights(hist), replay = new Chess(), cv = renderer.domElement;
+  // replays start from this game's real opening position (a game can begin from a set-up position)
+  { const c = new Chess(); c.load_pgn(game.pgn()); while (c.undo()){} replay.startFen = c.fen(); }
   A.music.stop(); A.music.intensity(0); A.sfx.outro();
   movieSkip = false; camSave(); checkRing.visible = false;
   for (const sq in marks){ const m = marks[sq]; m.hl.visible = m.dot.visible = m.ring.visible = false; }
@@ -2375,7 +2466,7 @@ async function outroMovie(isMate){
     if (!movieSkip && !isMate) await drawFinale(last, hist, replay, layer);
     if (!movieSkip && isMate){
       // 3. the final blow, full colour, super slow motion
-      replay.reset(); for (let i = 0; i < hist.length - 1; i++) replay.move(hist[i]);
+      replay.load(replay.startFen); for (let i = 0; i < hist.length - 1; i++) replay.move(hist[i]);
       syncPieces(true, replay);
       const F = sqPos(last.from), away = K.clone().sub(F).setY(0); if (away.lengthSq() < 1e-4) away.set(0, 0, 1); away.normalize();
       controls.target.set((K.x + F.x) / 2, .5, (K.z + F.z) / 2);
@@ -2610,6 +2701,7 @@ async function commit(input, remote, remoteClock){
     mv = game.move(input);
     if (!mv) return;
     noteStyle(mv); hintMove = null;
+    if (mv.promotion && cutins) promoHold = mv.to;
     if (tcOn()){
       clockPause();
       if (remote && remoteClock){ clock.w = remoteClock.w; clock.b = remoteClock.b; }
@@ -2636,8 +2728,9 @@ async function commit(input, remote, remoteClock){
     console.error(err);
     if (camSaved){ camera.position.copy(camSaved.p); controls.target.copy(camSaved.t); camSaved = null; controls.minDistance = 7; }
     controls.enabled = !orbit; camera.fov = baseFov; camera.updateProjectionMatrix();
-    render(true);
+    promoHold = null; render(true);
   } finally {
+    if (promoHold){ promoHold = null; render(true); }
     busy = false; panel();
     if (mv && tcOn() && !isOver()) clockStart(game.turn());
   }
@@ -4094,6 +4187,252 @@ function demo(pos, move){
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
   setTimeout(() => { if (canMoveNow()) commit(move); }, 1800);
 }
+
+/* ================= DONATIONS =================
+   Money never passes through Kessen Chess: every button links to a fundraiser page on the charity's own
+   platform, and the counter only shows totals that a platform publishes. A link set to 'TODO' shows
+   "Coming soon"; a total that can't be read is simply left out. Never put made-up numbers here. */
+const CHARITIES = [
+  {name: 'Australian Conservation Foundation', cause: 'Environment', emoji: '🌏', abn: '22 007 498 482',
+   acnc: 'https://www.acnc.gov.au/charity/charities/d2e1368f-38af-e811-a960-000d3ad24282/profile', page: 'TODO', total: null},
+  {name: "Starlight Children's Foundation", cause: 'Sick kids', emoji: '⭐', abn: '80 931 522 157',
+   acnc: 'https://www.acnc.gov.au/charity/charities/af96203d-39af-e811-a963-000d3ad24077/profile', page: 'TODO', total: null},
+  {name: 'Beyond Blue', cause: 'Mental health', emoji: '💙', abn: '87 093 865 840',
+   acnc: 'https://www.acnc.gov.au/charity/charities/8bae377e-38af-e811-a963-000d3ad244fd/profile', page: 'TODO', total: null},
+  {name: 'Foodbank Queensland', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209',
+   acnc: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile', page: 'TODO', total: null},
+  {name: 'Craniofacial Australia', cause: 'Craniofacial care', emoji: '🩺', abn: '29 008 155 780',
+   acnc: 'https://www.acnc.gov.au/charity/charities/9f7e79c5-38af-e811-a95e-000d3ad24c60/profile', page: 'TODO', total: null},
+  {name: 'Cancer Council Queensland', cause: 'Cancer', emoji: '🎗️', abn: '48 321 126 727',
+   acnc: 'https://www.acnc.gov.au/charity/charities/0655bad9-39af-e811-a963-000d3ad24077/profile', page: 'TODO', total: null}
+];
+// `total` says where a page's live total can be read, or null for no number:
+//   {type: 'justgiving', page: '<page short name>'}  needs JUSTGIVING_APP_ID (a free key from developer.justgiving.com)
+//   {type: 'opencollective', slug: '<collective slug>'}
+const JUSTGIVING_APP_ID = 'TODO';
+// The dev's coffee jar on Open Collective. Hidden until `url` and `slug` are filled in.
+// Goals fill in order: the first goal's amount, then the next on top of it.
+// Each goal can show a `receipt` link and a `proof` photo or video once it's done (an image or video file
+// such as 'proof/guitar.jpg' committed to the repo, or any link such as a YouTube video).
+const COFFEE = {
+  url: 'TODO', slug: 'TODO', currency: 'AUD',
+  goals: [
+    {label: 'Guitar Hero guitar', emoji: '🎸', amount: 150, receipt: 'TODO', proof: 'TODO'},
+    {label: 'Family holiday to Tasmania', emoji: '🏝️', amount: 3000, receipt: 'TODO', proof: 'TODO'}
+  ],
+  overBudgetNote: ''   // optional line shown once every goal is reached, e.g. what the extra goes toward
+};
+// When true, the coffee section explains the 50/50 split and links the public ledger.
+const SPLIT_MODE = false;
+
+const isSet = v => !!v && v !== 'TODO';
+const fmtMoney = (n, cur) => { try { return new Intl.NumberFormat('en-AU', {style: 'currency', currency: cur, maximumFractionDigits: n % 1 ? 2 : 0}).format(n); } catch(e){ return `${cur} ${n.toFixed(2)}`; } };
+async function fetchJSON(url, opts = {}, ms = 8000){
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
+  try { const r = await fetch(url, Object.assign({}, opts, {signal: ctl.signal})); return r.ok ? await r.json() : null; }
+  catch(e){ return null; } finally { clearTimeout(timer); }
+}
+// Read a platform's published total. Returns {amount, currency, donors} or null when it can't be read.
+async function readTotal(spec){
+  if (!spec) return null;
+  if (spec.type === 'opencollective' && isSet(spec.slug)){
+    const j = await fetchJSON('https://api.opencollective.com/graphql/v2', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: 'query($s:String){account(slug:$s){stats{totalAmountReceived{valueInCents currency} contributorsCount}}}', variables: {s: spec.slug}})});
+    const s = j && j.data && j.data.account && j.data.account.stats;
+    if (!s || !s.totalAmountReceived || typeof s.totalAmountReceived.valueInCents !== 'number') return null;
+    return {amount: s.totalAmountReceived.valueInCents / 100, currency: s.totalAmountReceived.currency, donors: typeof s.contributorsCount === 'number' ? s.contributorsCount : null};
+  }
+  if (spec.type === 'justgiving' && isSet(JUSTGIVING_APP_ID) && isSet(spec.page)){
+    const base = `https://api.justgiving.com/${encodeURIComponent(JUSTGIVING_APP_ID)}/v1/fundraising/pages/${encodeURIComponent(spec.page)}`;
+    const j = await fetchJSON(base, {headers: {Accept: 'application/json'}});
+    // only money donated online through the page: page owners can add offline amounts by hand, which can't be checked
+    const amount = j ? parseFloat(j.totalRaisedOnline) : NaN;
+    if (!isFinite(amount)) return null;
+    const d = await fetchJSON(base + '/donations?pageSize=1', {headers: {Accept: 'application/json'}});
+    const donors = d && d.pagination && typeof d.pagination.totalResults === 'number' ? d.pagination.totalResults : null;
+    return {amount, currency: j.currencyCode || 'AUD', donors};
+  }
+  return null;
+}
+// Charity totals, summed only from numbers a platform actually returned (cached for 10 minutes per tab).
+let donTotals = {per: [], sum: null, donors: null};
+async function loadCharityTotals(){
+  if (!CHARITIES.some(c => c.total && isSet(c.page))) return;
+  let cached = null; try { cached = JSON.parse(sessionStorage.getItem('kessen-don-totals') || 'null'); } catch(e){}
+  let per;
+  if (cached && Date.now() - cached.t < 600000) per = cached.per;
+  else {
+    per = await Promise.all(CHARITIES.map(c => isSet(c.page) ? readTotal(c.total) : null));
+    try { sessionStorage.setItem('kessen-don-totals', JSON.stringify({t: Date.now(), per})); } catch(e){}
+  }
+  const aud = per.filter(t => t && t.currency === 'AUD');
+  donTotals = {per, sum: aud.length ? aud.reduce((a, t) => a + t.amount, 0) : null, donors: aud.length && aud.every(t => t.donors != null) ? aud.reduce((a, t) => a + t.donors, 0) : null};
+  drawDonationTotals();
+}
+function drawDonationTotals(){
+  const {sum, donors} = donTotals;
+  $('#donChipAmt').textContent = sum != null && sum > 0 ? fmtMoney(sum, 'AUD') : '';
+  const el = $('#donRaised'); el.hidden = !(sum != null && sum > 0);
+  if (!el.hidden) el.textContent = `💝 ${fmtMoney(sum, 'AUD')} raised by ${donors != null ? `${donors.toLocaleString()} Kessen player${donors === 1 ? '' : 's'}` : 'Kessen players'}`;
+  CHARITIES.forEach((c, i) => { const t = donTotals.per[i], r = document.querySelector(`#donGrid [data-i="${i}"] .raised`); if (r) { r.hidden = !t; r.textContent = t ? `${fmtMoney(t.amount, t.currency)} raised` : ''; } });
+}
+function charityLink(c, label){
+  if (!isSet(c.page)){ const s = document.createElement('span'); s.className = 'dbtn soon'; s.textContent = 'Coming soon'; return s; }
+  const a = document.createElement('a'); a.className = 'dbtn'; a.href = c.page; a.target = '_blank'; a.rel = 'noopener'; a.textContent = label; return a;
+}
+function drawCharities(){
+  const grid = $('#donGrid'); grid.innerHTML = '';
+  CHARITIES.forEach((c, i) => {
+    const card = document.createElement('article'); card.className = 'charity'; card.dataset.i = i;
+    card.innerHTML = `<div class="ctop"><span class="em" aria-hidden="true"></span><div><b></b><div class="cause"></div></div></div>
+      <div class="meta"><a target="_blank" rel="noopener">ACNC registered ↗</a><span></span></div><div class="raised" hidden></div><div class="act"></div>`;
+    card.querySelector('.em').textContent = c.emoji; card.querySelector('b').textContent = c.name; card.querySelector('.cause').textContent = c.cause;
+    const acnc = card.querySelector('.meta a'); acnc.href = c.acnc; card.querySelector('.meta span').textContent = `ABN ${c.abn}`;
+    card.querySelector('.act').appendChild(charityLink(c, 'Donate ↗'));
+    grid.appendChild(card);
+  });
+  drawDonationTotals();
+}
+
+// The coffee jar: an ink-sketch penny jar that fills toward the current goal, from the real Open Collective total only.
+function jarSVG(frac, over){
+  const fillTop = 146 - 104 * frac, coin = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="3.4" fill="#ffc83d" stroke="#000" stroke-width="1.5"/>`;
+  let coins = '';
+  for (let y = 142, row = 0; y > fillTop - 2; y -= 8, row++) for (let x = 30 + (row % 2) * 7; x <= 90; x += 14) coins += coin(x, y);
+  // over budget: coins pile on the lid and spill down the side
+  const spill = over ? [[40, 20], [54, 18], [68, 19], [82, 21], [47, 13], [61, 11], [75, 13], [104, 30], [108, 44], [111, 140], [99, 151], [113, 152]].map(([x, y]) => coin(x, y)).join('')
+    + '<text x="12" y="16" font-size="14" fill="#ffc83d">✦</text><text x="100" y="12" font-size="11" fill="#ffc83d">✦</text>' : '';
+  return `<svg viewBox="0 0 120 160" aria-hidden="true"><defs><clipPath id="jarClip"><path d="M26 40 Q20 46 20 58 L20 136 Q20 148 32 148 L88 148 Q100 148 100 136 L100 58 Q100 46 94 40 Z"/></clipPath></defs>
+    ${frac > 0 ? `<g clip-path="url(#jarClip)"><rect x="0" y="${fillTop}" width="120" height="${160 - fillTop}" fill="#b98a1f"/>${coins}</g>` : ''}
+    <path d="M26 40 Q20 46 20 58 L20 136 Q20 148 32 148 L88 148 Q100 148 100 136 L100 58 Q100 46 94 40" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="22" y="24" width="76" height="16" rx="3" fill="#2a2d3a" stroke="#fff" stroke-width="4"/><rect x="48" y="27" width="24" height="5" rx="2" fill="#000"/>
+    <path d="M30 66 L30 120" stroke="rgba(255,255,255,.35)" stroke-width="5" stroke-linecap="round"/>${spill}</svg>`;
+}
+// A receipt link and a photo or video of the goal being done, when the dev has added them.
+function proofRow(g){
+  if (!isSet(g.receipt) && !isSet(g.proof)) return null;
+  const row = document.createElement('div'); row.className = 'gl-proof';
+  if (isSet(g.receipt)){ const a = document.createElement('a'); a.href = g.receipt; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '🧾 Receipt ↗'; row.appendChild(a); }
+  if (isSet(g.proof)){
+    const src = g.proof, path = src.split(/[?#]/)[0].toLowerCase();
+    if (/\.(jpe?g|png|webp|gif|avif)$/.test(path)){ const a = document.createElement('a'), img = document.createElement('img'); a.href = src; a.target = '_blank'; a.rel = 'noopener'; img.src = src; img.alt = `Proof: ${g.label}`; img.loading = 'lazy'; a.appendChild(img); row.appendChild(a); }
+    else if (/\.(mp4|webm|mov)$/.test(path)){ const v = document.createElement('video'); v.src = src; v.controls = true; v.preload = 'metadata'; v.playsInline = true; row.appendChild(v); }
+    else { const a = document.createElement('a'); a.href = src; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '🎬 Watch ↗'; row.appendChild(a); }
+  }
+  return row;
+}
+let coffeeTotal = null;
+async function drawCoffee(){
+  const show = isSet(COFFEE.url) && isSet(COFFEE.slug);
+  $('#coffeeSec').hidden = !show; if (!show) return;
+  $('#coffeeBtn').href = COFFEE.url;
+  const split = $('#splitNote'); split.hidden = !SPLIT_MODE;
+  if (SPLIT_MODE){ split.className = 'dnote split-note'; split.innerHTML = 'Half of every coffee goes to the charity you pick; payment and platform fees come out of my half. <a target="_blank" rel="noopener">See the public ledger ↗</a>'; split.querySelector('a').href = COFFEE.url.replace(/\/$/, '') + '/transactions'; }
+  if (coffeeTotal === null) coffeeTotal = (await readTotal({type: 'opencollective', slug: COFFEE.slug})) || false;
+  const t = coffeeTotal || null, goals = COFFEE.goals, cc = COFFEE.currency, money = n => fmtMoney(n, cc);
+  const totalGoal = goals.reduce((a, g) => a + g.amount, 0);
+  // Which goal is being filled right now, and how far along it is.
+  const raised = t && t.currency === cc ? t.amount : null;
+  let start = 0, cur = goals[0], frac = 0;
+  if (raised != null){ cur = goals[goals.length - 1]; for (const g of goals){ cur = g; if (raised < start + g.amount) break; start += g.amount; } frac = Math.max(0, Math.min(1, (raised - start) / cur.amount)); }
+  const over = raised != null && raised > totalGoal, allDone = raised != null && raised >= totalGoal;
+  $('#jar').innerHTML = jarSVG(allDone ? 1 : frac, over);
+  $('#jar').setAttribute('aria-label', raised == null ? 'Penny jar' : allDone ? 'Penny jar, full' : `Penny jar ${Math.round(frac * 100)}% full`);
+  $('#jarGoal').textContent = allDone ? '🎉 Every goal reached!' : `${cur.emoji} Goal: ${cur.label}`;
+  let status = '';
+  if (!t) status = 'The live total is unavailable right now.';
+  else if (raised == null) status = `${fmtMoney(t.amount, t.currency)} received (the goals are in ${cc}).`;
+  else if (SPLIT_MODE) status = 'Coffee money received, before the 50/50 split.';
+  $('#jarAmt').textContent = status; $('#jarAmt').hidden = !status;
+  const ul = $('#jarGoals'); ul.innerHTML = '';
+  goals.forEach((g, i) => {
+    const before = goals.slice(0, i).reduce((a, x) => a + x.amount, 0), got = raised == null ? null : Math.max(0, Math.min(g.amount, raised - before)), done = got != null && got >= g.amount;
+    const li = document.createElement('li'), top = document.createElement('div'), name = document.createElement('span'), amt = document.createElement('span'), bar = document.createElement('div');
+    top.className = 'gl-top'; amt.className = 'gl-amt'; bar.className = 'gl-bar';
+    name.textContent = `${done ? '✅' : g.emoji} ${g.label}`;
+    amt.textContent = got == null ? money(g.amount) : `${money(got)} of ${money(g.amount)}`;
+    bar.innerHTML = '<i></i>'; bar.firstChild.style.width = `${got == null ? 0 : Math.round(got / g.amount * 100)}%`;
+    top.append(name, amt); li.append(top, bar);
+    const proof = proofRow(g); if (proof) li.appendChild(proof);
+    ul.appendChild(li);
+  });
+  const ov = $('#jarOver'); ov.hidden = !over;
+  if (over){ ov.textContent = `🎉 Over budget by ${money(raised - totalGoal)}!`; if (COFFEE.overBudgetNote){ const s = document.createElement('span'); s.textContent = COFFEE.overBudgetNote; ov.appendChild(s); } }
+}
+
+// 🪙 Penny Dropper: a little Plinko board, one slot per charity. Purely for fun; no money involved.
+const plinko = (() => {
+  const cv = $('#plinko'), W = 320, H = 360, R = 7, PEG = 4, SLOT_Y = 300, slots = CHARITIES.length, sw = W / slots;
+  const pegs = []; for (let r = 0; r < 7; r++){ const odd = r % 2, n = odd ? 7 : 8; for (let i = 0; i < n; i++) pegs.push({x: (odd ? 40 : 20) + 40 * i, y: 56 + 34 * r, lit: 0}); }
+  let ctx = null, ball = null, landed = -1, raf = 0, lastPing = 0;
+  function size(){ const d = Math.min(devicePixelRatio || 1, 2); cv.width = W * d; cv.height = H * d; ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); }
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < slots; i++){
+      if (i === landed){ ctx.fillStyle = 'rgba(255,200,61,.3)'; ctx.fillRect(i * sw, SLOT_Y, sw, H - SLOT_Y); }
+      ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(CHARITIES[i].emoji, i * sw + sw / 2, H - 26);
+    }
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+    for (let k = 1; k < slots; k++){ ctx.beginPath(); ctx.moveTo(k * sw, SLOT_Y); ctx.lineTo(k * sw, H); ctx.stroke(); }
+    for (const p of pegs){ ctx.beginPath(); ctx.arc(p.x, p.y, PEG + p.lit * 2, 0, Math.PI * 2); ctx.fillStyle = p.lit > 0 ? '#ffc83d' : '#fff'; ctx.fill(); p.lit = Math.max(0, p.lit - .08); }
+    if (ball){ ctx.beginPath(); ctx.arc(ball.x, ball.y, R, 0, Math.PI * 2); ctx.fillStyle = '#ffc83d'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#7a5a00'; ctx.font = '700 9px sans-serif'; ctx.fillText('¢', ball.x, ball.y + 1); }
+  }
+  function step(){
+    const b = ball; b.vy += .22; b.vx *= .995; b.x += b.vx; b.y += b.vy;
+    if (b.x < R){ b.x = R; b.vx = Math.abs(b.vx) * .6; } if (b.x > W - R){ b.x = W - R; b.vx = -Math.abs(b.vx) * .6; }
+    for (const p of pegs){
+      const dx = b.x - p.x, dy = b.y - p.y, d = Math.hypot(dx, dy);
+      if (d < R + PEG && d > 0){
+        const nx = dx / d, ny = dy / d, dot = b.vx * nx + b.vy * ny;
+        b.x = p.x + nx * (R + PEG); b.y = p.y + ny * (R + PEG);
+        if (dot < 0){ b.vx -= 1.5 * dot * nx; b.vy -= 1.5 * dot * ny; }
+        b.vx += (Math.random() - .5) * .8; p.lit = 1;
+        if (performance.now() - lastPing > 70){ lastPing = performance.now(); A.sfx.select(); }
+      }
+    }
+    if (b.y > SLOT_Y - R){   // dividers between the slots
+      for (let k = 1; k < slots; k++){ const x = k * sw; if (Math.abs(b.x - x) < R){ b.x = x + Math.sign(b.x - x || 1) * R; b.vx = -b.vx * .5; } }
+    }
+    if (b.y >= H - 40){ b.y = H - 40; return true; }
+    return false;
+  }
+  function loop(){ const done = step() || step(); draw(); if (done){ finish(); return; } raf = requestAnimationFrame(loop); }
+  function finish(){
+    landed = Math.max(0, Math.min(slots - 1, Math.floor(ball.x / sw))); draw();
+    A.sfx.twinkle(); $('#dropBtn').disabled = false;
+    const c = CHARITIES[landed], res = $('#pResult'); res.innerHTML = '';
+    const line = document.createElement('div'); line.append('The penny picked ', Object.assign(document.createElement('b'), {textContent: `${c.emoji} ${c.name}`}), '!');
+    res.append(line, charityLink(c, 'Donate to them ↗'));
+    document.querySelectorAll('#donGrid .charity').forEach(el => el.classList.toggle('picked', +el.dataset.i === landed));
+    const card = document.querySelector(`#donGrid [data-i="${landed}"]`); if (card) card.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+  }
+  return {
+    reset(){ size(); landed = -1; ball = null; draw(); },
+    drop(){ if (ball && landed < 0) return; cancelAnimationFrame(raf); landed = -1; $('#pResult').textContent = '';
+      document.querySelectorAll('#donGrid .charity').forEach(el => el.classList.remove('picked'));
+      ball = {x: W / 2 + (Math.random() - .5) * 40, y: 16, vx: (Math.random() - .5) * 1.2, vy: 0}; $('#dropBtn').disabled = true; A.sfx.whoosh(); loop(); },
+    stop(){ cancelAnimationFrame(raf); if (ball && landed < 0){ ball = null; $('#dropBtn').disabled = false; } }
+  };
+})();
+
+async function openDonate(toFund){
+  A.init(); drawCharities(); plinko.reset(); $('#pResult').textContent = ''; $('#dropBtn').disabled = false;
+  $('#donate').hidden = false; $('#donClose').focus();
+  loadCharityTotals();
+  await drawCoffee();
+  if (toFund === true && !$('#coffeeSec').hidden) $('#coffeeSec').scrollIntoView({block: 'start', behavior: 'smooth'});
+}
+function closeDonate(){ plinko.stop(); $('#donate').hidden = true; $('#donBtn').focus(); }
+$('#donBtn').onclick = () => openDonate();
+// The holiday-fund chip only appears once the dev's Open Collective link is filled in.
+$('#fundBtn').hidden = !(isSet(COFFEE.url) && isSet(COFFEE.slug));
+$('#fundBtn').onclick = () => openDonate(true);
+$('#donClose').onclick = closeDonate;
+$('#donate').addEventListener('click', e => { if (e.target === $('#donate')) closeDonate(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#donate').hidden) closeDonate(); });
+$('#dropBtn').onclick = () => plinko.drop();
+loadCharityTotals();   // fills the header chip's total once real numbers are configured (no network calls until then)
 
 setCamSide('w');
 function start(data){
