@@ -207,7 +207,24 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .m-actions{display:flex;gap:10px;flex-wrap:wrap}
 .m-actions .btn{font-size:18px;padding:14px}
 .rules{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
-#promo{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(8,5,18,.55)}
+#promo,#prof{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(8,5,18,.55)}
+.fighter{display:flex;align-items:center;gap:12px}
+.crest{width:44px;height:44px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:34px;line-height:1;background:var(--night);border:2px solid var(--c,var(--gold));color:var(--c,var(--gold))}
+.fmeta{flex:1;min-width:0}
+.fname{font-family:var(--display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frank{font-size:12px;color:var(--muted)}
+.frank b{color:var(--gold);font-variant-numeric:tabular-nums}
+.profcard{width:min(360px,calc(100vw - 32px));align-items:stretch}
+.profcard input{background:var(--night);border:1px solid var(--line);padding:10px;font-weight:700}
+.profcard .opts{justify-content:center}
+.profcard .opts button[aria-pressed="true"]{background:var(--gold)}
+.swatches{display:flex;gap:8px;justify-content:center}
+.swatches button{width:34px;height:34px;border:2px solid #000;cursor:pointer;border-radius:50%}
+.swatches button[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px}
+.scouter{font:700 15px/1.5 ui-monospace,Consolas,monospace;color:#7dff8a;background:rgba(10,30,14,.92);border:2px solid #7dff8a;box-shadow:inset 0 0 18px rgba(125,255,138,.25);padding:10px 12px;text-align:left;text-shadow:0 0 6px rgba(125,255,138,.7)}
+.scouter .big{font-size:26px;display:block}
+.scouter .rk{color:#ffe36b}
+.pl .pw{font-size:11px;color:var(--gold);margin-left:auto}
 .pcard{background:var(--night);border:3px solid var(--gold);padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center}
 .pcard .opts{display:flex;gap:8px}
 .pcard button{width:68px;height:68px;background:#ead9b5;border:2px solid #000;cursor:pointer;font-family:var(--chess);font-size:52px;line-height:1;display:grid;place-items:center}
@@ -249,6 +266,11 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   <main>
     <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
     <aside class="panel">
+      <section class="card fighter" id="fighter">
+        <div class="crest" id="fCrest"></div>
+        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b></div></div>
+        <button class="chip" id="fEdit" type="button">Edit</button>
+      </section>
       <section class="card status" aria-live="polite">
         <div class="turn-chip" id="turnChip"></div>
         <div><div class="eyebrow">Move <span id="moveNo">1</span></div><div class="status-text" id="statusText">White to move</div></div>
@@ -258,6 +280,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
           <div class="seg" id="modeSeg"><button id="mCpu" data-mode="cpu" aria-pressed="true">CPU</button><button id="mPvp" data-mode="pvp" aria-pressed="false">Same screen</button><button id="mOn" data-mode="online" aria-pressed="false">Online friend</button></div></div>
         <div class="field" id="sideField"><span class="label">You play</span>
           <div class="seg" id="sideSeg"><button id="sW" data-side="w" aria-pressed="true">White</button><button id="sB" data-side="b" aria-pressed="false">Black</button></div></div>
+        <div class="field" id="flipField"><span class="label">Board view</span>
+          <div class="seg" id="flipSeg"><button data-flip="on" aria-pressed="false">Auto-flip</button><button data-flip="off" aria-pressed="true">Fixed</button></div></div>
         <div class="field" id="lvlField"><span class="label">CPU level</span>
           <div class="seg" id="lvlSeg"><button id="l0" data-lvl="0" aria-pressed="false">Rookie</button><button id="l1" data-lvl="1" aria-pressed="true">Rival</button><button id="l2" data-lvl="2" aria-pressed="false">Final Boss</button></div></div>
         <div class="field" id="tcField"><label class="label" for="tcSel">Time control</label>
@@ -301,11 +325,19 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 
 <canvas id="particles"></canvas>
 <div id="fx"><div id="dim"></div><div id="vignette"></div><div id="scope"><div class="ring"></div><div class="dot"></div><div class="lock">LOCK ON</div></div><div class="lb" id="lbTop"></div><div class="lb" id="lbBot"></div><div class="hazard" id="hzTop"><span>WARNING</span></div><div class="hazard" id="hzBot"><span>WARNING</span></div><div id="flash"></div></div>
+<div id="prof" hidden><div class="pcard profcard">
+  <div class="label">Your fighter</div>
+  <input id="pName" maxlength="16" placeholder="Nameless Challenger" aria-label="Fighter name" autocomplete="off">
+  <div class="label">Crest</div><div class="opts" id="pCrests"></div>
+  <div class="label">Colour</div><div class="swatches" id="pColors"></div>
+  <div class="m-actions"><button class="btn primary" id="pSave" type="button">Save</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
+</div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
 <div id="modal">
   <div class="mcard">
     <div class="m-jp" id="mJp">決戦</div>
     <div class="m-title" id="mTitle">A duel of kings awaits</div>
+    <div class="scouter" id="mScouter" hidden></div>
     <div class="m-sub" id="mSub">A 3D board, a cut-in for every capture, an alarm for every check, and a shattering king at checkmate. Play the CPU, a friend on this screen, or a friend online. All music and sound are synthesized live in your browser.</div>
     <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button></div>
   </div>
@@ -804,6 +836,16 @@ function shatter(pos, color, n = 26, power = 1){
 }
 let camShake = 0, orbit = null;
 function camPunch(amount = 7, ms = 600){ return tween(ms, k => { camera.fov = baseFov - amount * (1 - k) * (1 - k); camera.updateProjectionMatrix(); }); }
+let swinging = null;
+function swingTo(side){
+  if (RM || orbit || !controls.enabled){ setCamSide(side); return; }
+  const t = controls.target, p = camera.position.clone().sub(t), r = Math.hypot(p.x, p.z), y = p.y;
+  const a0 = Math.atan2(p.z, p.x), want = side === 'w' ? Math.PI / 2 : -Math.PI / 2;
+  let da = want - a0; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(Math.abs(da) - Math.PI) < .01) da = Math.PI;   // always turn the same way
+  const id = swinging = {};
+  labels.forEach(l => { l.rotation.z = side === 'w' ? 0 : Math.PI; });
+  return tween(700, k => { if (swinging !== id) return; const a = a0 + da * easeIO(k); camera.position.set(t.x + Math.cos(a) * r, t.y + y, t.z + Math.sin(a) * r); camera.lookAt(t); });
+}
 function setCamSide(side){
   orbit = null; controls.enabled = true;
   const z = side === 'w' ? 1 : -1;
@@ -1578,6 +1620,7 @@ function panel(){
   log.innerHTML = hist.map((m, i) => `<li><span class="n">${i % 2 ? '' : (i/2 + 1) + '.'}</span><span class="san">${m.san}</span>${m.captured ? `<span class="atk">${m.flags.includes('e') ? 'En passant!' : m.captured === 'q' ? SP_TITLE[m.piece][0] : ATK[m.piece].en}</span>` : ''}</li>`).join('') || '<li class="note">No moves yet. White opens.</li>';
   log.scrollTop = log.scrollHeight;
   $('#lvlField').hidden = mode !== 'cpu';
+  $('#flipField').hidden = mode !== 'pvp';
   $('#sideField').hidden = mode === 'pvp' || (mode === 'online' && !!net.code);
   $('#onlineField').hidden = mode !== 'online';
   $('#tcField').hidden = mode === 'cpu' || (mode === 'online' && !!net.code);
@@ -2420,7 +2463,7 @@ let ended = null;     // {type: 'resign' | 'draw' | 'abandon', winner: 'w' | 'b'
 const isOver = () => game.game_over() || !!flagged || !!ended;
 const tcOn = () => clock.base > 0 && mode !== 'cpu';
 const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
-function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; drawClocks(); }
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined'){ styleBonus = []; ratedDone = false; } drawClocks(); }
 function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
 function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
 const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
@@ -2529,6 +2572,7 @@ async function commit(input, remote, remoteClock){
     if (flagged || ended) return;
     mv = game.move(input);
     if (!mv) return;
+    noteStyle(mv);
     if (tcOn()){
       clockPause();
       if (remote && remoteClock){ clock.w = remoteClock.w; clock.b = remoteClock.b; }
@@ -2562,6 +2606,7 @@ async function commit(input, remote, remoteClock){
   }
   if (!mv) return;
   saveGame();
+  if (mode === 'pvp' && autoFlip && !isOver() && orientation !== game.turn()){ orientation = game.turn(); swingTo(orientation); }
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
   if (premoves.length && canMoveNow()){ tryPremove(); return; }
   // A piece picked during the opponent's turn (purple dots, no destination yet) becomes a normal selection now,
@@ -3160,7 +3205,8 @@ function wireConn(conn){
     const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
+    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0} : null;
+    if (net.ref) net.ref.receive({pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
   });
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
@@ -3260,8 +3306,10 @@ async function drawPlayers(){
     const id = d[c];
     if (id && ps[id]){ const img = document.createElement('img'); img.src = ps[id].avatarUrl; img.alt = ''; row.appendChild(img); }
     const nm = document.createElement('span');
-    nm.textContent = id ? ((ps[id] && ps[id].name) || (id === net.myId ? 'You' : 'Your friend')) : 'Waiting for a player…';
+    const card = d['p' + c];
+    nm.textContent = id ? ((card && card.name) || (ps[id] && ps[id].name) || (id === net.myId ? 'You' : 'Your friend')) : 'Waiting for a player…';
     row.appendChild(nm);
+    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `${rankOf(card.power)} · ${Number(card.power).toLocaleString()}`; row.appendChild(pw); }
     if (id && id === net.myId){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; row.appendChild(y); }
     box.appendChild(row);
   }
@@ -3287,6 +3335,7 @@ function onRemote(snap){
     bigText(en, jp, {hold: 1600, size: .55, color: 'var(--gold)', sub: side ? `YOU PLAY ${side} · ${side === 'WHITE' ? 'YOU MOVE FIRST' : 'WHITE MOVES FIRST'}` : 'YOU ARE WATCHING'});
     note(net.kind === 'p2p' ? 'Your friend is here! Keep this tab open while you play.' : 'Your friend is here!');
   }
+  if (net.my && (!d['p' + net.my] || d['p' + net.my].power !== profile.power || d['p' + net.my].name !== fighterName())) shareProfile();
   drawPlayers();
   const tc = d.tc || {base: 0, inc: 0};
   if (tc.base !== clock.base || tc.inc !== clock.inc){ clockReset(tc); if (d.clock){ clock.w = d.clock.w; clock.b = d.clock.b; } }
@@ -3359,7 +3408,16 @@ $('#sideSeg').addEventListener('click', e => { const b = e.target.closest('butto
 $('#tcSel').addEventListener('change', () => { if (busy) return; if (mode === 'pvp') newGame(); else if (mode === 'online' && !net.code) note('Your friend will play with the time control you pick here when you create the game.'); });
 $('#lvlSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; level = +b.dataset.lvl; seg('lvlSeg', 'lvl', level); });
 $('#newBtn').onclick = () => { if (!busy){ A.init(); started = true; hideModal(); newGame(); } };
-$('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; setCamSide(orientation); };
+$('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; swingTo(orientation); };
+// Same screen: optionally swing the board round after every move so it always faces the player to move.
+let autoFlip = false; try { autoFlip = localStorage.getItem('kessen-autoflip') === 'on'; } catch(e){}
+seg('flipSeg', 'flip', autoFlip ? 'on' : 'off');
+$('#flipSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  autoFlip = b.dataset.flip === 'on'; seg('flipSeg', 'flip', b.dataset.flip);
+  try { localStorage.setItem('kessen-autoflip', autoFlip ? 'on' : 'off'); } catch(err){}
+  if (autoFlip && mode === 'pvp' && orientation !== game.turn()){ orientation = game.turn(); swingTo(orientation); }
+});
 $('#undoBtn').onclick = () => {
   if (busy || mode === 'online' || flagged || ended || !game.history().length) return;
   game.undo(); if (mode === 'cpu' && game.turn() !== playerColor) game.undo();
@@ -3413,7 +3471,7 @@ styleSel.addEventListener('change', () => {
   render(true);
 });
 
-function hideModal(){ $('#modal').hidden = true; clearInterval(contTimer); }
+function hideModal(){ $('#modal').hidden = true; $('#mScouter').hidden = true; clearInterval(contTimer); }
 // Online: change the time control and who plays which side before the rematch starts.
 function showRules(){
   clearInterval(contTimer);
@@ -3431,6 +3489,7 @@ function showRules(){
 }
 function showEnd(title, sub, jp){
   $('#mJp').textContent = jp; $('#mTitle').textContent = title; $('#mSub').textContent = sub;
+  showScouter(isOver() ? rateGame() : null);
   const rules = mode === 'online' && net.my ? '<button class="btn" id="mRules">Change rules</button>' : '';
   $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>`;
   if ($('#mRules')) $('#mRules').onclick = showRules;
@@ -3438,6 +3497,76 @@ function showEnd(title, sub, jp){
   $('#mLook').onclick = () => { hideModal(); clearEndFx(); };
   $('#mRe').disabled = mode === 'online' && !net.my;
   $('#modal').hidden = false; $('#mRe').focus();
+}
+/* ---- Fighter profile (this device) and the 戦闘力 Power Level ---- */
+const CRESTS = ['k', 'q', 'r', 'b', 'n', 'p'], CREST_COLORS = ['#ffc83d', '#ff2e4d', '#3fe0ff', '#b06cff', '#7dff8a'];
+const RANKS = [[0, 'Background Extra'], [300, 'Comic Relief'], [600, 'Side Character'], [900, 'Mysterious Transfer Student'], [1300, 'The Rival'], [1800, 'Main Character'], [2500, 'Final Boss'], [4000, 'Plot Armor'], [9001, "IT'S OVER 9000!!"]];
+const rankOf = p => RANKS.filter(([min]) => p >= min).pop()[1];
+const PROFILE_KEY = 'kessen-profile';
+let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0};
+try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch(e){}
+const fighterName = () => profile.name || 'Nameless Challenger';
+function saveProfile(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch(e){} drawFighter(); shareProfile(); }
+function drawFighter(){
+  $('#fCrest').textContent = GLYPH[profile.crest] + VS; $('#fCrest').style.setProperty('--c', profile.color);
+  $('#fName').textContent = fighterName(); $('#fRank').textContent = rankOf(profile.power); $('#fPower').textContent = profile.power.toLocaleString();
+}
+// what your friend sees online
+const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power});
+function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
+$('#fEdit').onclick = () => {
+  let crest = profile.crest, color = profile.color;
+  $('#pName').value = profile.name;
+  $('#pCrests').innerHTML = CRESTS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === crest}" aria-label="${NAME[c]}"><span class="gw">${GLYPH[c]}${VS}</span></button>`).join('');
+  $('#pColors').innerHTML = CREST_COLORS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === color}" style="background:${c}" aria-label="Colour"></button>`).join('');
+  $('#pCrests').onclick = e => { const b = e.target.closest('button'); if (!b) return; crest = b.dataset.c; $('#pCrests').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
+  $('#pColors').onclick = e => { const b = e.target.closest('button'); if (!b) return; color = b.dataset.c; $('#pColors').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
+  $('#pSave').onclick = () => { profile.name = $('#pName').value.trim().slice(0, 16); profile.crest = crest; profile.color = color; saveProfile(); $('#prof').hidden = true; };
+  $('#pCancel').onclick = () => { $('#prof').hidden = true; };
+  $('#prof').hidden = false; $('#pName').focus();
+};
+drawFighter();
+// Style bonuses earned during a rated game (vs CPU or online), and the result's swing.
+let styleBonus = [], ratedDone = false, lastRating = null;
+function noteStyle(mv){
+  const me = myColor(); if (!me || mv.color !== me) return;
+  if (mv.flags.includes('e')) styleBonus.push(['Baguette Bonus (en passant)', 50]);
+  if (/[kq]/.test(mv.flags)) styleBonus.push(['Six-Pack Bonus (castled)', 5]);
+  if (mv.promotion && mv.promotion !== 'q') styleBonus.push(['...Really? Bonus (underpromotion)', 25]);
+  if (mv.captured === 'q') styleBonus.push(['Queen Snatcher', 30]);
+  if (game.in_check() && checkers().length > 1) styleBonus.push(['Double Trouble (double check)', 40]);
+  if (game.in_checkmate() && (mv.piece === 'p' || mv.piece === 'k')) styleBonus.push([`Humiliation (mate with a ${NAME[mv.piece].toLowerCase()})`, 100]);
+}
+function rateGame(){
+  const me = myColor();
+  if (ratedDone || !me || !isOver()) return null;
+  ratedDone = true;
+  let winner = null;
+  if (ended) winner = ended.winner;
+  else if (flagged) winner = timeoutDraw ? null : (flagged === 'w' ? 'b' : 'w');
+  else if (game.in_checkmate()) winner = game.turn() === 'w' ? 'b' : 'w';
+  const out = winner === null ? 'draw' : winner === me ? 'win' : 'loss';
+  const table = mode === 'cpu' ? {win: [40, 90, 200][level], loss: [-60, -40, -20][level], draw: [10, 25, 60][level]} : {win: 150, loss: -60, draw: 20};
+  const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]], ...styleBonus];
+  if (ended && ended.type === 'resign' && winner !== me) lines.push(['White Flag Tax', -10]);
+  if (out === 'draw' && game.in_stalemate()) lines.push(['Tea Party (stalemate)', 20]);
+  if (out === 'draw' && game.in_threefold_repetition()) lines.push(['Déjà Vu Tax', -5]);
+  const before = profile.power, delta = lines.reduce((a, l) => a + l[1], 0);
+  profile.power = Math.max(0, before + delta); profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
+  saveProfile();
+  return lastRating = {before, after: profile.power, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
+}
+// The scouter readout on the end screen: lists the bonuses and counts the number up.
+function showScouter(r){
+  const el = $('#mScouter'); if (!r){ el.hidden = true; return; }
+  const sign = n => (n >= 0 ? '+' : '') + n;
+  el.innerHTML = `戦闘力 POWER LEVEL<span class="big" id="scN">${r.before.toLocaleString()}</span>` + r.lines.map(([t, n]) => `${t} ${sign(n)}`).join('<br>') +
+    (r.rankUp ? `<br><span class="rk">RANK UP! ${rankOf(r.after).toUpperCase()}</span>` : '');
+  el.hidden = false; A.sfx.beep();
+  const t0 = performance.now(), n = $('#scN');
+  const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1200); n.textContent = Math.round(r.before + (r.after - r.before) * k).toLocaleString(); if (k < 1) requestAnimationFrame(tick); else { n.textContent = r.after.toLocaleString(); if (r.rankUp) A.sfx.promote(); } };
+  requestAnimationFrame(tick);
+  if (r.over9000){ setTimeout(() => { A.sfx.impact(1.2); flash('#7dff8a', 500, .8); shake(1.2, 600); bigText("IT'S OVER 9000!!", '九千超え', {hold: 1600, size: .6, color: '#7dff8a'}); }, 1300); }
 }
 /* ---- Save and resume: a CPU or same-screen game survives a reload ---- */
 const SAVE_KEY = 'kessen-save';
