@@ -296,6 +296,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
           <span class="label">Online duel</span>
           <div id="onIdle" class="field">
             <button class="btn primary" id="createBtn">Create game</button>
+            <button class="btn" id="qmBtn" type="button">Random opponent</button>
             <form class="joinrow" id="joinForm"><input id="joinCode" maxlength="6" placeholder="Code" autocomplete="off" aria-label="Game code"><button class="btn" type="submit" style="flex:none">Join</button></form>
           </div>
           <div id="onActive" class="field" hidden>
@@ -1603,7 +1604,7 @@ function panel(){
   else if (mode === 'online'){
     if (!net.code) s = 'Create or join an online game';
     else if (!net.my) s = `Watching. ${side} to move`;
-    else if (!(net.data && net.data.w && net.data.b)) s = `Waiting for your friend to join with code ${net.code}`;
+    else if (!(net.data && net.data.w && net.data.b)) s = /^QMATC/.test(net.code) ? 'Searching for a random opponent…' : `Waiting for your friend to join with code ${net.code}`;
     else s = (t === net.my ? 'Your move' : "Friend's move") + (game.in_check() ? '. Check!' : '');
   }
   else if (game.in_check()) s = `${side} is in check!`;
@@ -3185,7 +3186,7 @@ async function reconnectGuest(){
     await new Promise((res, rej) => { conn.on('open', res); conn.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 8000); });
     if (net.code !== code || net.peer !== peer){ conn.close(); return; }
     const old = net.conn; wireConn(conn); if (old && old !== conn){ try { old.close(); } catch(e){} }
-    lastHeard = Date.now(); conn.send({t: 'hello'}); p2pSend();
+    lastHeard = Date.now(); conn.send({t: 'hello', token: clientToken}); p2pSend();
   } catch(e){ /* the next heartbeat tries again */ }
   finally { reconnecting = false; }
 }
@@ -3195,6 +3196,7 @@ function wireConn(conn){
   conn.on('data', m => {
     lastHeard = Date.now();
     if (m && m.t === 'hello' && net.myId === 'host' && net.ref){ p2pSend(); return; }
+    if (m && m.t === 'full'){ note('That game already has two players.', true); leaveGame(); return; }
     if (!m || m.t !== 'state' || !m.d || typeof m.d !== 'object') return;
     const d = m.d;
     if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return;
@@ -3211,32 +3213,42 @@ function wireConn(conn){
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
 function dropPeer(){ if (net.peer){ try { net.peer.destroy(); } catch(e){} } net.peer = null; net.conn = null; }
-async function createGame(){
-  if (!net.ready) return;
-  let code = ''; for (let i = 0; i < 6; i++) code += CODE_CH[Math.floor(Math.random() * CODE_CH.length)];
+async function createGame(fixedCode, quiet){
+  if (!net.ready) return false;
+  let code = fixedCode || ''; if (!code) for (let i = 0; i < 6; i++) code += CODE_CH[Math.floor(Math.random() * CODE_CH.length)];
   if (net.kind === 'p2p'){
     note('Opening a room…');
     dropPeer();
     let peer;
     try {
       peer = await new Promise((res, rej) => { const p = new Peer(PEER_PREFIX + code); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); });
-    } catch(e){ note(e && e.type === 'unavailable-id' ? 'That code was taken. Click Create game again.' : 'Could not reach the matchmaking server. Try again in a moment.', true); return; }
+    } catch(e){ if (!quiet) note(e && e.type === 'unavailable-id' ? 'That code was taken. Click Create game again.' : 'Could not reach the matchmaking server. Try again in a moment.', true); return false; }
     net.peer = peer; net.myId = 'host'; linkOk = null;
+    net.guestToken = null;
     peer.on('connection', conn => {
       conn.on('open', () => {
-        const old = net.conn; wireConn(conn); lastHeard = Date.now();
-        if (old && old !== conn){ try { old.close(); } catch(e){} }
-        const d = net.data || {};
-        if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
-        else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
+        // wait for the guest's hello: it carries the token that proves a reconnect is the same friend
+        const bail = setTimeout(() => { try { conn.close(); } catch(e){} }, 8000);
+        const first = m => {
+          if (!m || m.t !== 'hello') return;
+          conn.off('data', first); clearTimeout(bail);
+          if (net.guestToken && m.token !== net.guestToken){ try { conn.send({t: 'full'}); setTimeout(() => conn.close(), 300); } catch(e){} return; }
+          net.guestToken = m.token || 'anon';
+          const old = net.conn; wireConn(conn); lastHeard = Date.now();
+          if (old && old !== conn){ try { old.close(); } catch(e){} }
+          const d = net.data || {};
+          if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
+          else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
+        };
+        conn.on('data', first);
       });
     });
     peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
     const ref = p2pRef();
     attach(code, ref);
     ref.update({pgn: '', n: 0, w: playerColor === 'w' ? 'host' : null, b: playerColor === 'b' ? 'host' : null, at: Date.now(), tc: parseTc($('#tcSel').value), clock: null, flag: null});
-    note('Send your friend the invite link (or the code). Keep this tab open while you play.');
-    return;
+    note(quiet ? 'Waiting for a random opponent… Keep this tab open.' : 'Send your friend the invite link (or the code). Keep this tab open while you play.');
+    return true;
   }
   const ref = net.db.doc('games/' + code);
   try {
@@ -3257,7 +3269,7 @@ async function joinGame(code){
       const conn = peer.connect(PEER_PREFIX + code, {reliable: true});
       await new Promise((res, rej) => { conn.on('open', res); peer.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 15000); });
       const ref = p2pRef();
-      attach(code, ref); wireConn(conn); lastHeard = Date.now(); linkOk = null; conn.send({t: 'hello'});
+      attach(code, ref); wireConn(conn); lastHeard = Date.now(); linkOk = null; conn.send({t: 'hello', token: clientToken});
       note('Connected. Waiting for the game to load…');
     } catch(e){
       dropPeer();
@@ -3324,7 +3336,7 @@ function onRemote(snap){
   const my = d.w === net.myId ? 'w' : d.b === net.myId ? 'b' : null;
   if (my !== net.my){ net.my = my; orientation = my || 'w'; setCamSide(orientation); }
   const seated = !!(d.w && d.b);
-  $('#codeBox').hidden = seated;   // once both players are in, the code is no longer needed
+  $('#codeBox').hidden = seated || /^QMATC/.test(net.code || '');   // once both players are in (or it's a random match), the code isn't needed
   if ((!prev || !prev.w || !prev.b) && seated){
     // Make the arrival impossible to miss on both screens.
     const side = net.my === 'w' ? 'WHITE' : net.my === 'b' ? 'BLACK' : '';
@@ -3377,6 +3389,46 @@ function rematchOnline({sides = 'swap', tc = null} = {}){
   net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null}, tc ? {tc} : {})).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
+/* ---- Random opponent: join someone already waiting in a matchmaking room, or open one and wait ---- */
+const clientToken = Math.random().toString(36).slice(2, 12);
+const QM_SLOTS = 6, qmCode = i => 'QMATC' + i;
+let qmBusy = false;
+async function tryJoinQM(peer, code){
+  const conn = peer.connect(PEER_PREFIX + code, {reliable: true});
+  const ok = await new Promise(res => {
+    let settled = false; const done = v => { if (!settled){ settled = true; clearTimeout(t); peer.off('error', onErr); res(v); } };
+    const t = setTimeout(() => done(false), 4000);
+    const onErr = e => { if (e && e.type === 'peer-unavailable') done(false); };
+    peer.on('error', onErr);
+    conn.on('open', () => conn.send({t: 'hello', token: clientToken}));
+    conn.on('data', m => { if (m && m.t === 'full') done(false); else if (m && m.t === 'state' && m.d && (m.d.w === 'guest' || m.d.b === 'guest')) done(true); });
+    conn.on('close', () => done(false));
+  });
+  if (!ok){ try { conn.close(); } catch(e){} return false; }
+  net.peer = peer; net.myId = 'guest';
+  attach(code, p2pRef()); wireConn(conn); lastHeard = Date.now(); linkOk = null;
+  conn.send({t: 'hello', token: clientToken});   // the first state was used up by the check above: ask for it again
+  return true;
+}
+async function quickMatch(){
+  if (qmBusy) return;
+  if (!net.ready || net.kind !== 'p2p'){ note('Random opponents work on the GitHub Pages version of the game.', true); return; }
+  qmBusy = true; $('#qmBtn').disabled = true;
+  try {
+    note('Looking for a random opponent…');
+    dropPeer();
+    let peer;
+    try { peer = await new Promise((res, rej) => { const p = new Peer(); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); }); }
+    catch(e){ note('Could not reach the matchmaking server. Try again in a moment.', true); return; }
+    for (let i = 0; i < QM_SLOTS; i++){ if (await tryJoinQM(peer, qmCode(i))){ note('Opponent found!'); return; } }
+    try { peer.destroy(); } catch(e){}
+    // nobody waiting: open the first free room on a random side and wait there
+    playerColor = Math.random() < .5 ? 'w' : 'b'; seg('sideSeg', 'side', playerColor);
+    for (let i = 0; i < QM_SLOTS; i++){ if (await createGame(qmCode(i), true)){ $('#codeBox').hidden = true; return; } }
+    note('Matchmaking is busy. Try again in a moment.', true);
+  } finally { qmBusy = false; $('#qmBtn').disabled = false; }
+}
+$('#qmBtn').onclick = () => { A.init(); quickMatch(); };
 $('#joinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); joinGame($('#joinCode').value); });
 $('#leaveBtn').onclick = leaveGame;
 $('#copyCode').onclick = () => {
