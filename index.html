@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028224728">
+<meta name="kessen-build" content="20261028230416">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -1816,9 +1816,26 @@ async function dejavuFx(){
       camShake = Math.max(camShake, .04);
     });
     movers.forEach(x => x.g.position.copy(x.a));
+    // ▶ PLAY: the Initial D chorus kicks in on the credited TV while the pieces keep drifting through the same moves
+    const song = playClip(CLIPS.dejavu);
+    await song.started;
     osd.getAnimations().forEach(a => a.cancel()); osd.textContent = '▶ PLAY'; osdR.textContent = 'AGAIN. AND AGAIN.';
-    say('Déjà vu…', {rate: .75, pitch: .95}); A.sfx.twinkle();
-    await bigText('Déjà vu…', '既視感', {color: 'var(--volt)', hold: 1600, size: .7, rot: -3, sub: 'THREEFOLD REPETITION'});
+    A.sfx.twinkle(); flash('#fff', 250, .5);
+    const title = bigText('DÉJÀ VU!', '既視感', {color: 'var(--volt)', hold: 2200, size: .75, rot: -3, sub: "I'VE JUST BEEN IN THIS PLACE BEFORE"});
+    // eurobeat drift: the repeating pieces slide between their two squares, swinging their tails out on every beat
+    const playing = box => box && box.dataset.voice === 'youtube';
+    if (playing($('#epTv'))){
+      let over = false; const t0 = performance.now();
+      const step = () => {
+        if (over) return;
+        const k = (performance.now() - t0) / 1550, e = (1 - Math.cos(k * Math.PI)) / 2;   // one slide per 1.55 s
+        movers.forEach(x => { x.g.position.lerpVectors(x.a, x.b, e); x.g.rotation.z = Math.sin(k * Math.PI) * .35; });
+        requestAnimationFrame(step);
+      };
+      step();
+      await song.done; over = true;   // the song's timer ends it, so a hidden tab (no animation frames) can't stall here
+      movers.forEach(x => { x.g.position.copy(x.a); x.g.rotation.z = 0; });
+    } else await title;
   } finally { layer.remove(); cv.style.filter = ''; }
 }
 // A PAWN ON THE 7TH RANK: an ominous choir, the pawn sweats, and the whole enemy back rank turns to stare
@@ -1866,36 +1883,43 @@ async function moveFx(mv){
   if (/[kq]/.test(mv.flags)) mini(mv.to, 'CASTLE! 入城');
   else if (mv.piece === 'n') mini(mv.to, 'HYAH!');
 }
-/* ================= EN PASSANT: a beret, a moustache, a baguette, and the word said properly ================= */
-// The voice is Julien Miquel's "How to Pronounce En Passant", played through YouTube's official embed in a small credited
-// TV (never downloaded or copied). Where YouTube cannot load, the browser's French voice says it instead.
-const EP_VIDEO = 'VO-YWOKX5jc', EP_FROM = 12, EP_LEN = 3000;   // 0:12–0:15 of the video
-const yt = {player: null, ready: false, loading: false};
+/* ================= CREDITED YOUTUBE TV: short clips played through YouTube's official embed ================= */
+// Never downloaded or copied: each clip plays in a small TV that names the video and its channel and links to it.
+const CLIPS = {
+  // Julien Miquel, "How to Pronounce En Passant", 0:12–0:15
+  ep: {id: 'VO-YWOKX5jc', from: 12, len: 3000, title: 'How to Pronounce En Passant', channel: 'Julien Miquel'},
+  // avex, "DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】", the chorus
+  dejavu: {id: 'UT7O7FyUbxA', from: 58, len: 6000, title: 'DAVE RODGERS / DEJA VU 【頭文字D/INITIAL D】', channel: 'avex'}
+};
+const yt = {player: null, ready: false, loading: false, state: -1};
 function ytBox(){
   let el = $('#epTv');
   if (!el){
     el = document.createElement('div'); el.id = 'epTv'; el.className = 'eptv';
-    el.innerHTML = `<div class="eptv-screen"><div id="epTvFrame"></div></div>
-      <div class="eptv-meta"><b>How to Pronounce En Passant</b><span>Julien Miquel · YouTube</span>
-      <a href="https://www.youtube.com/watch?v=${EP_VIDEO}" target="_blank" rel="noopener">Watch the full video ↗</a></div>`;
+    el.innerHTML = '<div class="eptv-screen"><div id="epTvFrame"></div></div><div class="eptv-meta"><b></b><span></span><a target="_blank" rel="noopener">Watch the full video ↗</a></div>';
     document.body.appendChild(el);
   }
   return el;
 }
+function ytLabel(clip){
+  const el = ytBox();
+  el.querySelector('b').textContent = clip.title; el.querySelector('span').textContent = `${clip.channel} · YouTube`;
+  el.querySelector('a').href = `https://www.youtube.com/watch?v=${clip.id}`;
+}
 function ytLoad(){
   if (yt.loading || location.protocol === 'file:') return; yt.loading = true;
-  ytBox();
+  ytLabel(CLIPS.ep);
   window.onYouTubeIframeAPIReady = () => {
     try {
-      yt.player = new YT.Player('epTvFrame', {width: 200, height: 113, videoId: EP_VIDEO,
+      yt.player = new YT.Player('epTvFrame', {width: 200, height: 113, videoId: CLIPS.ep.id,
         playerVars: {controls: 0, disablekb: 1, playsinline: 1, rel: 0, modestbranding: 1, fs: 0, iv_load_policy: 3},
-        events: {onReady: () => { yt.ready = true; try { yt.player.cueVideoById({videoId: EP_VIDEO, startSeconds: EP_FROM}); } catch(e){} },
+        events: {onReady: () => { yt.ready = true; try { yt.player.cueVideoById({videoId: CLIPS.ep.id, startSeconds: CLIPS.ep.from}); } catch(e){} },
           onStateChange: e => { yt.state = e.data; (window.__ytStates = window.__ytStates || []).push(e.data); }}});
     } catch(e){}
   };
   const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = () => {}; document.head.appendChild(s);
 }
-// The player loads (paused) as soon as the page is up, so it is ready long before anyone captures en passant.
+// The player loads (paused) as soon as the page is up, so it is ready long before a clip is needed.
 if (document.readyState === 'complete') setTimeout(ytLoad, 1500); else addEventListener('load', () => setTimeout(ytLoad, 1500), {once: true});
 const sfxOnNow = () => $('#sfxBtn').getAttribute('aria-pressed') === 'true';
 let frVoices = [];
@@ -1910,14 +1934,20 @@ function say(text, {rate = .85, pitch = 1.1} = {}){
     speechSynthesis.speak(u);
   } catch(e){}
 }
-// Shows the credited TV and plays the clip. `started` resolves once the word is about to be heard (YouTube playing,
-// or the fallback voice speaking); `done` resolves when the TV has been put away.
-function sayEnPassant(){
-  const fallback = () => say('En passant !', {rate: .7, pitch: 1});
+// Slides the credited TV in and plays the clip. `started` resolves once it is audibly playing (or has given up and run
+// `fallback`, if any); `done` resolves when the TV has been put away.
+function playClip(clip, fallback = () => {}){
   const p = yt.player, box = $('#epTv');
   if (!sfxOnNow() || !yt.ready || !p || !box){ if (sfxOnNow()) fallback(); return {started: Promise.resolve(), done: Promise.resolve()}; }
-  box.classList.add('on');
-  try { p.unMute(); p.setVolume(100); p.seekTo(EP_FROM, true); p.playVideo(); } catch(e){}
+  ytLabel(clip); box.classList.add('on');
+  const kick = () => {
+    try {
+      const cur = p.getVideoData && p.getVideoData().video_id;
+      p.unMute(); p.setVolume(100);
+      if (cur !== clip.id) p.loadVideoById({videoId: clip.id, startSeconds: clip.from}); else { p.seekTo(clip.from, true); p.playVideo(); }
+    } catch(e){}
+  };
+  yt.state = -1; kick();
   let doneRes; const done = new Promise(r => { doneRes = r; });
   const finish = ms => setTimeout(() => { try { p.pauseVideo(); } catch(e){} box.classList.remove('on'); doneRes(); }, ms);
   const started = new Promise(res => {
@@ -1925,13 +1955,15 @@ function sayEnPassant(){
     const check = setInterval(() => {
       let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
       // a late "cue" from the player's start-up can swallow the play request: ask again until it plays
-      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); try { p.seekTo(EP_FROM, true); p.playVideo(); } catch(e){} }
-      if (st === 1 || yt.state === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(EP_LEN + 600); res(); }
-      else if (Date.now() - t0 > 3500){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(1200); res(); }
+      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); kick(); }
+      if (st === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(clip.len + 600); res(); }
+      else if (Date.now() - t0 > 4000){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(800); res(); }
     }, 50);
   });
   return {started, done};
 }
+/* ================= EN PASSANT: a beret, a moustache, a baguette, and the word said properly ================= */
+// The word is Julien Miquel's clip in the credited TV; where YouTube cannot load, the browser's French voice says it.
 const EPM = {
   beretW: toon(0x1b1b2a), beretB: toon(0xc8102e), stem: toon(0x111111),
   stache: {w: new THREE.MeshBasicMaterial({color: 0x2a1608}), b: new THREE.MeshBasicMaterial({color: 0xf6f0e0})},
@@ -1994,7 +2026,7 @@ async function enPassantFx(mv){
     await tween(900, k => { g.rotation.z = Math.sin(k * Math.PI * 4) * .08; });   // smug little shimmy
     g.rotation.z = 0;
     // 3. the victim realises what is about to happen
-    const voice = sayEnPassant();   // the TV slides in now so the clip has time to buffer
+    const voice = playClip(CLIPS.ep, () => say('En passant !', {rate: .7, pitch: 1}));   // the TV slides in now so the clip has time to buffer
     const r0 = fr.eyes.face.rotation.y, r1 = Math.atan2(-d.z, d.x);   // ...then turns to face its victim
     let dr = r1 - r0; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
     tween(350, k => { fr.eyes.face.rotation.y = fr.piv.rotation.y = r0 + dr * easeIO(k); });
