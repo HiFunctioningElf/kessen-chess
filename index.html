@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029012832">
+<meta name="kessen-build" content="20261029013631">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -221,7 +221,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .rules{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
 #promo,#prof{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(8,5,18,.55)}
 .fighter{display:flex;align-items:center;gap:12px}
-.crest{width:44px;height:44px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:34px;line-height:1;background:var(--night);border:2px solid var(--c,var(--gold));color:var(--c,var(--gold))}
+.crest{width:44px;height:44px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:34px;line-height:1;padding-top:.3em;background:var(--night);border:2px solid var(--c,var(--gold));color:var(--c,var(--gold))}
 .fmeta{flex:1;min-width:0}
 .fname{font-family:var(--display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .frank{font-size:12px;color:var(--muted)}
@@ -253,6 +253,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 /* piece tiles (promotion picker and crests) only: Save/Cancel and the colour swatches keep their own sizes */
 .pcard .opts button{width:68px;height:68px;background:#ead9b5;border:2px solid #000;cursor:pointer;font-family:var(--chess);font-size:52px;line-height:1;display:grid;place-items:center}
 .pcard .opts button:hover{background:var(--gold)}
+/* The chess-symbol font draws its pieces about 0.15em above the middle of the line; nudge them down so they sit centred in their boxes. */
+.pcard .opts button > span{display:block;line-height:1;transform:translateY(.15em)}
 .tricolor{position:absolute;inset:0;background:linear-gradient(90deg,#0055a4 0 33.4%,#fff 33.4% 66.6%,#ef4135 66.6%);mix-blend-mode:screen;opacity:0}
 .pastry{position:absolute;top:0;font-size:clamp(26px,4vw,44px);line-height:1;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.5))}
 .eptv{position:fixed;right:max(16px,3vw);top:calc(11vh + 14px);z-index:65;width:min(280px,calc(100vw - 32px));background:#111;border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 #000;
@@ -4192,19 +4194,27 @@ function demo(pos, move){
    Money never passes through Kessen Chess: every button links to a fundraiser page on the charity's own
    platform, and the counter only shows totals that a platform publishes. A link set to 'TODO' shows
    "Coming soon"; a total that can't be read is simply left out. Never put made-up numbers here. */
+// `page` = the Kessen Chess fundraiser page for that charity (its total can be counted);
+// until it exists, the button goes to the charity's own official donation page (`donate`), which has no public total.
 const CHARITIES = [
   {name: 'Australian Conservation Foundation', cause: 'Environment', emoji: '🌏', abn: '22 007 498 482',
-   acnc: 'https://www.acnc.gov.au/charity/charities/d2e1368f-38af-e811-a960-000d3ad24282/profile', page: 'TODO', total: null},
+   acnc: 'https://www.acnc.gov.au/charity/charities/d2e1368f-38af-e811-a960-000d3ad24282/profile',
+   donate: 'https://www.acf.org.au/donate', page: 'TODO', total: null},
   {name: "Starlight Children's Foundation", cause: 'Sick kids', emoji: '⭐', abn: '80 931 522 157',
-   acnc: 'https://www.acnc.gov.au/charity/charities/af96203d-39af-e811-a963-000d3ad24077/profile', page: 'TODO', total: null},
+   acnc: 'https://www.acnc.gov.au/charity/charities/af96203d-39af-e811-a963-000d3ad24077/profile',
+   donate: 'https://www.starlight.org.au/donate/', page: 'TODO', total: null},
   {name: 'Beyond Blue', cause: 'Mental health', emoji: '💙', abn: '87 093 865 840',
-   acnc: 'https://www.acnc.gov.au/charity/charities/8bae377e-38af-e811-a963-000d3ad244fd/profile', page: 'TODO', total: null},
+   acnc: 'https://www.acnc.gov.au/charity/charities/8bae377e-38af-e811-a963-000d3ad244fd/profile',
+   donate: 'https://www.beyondblue.org.au/donate', page: 'TODO', total: null},
   {name: 'Foodbank Queensland', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209',
-   acnc: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile', page: 'TODO', total: null},
+   acnc: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile',
+   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'TODO', total: null},
   {name: 'Craniofacial Australia', cause: 'Craniofacial care', emoji: '🩺', abn: '29 008 155 780',
-   acnc: 'https://www.acnc.gov.au/charity/charities/9f7e79c5-38af-e811-a95e-000d3ad24c60/profile', page: 'TODO', total: null},
+   acnc: 'https://www.acnc.gov.au/charity/charities/9f7e79c5-38af-e811-a95e-000d3ad24c60/profile',
+   donate: 'https://www.givenow.com.au/acmffdonations/donate', page: 'TODO', total: null},
   {name: 'Cancer Council Queensland', cause: 'Cancer', emoji: '🎗️', abn: '48 321 126 727',
-   acnc: 'https://www.acnc.gov.au/charity/charities/0655bad9-39af-e811-a963-000d3ad24077/profile', page: 'TODO', total: null}
+   acnc: 'https://www.acnc.gov.au/charity/charities/0655bad9-39af-e811-a963-000d3ad24077/profile',
+   donate: 'https://donate.cancerqld.org.au/', page: 'TODO', total: null}
 ];
 // `total` says where a page's live total can be read, or null for no number:
 //   {type: 'justgiving', page: '<page short name>'}  needs JUSTGIVING_APP_ID (a free key from developer.justgiving.com)
@@ -4271,14 +4281,17 @@ async function loadCharityTotals(){
 }
 function drawDonationTotals(){
   const {sum, donors} = donTotals;
-  $('#donChipAmt').textContent = sum != null && sum > 0 ? fmtMoney(sum, 'AUD') : '';
-  const el = $('#donRaised'); el.hidden = !(sum != null && sum > 0);
+  // Charity pages only: the developer's holiday fund is never part of this total.
+  $('#donChipAmt').textContent = sum != null ? `${fmtMoney(sum, 'AUD')} donated` : '';
+  $('#donBtn').title = sum != null ? 'Donated to the charities through Kessen Chess fundraiser pages (the developer\'s holiday fund isn\'t included)' : '';
+  const el = $('#donRaised'); el.hidden = sum == null;
   if (!el.hidden) el.textContent = `💝 ${fmtMoney(sum, 'AUD')} raised by ${donors != null ? `${donors.toLocaleString()} Kessen player${donors === 1 ? '' : 's'}` : 'Kessen players'}`;
   CHARITIES.forEach((c, i) => { const t = donTotals.per[i], r = document.querySelector(`#donGrid [data-i="${i}"] .raised`); if (r) { r.hidden = !t; r.textContent = t ? `${fmtMoney(t.amount, t.currency)} raised` : ''; } });
 }
 function charityLink(c, label){
-  if (!isSet(c.page)){ const s = document.createElement('span'); s.className = 'dbtn soon'; s.textContent = 'Coming soon'; return s; }
-  const a = document.createElement('a'); a.className = 'dbtn'; a.href = c.page; a.target = '_blank'; a.rel = 'noopener'; a.textContent = label; return a;
+  const url = isSet(c.page) ? c.page : c.donate;
+  if (!isSet(url)){ const s = document.createElement('span'); s.className = 'dbtn soon'; s.textContent = 'Coming soon'; return s; }
+  const a = document.createElement('a'); a.className = 'dbtn'; a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = label; return a;
 }
 function drawCharities(){
   const grid = $('#donGrid'); grid.innerHTML = '';

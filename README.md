@@ -19,7 +19,7 @@
 
 ## Donations
 
-The 💝 **Donate** button links to fundraiser pages for six registered Australian charities. **Your donation goes straight to the charity. Kessen Chess never handles the money.** Each fundraiser page is set up on the charity's own fundraising platform.
+The 💝 **Donate** button links to fundraiser pages for six registered Australian charities. **Your donation goes straight to the charity. Kessen Chess never handles the money.** Each button goes to a Kessen Chess fundraiser page on the charity's own fundraising platform, or, until that page exists, to the charity's official donation page.
 
 | Charity | Cause | ABN | ACNC register |
 |---|---|---|---|
