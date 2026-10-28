@@ -51,7 +51,7 @@ Totals are cached in the browser for 10 minutes.
 
 ### Developer's holiday fund
 
-The 🏝️ **Developer's holiday fund** links to the developer's Open Collective, where people can shout a coffee. A penny jar fills from the collective's real total toward the goals in order: a $150 Guitar Hero guitar, then a $3,000 AUD family holiday to Tasmania. Past both, it shows how far over budget it is. Each goal can show a receipt and a photo or video once it's done. A `SPLIT_MODE` switch can later send half of every coffee to the charity the supporter picks.
+The 🏝️ **Developer's holiday fund** links to the developer's Open Collective, where people can shout a coffee. A penny jar fills from the collective's real total toward the goals in order: a $250 AUD CRKD Gibson Guitar, then a $3,000 AUD family holiday to Tasmania. Past both, it shows how far over budget it is. Each goal can show a receipt and a photo or video once it's done. A `SPLIT_MODE` switch can later send half of every coffee to the charity the supporter picks.
 
 To set it all up, fill in the `CHARITIES` and `COFFEE` settings at the top of the donations code in `index.html`. Anything left as `TODO` stays hidden or shows "Coming soon".
 
