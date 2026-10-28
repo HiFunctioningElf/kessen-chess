@@ -1518,15 +1518,30 @@ function render(force){
     const pre = preLegal.some(x => x.to === sq);
     m.dot.material.color.set(pre ? 0xb06cff : 0x3fe0ff);
     if (pre) m.dot.visible = true;
-    if (sq === preSel || (premove && (sq === premove.from || sq === premove.to))){ m.hl.visible = true; m.hl.material.color.set(0xb06cff); m.hl.material.opacity = .6; }
+    if (sq === preSel || premoves.some(pm => sq === pm.from || sq === pm.to)){ m.hl.visible = true; m.hl.material.color.set(0xb06cff); m.hl.material.opacity = .6; }
   }
   syncPieces(force);
+  drawPreGhosts();
   const ck = game.in_check() ? kingSq(game.turn()) : null;
   for (const sq in pieceAt){ const g = pieceAt[sq], isCk = sq === ck; g.children.forEach(c => { if (!c.userData.outline) c.material = isCk ? MAT.check : MAT[g.userData.color]; }); }
   checkRing.visible = !!ck; if (ck){ const p = sqPos(ck); checkRing.position.set(p.x, .104, p.z); }
   // lift selected piece
   for (const sq in pieceAt) pieceAt[sq].position.y = BASEY + (sq === selected ? .18 : 0);
   panel();
+}
+let preGhosts = [];
+const preGhostMat = new THREE.MeshBasicMaterial({color: 0xb06cff, transparent: true, opacity: .45, depthWrite: false});
+function drawPreGhosts(){
+  preGhosts.forEach(g => scene.remove(g)); preGhosts = [];
+  if (typeof premoves === 'undefined' || !premoves.length) return;
+  const vg = new Chess(virtualFen()), seen = new Set();
+  for (const pm of premoves.slice().reverse()){
+    if (seen.has(pm.to)) continue; seen.add(pm.to);
+    const p = vg.get(pm.to); if (!p) continue;
+    const gh = makePiece(p.type, p.color);
+    gh.traverse(o => { if (o.isMesh){ o.material = preGhostMat; o.castShadow = false; } else if (o.isLineSegments) o.visible = false; });
+    gh.position.copy(sqPos(pm.to)); scene.add(gh); preGhosts.push(gh);
+  }
 }
 function canMoveNow(){
   if (!started || busy || isOver() || !$('#promo').hidden) return false;
@@ -2548,7 +2563,7 @@ async function commit(input, remote, remoteClock){
   if (!mv) return;
   saveGame();
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
-  if (premove && canMoveNow()){ tryPremove(); return; }
+  if (premoves.length && canMoveNow()){ tryPremove(); return; }
   // A piece picked during the opponent's turn (purple dots, no destination yet) becomes a normal selection now,
   // so its stale premove dots don't linger into your turn.
   if (preSel && canMoveNow()){
@@ -2720,8 +2735,9 @@ $('#slapBtn').onclick = () => {
   slapFx();
 };
 $('#claimBtn').onclick = () => { if (mode === 'online' && net.my && !isOver()) endGame({type: 'abandon', winner: net.my}); };
-/* ---- Premoves: queue one move during the opponent's turn (vs CPU or online); it plays the instant your turn starts ---- */
-let premove = null, preSel = null, preLegal = [];
+/* ---- Premoves: during the opponent's turn (vs CPU or online) queue up to 6 moves; one plays the instant each of your turns starts ---- */
+const MAX_PREMOVES = 6;
+let premoves = [], preSel = null, preLegal = [];
 const myColor = () => mode === 'cpu' ? playerColor : mode === 'online' ? net.my : null;
 let premovesOn = true; try { premovesOn = localStorage.getItem('kessen-premoves') !== 'off'; } catch(e){}
 function canPremove(){
@@ -2731,33 +2747,50 @@ function canPremove(){
   if (mode === 'online' && !(net.data && net.data.w && net.data.b)) return false;
   return game.turn() !== me;
 }
-// Moves this piece could make if it were its side's turn in the current position.
+// The board as it will look after your queued premoves (the opponent's pieces stay where they are).
+function virtualFen(){
+  const me = myColor(); let fen = game.fen();
+  for (const pm of premoves){
+    const f = fen.split(' '); f[1] = me; f[3] = '-';
+    const g = new Chess(); if (!g.load(f.join(' ')) || !g.move(pm)) break;
+    fen = g.fen();
+  }
+  return fen;
+}
+// Moves this piece could make if it were its side's turn, starting from the planned position.
 function premoveTargets(sq, color){
-  const f = game.fen().split(' '); f[1] = color; f[3] = '-';
+  const f = virtualFen().split(' '); f[1] = color; f[3] = '-';
   const g = new Chess(); if (!g.load(f.join(' '))) return [];
   return g.moves({square: sq, verbose: true});
 }
-function clearPremove(){ premove = null; preSel = null; preLegal = []; }
+function clearPremove(){ premoves = []; preSel = null; preLegal = []; }
+function queuePremove(from, to, opts){
+  if (premoves.length >= MAX_PREMOVES){ toast(`Up to ${MAX_PREMOVES} premoves`); return; }
+  premoves.push({from, to, promotion: opts.some(m => m.promotion) ? 'q' : undefined});
+  preSel = null; preLegal = []; A.sfx.select();
+  toast(premoves.length === 1 ? 'Premove set. Right-click or Esc to cancel' : `Premove ${premoves.length} queued`);
+}
 function premoveClick(sq){
   if (!canPremove()){ clearPremove(); render(); return; }
   const me = myColor(), opts = preLegal.filter(m => m.to === sq);
-  if (preSel && opts.length){
-    premove = {from: preSel, to: sq, promotion: opts.some(m => m.promotion) ? 'q' : undefined};
-    preSel = null; preLegal = []; A.sfx.select(); toast('Premove set. Right-click or Esc to cancel'); render(); return;
-  }
-  const p = sq && game.get(sq);
-  if (p && p.color === me && sq !== preSel){ preSel = sq; preLegal = premoveTargets(sq, me); premove = null; A.sfx.select(); }
-  else clearPremove();
+  if (preSel && opts.length){ queuePremove(preSel, sq, opts); render(); return; }
+  const p = sq && new Chess(virtualFen()).get(sq);
+  if (p && p.color === me && sq !== preSel){ preSel = sq; preLegal = premoveTargets(sq, me); A.sfx.select(); }
+  else if (preSel){ preSel = null; preLegal = []; }   // tap elsewhere: drop the selection, keep the queue
+  else clearPremove();                                // tap elsewhere again: cancel everything
   render();
 }
 function tryPremove(){
-  const pm = premove; clearPremove();
+  const pm = premoves[0];
   if (!pm || !canMoveNow()){ render(); return; }
-  if (!game.moves({square: pm.from, verbose: true}).some(m => m.to === pm.to)){ toast('Premove cancelled: no longer legal'); render(); return; }
+  if (!game.moves({square: pm.from, verbose: true}).some(m => m.to === pm.to)){
+    const n = premoves.length; clearPremove(); toast(n > 1 ? 'Premoves cancelled: the next one is no longer legal' : 'Premove cancelled: no longer legal'); render(); return;
+  }
+  premoves.shift(); preSel = null; preLegal = [];
   commit(pm);
 }
-renderer.domElement.addEventListener('contextmenu', e => { if (premove || preSel){ e.preventDefault(); clearPremove(); render(); toast('Premove cleared'); } });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && (premove || preSel) && $('#promo').hidden){ clearPremove(); render(); } });
+renderer.domElement.addEventListener('contextmenu', e => { if (premoves.length || preSel){ e.preventDefault(); clearPremove(); render(); toast('Premoves cleared'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && (premoves.length || preSel) && $('#promo').hidden){ clearPremove(); render(); } });
 let cpuToken = 0;
 function cpuTurn(){
   if (mode !== 'cpu' || game.game_over() || game.turn() === playerColor || !started) return;
@@ -2830,7 +2863,7 @@ window.addEventListener('pointermove', e => {
   if (!drag.active){
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < CLICK_SLOP) return;
     drag.active = true;
-    if (drag.pre){ preSel = drag.from; preLegal = premoveTargets(drag.from, myColor()); premove = null; }
+    if (drag.pre){ preSel = drag.from; preLegal = premoveTargets(drag.from, myColor()); }
     else { selected = drag.from; legal = game.moves({square: drag.from, verbose: true}); }
     A.sfx.select(); render();
   }
@@ -2843,14 +2876,14 @@ window.addEventListener('pointerup', async e => {
   if (!d.active) return;   // it was a plain click; the click handler takes it from here
   const p = boardPointAt(e), to = p && sqAtPoint(p);
   if (to === d.from){   // dropped back where it started: treat it as a click that selects the piece
-    if (d.pre){ preSel = d.from; preLegal = premoveTargets(d.from, myColor()); premove = null; }
+    if (d.pre){ preSel = d.from; preLegal = premoveTargets(d.from, myColor()); }
     else { selected = d.from; legal = game.moves({square: d.from, verbose: true}); }
     render(true); return;
   }
   if (d.pre){
     const opts = preLegal.filter(m => m.to === to);
-    if (to && opts.length && canPremove()){ premove = {from: d.from, to, promotion: opts.some(m => m.promotion) ? 'q' : undefined}; preSel = null; preLegal = []; toast('Premove set. Right-click or Esc to cancel'); }
-    else clearPremove();
+    if (to && opts.length && canPremove()) queuePremove(d.from, to, opts);
+    else { preSel = null; preLegal = []; }
     render(true); return;
   }
   const opts = legal.filter(m => m.to === to);
