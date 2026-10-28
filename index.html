@@ -75,6 +75,14 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .btn:hover{border-color:var(--gold)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.primary{background:var(--gold);color:var(--ink);border-color:var(--gold);font-family:var(--display);font-weight:400}
+.sel{background:var(--night);border:1px solid var(--line);padding:9px 10px;font-weight:700;width:100%}
+.clock{position:absolute;right:10px;z-index:2;display:flex;align-items:center;gap:8px;background:rgba(12,10,23,.88);border:2px solid var(--line);padding:4px 12px;
+  font:700 clamp(18px,3vw,28px)/1.2 ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;pointer-events:none}
+.clock.top{top:10px} .clock.bot{bottom:10px}
+.clock .g{font-family:var(--chess);font-size:.85em}
+.clock.on{border-color:var(--gold);color:var(--gold);box-shadow:0 0 18px rgba(255,200,61,.35)}
+.clock.low{border-color:var(--blood);color:var(--blood);animation:lowtime .5s ease-in-out infinite alternate}
+@keyframes lowtime{to{box-shadow:0 0 24px rgba(255,46,77,.7)}}
 .joinrow{display:flex;gap:8px}
 .joinrow input{flex:1;min-width:0;background:var(--night);border:1px solid var(--line);padding:10px;font-weight:700;letter-spacing:.3em;text-transform:uppercase}
 .codebox{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -202,7 +210,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     </div>
   </header>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span></div>
+    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
     <aside class="panel">
       <section class="card status" aria-live="polite">
         <div class="turn-chip" id="turnChip"></div>
@@ -215,6 +223,13 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
           <div class="seg" id="sideSeg"><button id="sW" data-side="w" aria-pressed="true">White</button><button id="sB" data-side="b" aria-pressed="false">Black</button></div></div>
         <div class="field" id="lvlField"><span class="label">CPU level</span>
           <div class="seg" id="lvlSeg"><button id="l0" data-lvl="0" aria-pressed="false">Rookie</button><button id="l1" data-lvl="1" aria-pressed="true">Rival</button><button id="l2" data-lvl="2" aria-pressed="false">Final Boss</button></div></div>
+        <div class="field" id="tcField"><label class="label" for="tcSel">Time control</label>
+          <select id="tcSel" class="sel">
+            <option value="0+0">No clock</option>
+            <optgroup label="Bullet"><option value="1+0">1 min</option><option value="2+1">2 | 1</option></optgroup>
+            <optgroup label="Blitz"><option value="3+0">3 min</option><option value="3+2">3 | 2</option><option value="5+0">5 min</option></optgroup>
+            <optgroup label="Rapid"><option value="10+0">10 min</option><option value="15+10">15 | 10</option><option value="30+0">30 min</option></optgroup>
+          </select></div>
         <div class="field" id="onlineField" hidden>
           <span class="label">Online duel</span>
           <div id="onIdle" class="field">
@@ -439,6 +454,9 @@ const A = (() => {
     choir(){ if (!ok()) return; const t = now(); [62, 66, 69, 74, 78].forEach(m => { osc('sawtooth', mtof(m), t, 2.6, .04, sfxBus, {a: .5, lp: 1700, detune: -7}); osc('sawtooth', mtof(m), t, 2.6, .04, sfxBus, {a: .5, lp: 1700, detune: 7}); }); },
     clang(){ if (!ok()) return; const t = now(); [1, 2.41, 3.93, 5.37].forEach((r, i) => osc('triangle', 540 * r, t, .7 - i * .12, .14 / (i + 1), sfxBus)); nz(t, .05, .45, sfxBus, {type: 'highpass', f0: 3000}); },
     slap(){ if (!ok()) return; const t = now(); nz(t, .07, 1.3, sfxBus, {f0: 2300, q: .7}); nz(t, .025, .9, sfxBus, {type: 'highpass', f0: 4500}); osc('sine', 190, t, .1, .45, sfxBus, {to: 80}); },
+    shing(){ if (!ok()) return; const t = now(); nz(t, .18, .35, sfxBus, {f0: 7000, f1: 2500, q: 4}); osc('triangle', 2400, t + .04, .25, .06, sfxBus, {to: 1800}); },
+    shot(){ if (!ok()) return; const t = now(); nz(t, .05, .7, sfxBus, {type: 'highpass', f0: 900}); osc('sine', 120, t, .3, .6, sfxBus, {to: 40}); },
+    zap(){ if (!ok()) return; const t = now(); nz(t, .25, .4, sfxBus, {type: 'highpass', f0: 2500}); osc('square', 90, t, .25, .08, sfxBus, {lp: 1800}); osc('sawtooth', 1400, t, .2, .04, sfxBus, {to: 300}); },
     sob(){ if (!ok()) return; const t = now(); for (let i = 0; i < 4; i++){ const s = t + i * .3; osc('sawtooth', 560 - i * 35, s, .24, .05, sfxBus, {to: 400 - i * 30, lp: 1500, q: 5}); nz(s, .18, .05, sfxBus, {f0: 950, q: 6}); } },
     wail(){ if (!ok()) return; const t = now(); osc('sawtooth', 640, t, 1.4, .06, sfxBus, {to: 430, lp: 1700, q: 6, a: .08}); osc('sawtooth', 652, t, 1.4, .04, sfxBus, {to: 436, lp: 1700, q: 6, a: .08}); nz(t, 1.3, .04, sfxBus, {f0: 1000, q: 5, a: .1}); },
     ascend(){ if (!ok()) return; const t = now(); [0, 4, 7, 11, 12, 16, 19, 24].forEach((iv, i) => osc('sine', mtof(74 + iv), t + i * .24, 1.3, .05, sfxBus, {a: .15})); nz(t, 2.2, .05, sfxBus, {type: 'highpass', f0: 5000, a: .6}); },
@@ -794,10 +812,12 @@ function spCard(title, jp){
 const eyeMat = {w: new THREE.MeshBasicMaterial({color: 0xffffff}), k: new THREE.MeshBasicMaterial({color: 0x111111}), glow: new THREE.MeshBasicMaterial({color: 0x3fe0ff})};
 const eyeGeo = new THREE.SphereGeometry(.065, 14, 10), pupilGeo = new THREE.SphereGeometry(.034, 10, 8), browGeo = new THREE.BoxGeometry(.03, .025, .12);
 const EYE = {p: [.13, .62, .055], n: [.12, .64, .135], b: [.12, .82, .05], q: [.15, .9, .06], k: [.16, .9, .06], r: [.22, .7, .075]};
-function addEyes(g, toward, angry){
+const happyGeo = new THREE.TorusGeometry(.05, .014, 6, 14, Math.PI);
+function addEyes(g, toward, angry, happy){
   const type = g.userData.type, [x, y, z] = EYE[type], face = new THREE.Group(), whites = [];
   if (type !== 'n' && toward){ const d = toward.clone().sub(g.position).setY(0); face.rotation.y = Math.atan2(-d.z, d.x) - g.rotation.y; }
   for (const s of [-1, 1]){
+    if (happy){ const arc = new THREE.Mesh(happyGeo, eyeMat.k); arc.position.set(x + .01, y - .02, s * z); arc.rotation.y = Math.PI / 2; face.add(arc); whites.push(arc); continue; }
     const w = new THREE.Mesh(eyeGeo, eyeMat.w); w.position.set(x, y, s * z); face.add(w); whites.push(w);
     const p = new THREE.Mesh(pupilGeo, eyeMat.k); p.position.set(type === 'n' ? x + .035 : x + .05, y, s * (type === 'n' ? z + .035 : z)); face.add(p);
     if (angry){ const b = new THREE.Mesh(browGeo, eyeMat.k); b.position.set(x + .02, y + .085, s * z); b.rotation.x = -s * .45; face.add(b); }
@@ -840,6 +860,76 @@ function tracer(p1, p2, color = 0xffe680, r = .035, ms = 380){
   const m = new THREE.Mesh(geo, mat); m.position.copy(p1).add(p2).multiplyScalar(.5); m.quaternion.setFromUnitVectors(V3(0, 1, 0), p2.clone().sub(p1).normalize()); scene.add(m);
   tween(ms, k => { mat.opacity = 1 - k; m.scale.x = m.scale.z = 1 + k * 3; }).then(() => { scene.remove(m); geo.dispose(); mat.dispose(); });
 }
+// Subtle per-piece attacks for ordinary captures. Each resolves at the moment of the hit and
+// returns true when the attacker is already standing on the target square.
+const W_MAT = {blade: new THREE.MeshBasicMaterial({color: 0xe8f4ff}), gold: toon(0xffc83d), dark: toon(0x2a2d3a)};
+const SWORD = {blade: new THREE.BoxGeometry(.035, .4, .012), guard: new THREE.BoxGeometry(.13, .025, .035), hilt: new THREE.BoxGeometry(.028, .09, .028)};
+function makeSword(){
+  const s = new THREE.Group();
+  [[SWORD.blade, W_MAT.blade, .23], [SWORD.guard, W_MAT.gold, .03], [SWORD.hilt, W_MAT.dark, -.02]].forEach(([geo, mat, y]) => { const m = new THREE.Mesh(geo, mat); m.position.y = y; s.add(m); });
+  return s;
+}
+function slashArc(p){
+  const mat = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .95, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false});
+  const m = new THREE.Mesh(new THREE.RingGeometry(.32, .4, 28, 1, 0, Math.PI * .85), mat);
+  m.position.set(p.x, .55, p.z); m.lookAt(camera.position); m.rotateZ(-.9); scene.add(m);
+  tween(260, k => { mat.opacity = .95 * (1 - k); m.scale.setScalar(1 + k * .3); }).then(() => { scene.remove(m); m.geometry.dispose(); mat.dispose(); });
+}
+const WEAPON = {
+  // pawn: draws a little sword and lunges with a diagonal slash
+  p: async (mv, a) => {
+    const g = pieceAt[mv.from], t = sqPos(mv.to), d = dirOf(a, t);
+    const piv = new THREE.Group(); piv.rotation.y = Math.atan2(-d.z, d.x); g.add(piv);
+    const sw = makeSword(); sw.position.set(0, .55, -.24); sw.rotation.x = .5; sw.rotation.z = .9; piv.add(sw);
+    A.sfx.whoosh();
+    await tween(300, k => { g.position.lerpVectors(a, t, easeIn(k)); g.position.y = BASEY + Math.sin(Math.PI * k) * .25; sw.rotation.z = .9 - 3 * Math.max(0, (k - .4) / .6); });
+    A.sfx.shing(); slashArc(t);
+    setTimeout(() => { if (piv.parent) piv.parent.remove(piv); }, 250);
+    return true;
+  },
+  // rook: braces, fires a sniper tracer, settles from the recoil
+  r: async (mv, a, v) => {
+    const g = pieceAt[mv.from], d = dirOf(a, v), muzzle = a.clone().setY(.85).addScaledVector(d, .25);
+    await tween(180, k => { g.rotation.x = -d.z * .15 * k; g.rotation.z = d.x * .15 * k; });
+    A.sfx.shot(); tracer(muzzle, v.clone().setY(.45), 0xffe680, .02, 260);
+    const s = screenOf(muzzle); burst(s.x, s.y, {n: 10, kind: 'spark', colors: ['#ffe680', '#fff'], speed: 6, life: 12});
+    tween(220, k => { g.rotation.x = -d.z * .15 * (1 - k); g.rotation.z = d.x * .15 * (1 - k); });
+    return false;
+  },
+  // knight: leaps in and stomps
+  n: async mv => { A.sfx.whoosh(); await fly(mv.from, mv.to, false, 460); A.sfx.hoof(); A.sfx.hoof(); return true; },
+  // bishop: a thin beam of light falls on the target
+  b: async (mv, a, v) => {
+    A.sfx.twinkle();
+    const mat = new THREE.MeshBasicMaterial({color: 0xfff1a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false});
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, 6, 16, 1, true), mat); beam.position.set(v.x, 3, v.z); scene.add(beam);
+    await tween(260, k => { mat.opacity = .8 * k; beam.scale.set(.3 + k * .7, 1, .3 + k * .7); });
+    tween(300, k => { mat.opacity = .8 * (1 - k); }).then(() => { scene.remove(beam); beam.geometry.dispose(); mat.dispose(); });
+    return false;
+  },
+  // queen: a crackling lightning bolt
+  q: async (mv, a, v) => {
+    A.sfx.zap();
+    const from = a.clone().setY(1.05), to = v.clone().setY(.45), mat = new THREE.LineBasicMaterial({color: 0x9ff3ff, transparent: true, blending: THREE.AdditiveBlending});
+    let line = null;
+    const drop = () => { if (line){ scene.remove(line); line.geometry.dispose(); line = null; } };
+    await tween(300, k => {
+      drop();
+      const pts = []; for (let i = 0; i <= 10; i++){ const p = from.clone().lerp(to, i / 10); if (i > 0 && i < 10) p.add(V3((Math.random() - .5) * .25, (Math.random() - .5) * .25, (Math.random() - .5) * .25)); pts.push(p); }
+      line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat); scene.add(line); mat.opacity = 1 - k * .5;
+    });
+    setTimeout(() => { drop(); mat.dispose(); }, 120);
+    return false;
+  },
+  // king: a quick backhand slap
+  k: async (mv, a, v) => {
+    const g = pieceAt[mv.from], d = dirOf(a, v), lean = t => { g.rotation.x = d.z * t; g.rotation.z = -d.x * t; };
+    await tween(220, k => lean(-.35 * easeIO(k)));
+    await tween(80, k => lean(-.35 + .75 * k));
+    A.sfx.slap(); tween(200, k => lean(.4 * (1 - k)));
+    return false;
+  }
+};
 const SP_TITLE = {n: ['STAMPEDE STRIKE', '暴れ馬ストライク'], r: ['QUEEN SNIPE', '狙撃'], p: ['GIANT KILLER', '下克上'], b: ['HOLY SMITE', '天罰'], q: ["QUEEN'S DUEL", '女王決闘'], k: ['ROYAL SLAP', '王の平手打ち']};
 async function special(mv){
   A.music.duck(8000);
@@ -1215,7 +1305,7 @@ function render(force){
   panel();
 }
 function canMoveNow(){
-  if (!started || busy || game.game_over() || !$('#promo').hidden) return false;
+  if (!started || busy || game.game_over() || flagged || !$('#promo').hidden) return false;
   if (mode === 'cpu') return game.turn() === playerColor;
   if (mode === 'online') return !!(net.code && net.my && net.data && net.data.w && net.data.b && game.turn() === net.my);
   return true;
@@ -1225,7 +1315,8 @@ function panel(){
   $('#turnChip').innerHTML = `<span class="${t === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span>`;
   $('#moveNo').textContent = Math.floor(game.history().length / 2) + 1;
   let s = `${side} to move`;
-  if (game.in_checkmate()) s = `Checkmate. ${t === 'w' ? 'Black' : 'White'} wins`;
+  if (flagged) s = timeoutDraw ? 'Draw. Time ran out, but no mate was possible' : `${flagged === 'w' ? 'Black' : 'White'} wins on time`;
+  else if (game.in_checkmate()) s = `Checkmate. ${t === 'w' ? 'Black' : 'White'} wins`;
   else if (game.game_over()) s = 'Draw';
   else if (mode === 'online'){
     if (!net.code) s = 'Create or join an online game';
@@ -1249,6 +1340,7 @@ function panel(){
   $('#lvlField').hidden = mode !== 'cpu';
   $('#sideField').hidden = mode === 'pvp' || (mode === 'online' && !!net.code);
   $('#onlineField').hidden = mode !== 'online';
+  $('#tcField').hidden = mode === 'cpu' || (mode === 'online' && !!net.code);
   $('#undoBtn').disabled = mode === 'online';
   $('#newBtn').textContent = mode === 'online' ? 'Rematch' : 'New duel';
   $('#newBtn').disabled = mode === 'online' && !(net.code && net.my);
@@ -1276,10 +1368,11 @@ async function captureFx(mv){
   const vSq = mv.flags.includes('e') ? mv.to[0] + mv.from[1] : mv.to;
   A.music.duck(2200);
   if (cutins){ A.sfx.riser(); speedLines(innerWidth/2, innerHeight/2, 1000); await cutIn(mv); }
-  const vc = center(vSq);
-  A.sfx.whoosh(); speedLines(vc.x, vc.y, 520, 'rgba(255,46,77,.5)');
-  const victim = pieceAt[vSq];
-  await fly(mv.from, mv.to, true);
+  const vc = center(vSq), victim = pieceAt[vSq];
+  speedLines(vc.x, vc.y, 520, 'rgba(255,46,77,.5)');
+  let moved = false;
+  try { moved = await WEAPON[mv.piece](mv, sqPos(mv.from), sqPos(vSq)); }
+  catch (e){ console.error(e); }
   // IMPACT
   A.sfx.impact(power);
   if (victim){ scene.remove(victim); shatter(sqPos(vSq), victim.userData.color, Math.round(22 * power), power); }
@@ -1290,6 +1383,7 @@ async function captureFx(mv){
   burst(c2.x, c2.y, {n: Math.round(40*power), kind: 'spark', colors: ['#ffc83d', '#ff2e4d', '#ffffff', '#3fe0ff'], speed: 16*power, size: 3, life: 30});
   ring(c2.x, c2.y, c2.w * 2.2 * power, '#fff', 8); ring(c2.x, c2.y, c2.w * 3.5 * power, 'rgba(255,46,77,.9)', 5, 34);
   speedLines(c2.x, c2.y, 260);
+  if (!moved) await fly(mv.from, mv.to, false, 380);
   lastMove = {from: mv.from, to: mv.to}; render();
   const [en, jp] = mv.captured === 'q' ? ['QUEEN DOWN!!', '撃破'] : BOOM[Math.floor(Math.random() * BOOM.length)];
   await bigText(en, jp, {hold: 380 + power*240, size: mv.captured === 'q' ? .8 : 1, rot: (Math.random()*10 - 8) | 0});
@@ -1531,13 +1625,26 @@ async function outroMovie(isMate){
       }
     }
     if (!movieSkip && isMate){
-      // 6. winner splash: tears of joy, stats, to be continued
+      // 6. winner splash: the victor is proud and happy, stats, to be continued
       const caps = hist.filter(m => m.captured).length, checks = hist.filter(m => /[+#]/.test(m.san)).length, moves = Math.ceil(hist.length / 2);
       const sunEl = document.createElement('div'); sunEl.className = 'sunburst'; sunEl.id = 'sun'; fxEl.insertBefore(sunEl, $('#flash'));
       sunEl.animate([{opacity: 0}, {opacity: 1}], {duration: 800, fill: 'forwards'});
       const wk = pieceAt[kingSq(loser === 'w' ? 'b' : 'w')], c = (wk ? wk.position : K).clone().setY(.6);
       orbit = {c, r: 3.2, h: 1.3, a: Math.atan2(camera.position.z - c.z, camera.position.x - c.x)};
-      if (wk){ const we = addEyes(wk, camera.position, false); A.sfx.joy(); bubble(wk, 'みんな…ありがとう!!', 1900, 1.5); weep(we, 2500, true); }
+      await sleep(80);   // let the orbit camera settle before pinning speech bubbles to the screen
+      if (wk){
+        addEyes(wk, camera.position, false, true); A.sfx.joy(); A.sfx.laugh();
+        bubble(wk, 'フハハハ! 我こそが王!', 2000, 1.6);
+        word(wk.position.clone().setY(2.1), 'ドヤァ!', {size: 38, color: '#ffc83d', ms: 1600, rot: 8});
+        const top = renderer.domElement.getBoundingClientRect();
+        for (let i = 0; i < 5; i++) setTimeout(() => burst(top.left + top.width * (.15 + Math.random() * .7), top.top + 30, {n: 24, kind: 'spark', colors: ['#ff2e4d', '#ffc83d', '#3fe0ff', '#7dff9a', '#ff8ac4'], speed: 9, size: 3, life: 60, g: .25, drag: .96}), i * 280);
+        const wp = wk.position.clone(), toC = camera.position.clone().sub(wp).setY(0).normalize();
+        tween(2200, k => {   // chest out, victory hops, golden aura
+          wk.position.y = BASEY + Math.abs(Math.sin(k * Math.PI * 4)) * .28;
+          const lean = .16 * Math.min(1, k * 4); wk.rotation.x = -toC.z * lean; wk.rotation.z = toC.x * lean;
+          if (Math.random() < .4){ const s = screenOf(wk.position.clone().add(V3((Math.random() - .5) * .7, .3 + Math.random() * .9, (Math.random() - .5) * .7))); parts.push({x: s.x, y: s.y, vx: (Math.random() - .5) * 1.5, vy: -1.5 - Math.random() * 1.5, life: 34, max: 34, kind: 'spark', c: '#ffe680', s: 2.5, g: -.02, drag: .97}); kick(); }
+        });
+      }
       tbcArrow(layer, 'TO BE CONTINUED', 1200);
       await bigText(`${winner.toUpperCase()} WINS!!`, '完', {hold: 1450, color: 'var(--gold)', size: .8, rot: -4, sub: `${moves} MOVES · ${caps} CAPTURES · ${checks} CHECKS`});
     }
@@ -1581,13 +1688,77 @@ function clearEndFx(){
 
 /* ================= FLOW ================= */
 let pendingRemote = null;
+/* ================= CLOCKS (same screen and online) ================= */
+// Times are milliseconds. A side's clock runs only on its turn, and pauses while animations play.
+const clock = {base: 0, inc: 0, w: 0, b: 0, run: null, since: 0, paused: true};
+let flagged = null;   // 'w' or 'b' once that side has run out of time
+const tcOn = () => clock.base > 0 && mode !== 'cpu';
+const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; timeoutDraw = false; drawClocks(); }
+function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
+function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
+const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
+function fmtClock(ms){
+  ms = Math.max(0, ms);
+  if (ms < 20000) return (Math.floor(ms / 100) / 10).toFixed(1);
+  const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+function drawClocks(){
+  const on = tcOn(); $('#clockTop').hidden = $('#clockBot').hidden = !on; if (!on) return;
+  const bot = orientation, top = bot === 'w' ? 'b' : 'w';
+  [[top, '#clockTop'], [bot, '#clockBot']].forEach(([c, id]) => {
+    const el = $(id), r = remaining(c), live = clock.run === c && !clock.paused;
+    el.innerHTML = `<span class="g ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span><span>${fmtClock(r)}</span>`;
+    el.classList.toggle('on', live); el.classList.toggle('low', r < 20000 && clock.run === c && !flagged);
+  });
+}
+let lastTickSec = null;
+setInterval(() => {
+  drawClocks();
+  if (!tcOn() || !clock.run || clock.paused || flagged) return;
+  const r = remaining(clock.run);
+  if (r < 10000){ const s = Math.ceil(r / 1000); if (s !== lastTickSec){ lastTickSec = s; A.sfx.select(); } }
+  // Online, only a player's own screen may call their timeout: it holds the true time for that clock.
+  if (r <= 0 && (mode !== 'online' || clock.run === net.my)) timeUp(clock.run, false);
+}, 100);
+// Chess.com rule: running out of time is a draw if the opponent has no way to checkmate (lone king, or king + one minor piece).
+function cannotMate(color){
+  const left = game.board().flat().filter(p => p && p.color === color && p.type !== 'k').map(p => p.type);
+  return left.length === 0 || (left.length === 1 && (left[0] === 'n' || left[0] === 'b'));
+}
+let timeoutDraw = false;
+async function timeUp(c, remote){
+  if (flagged || game.game_over()) return;
+  flagged = c; clockPause(); clock[c] = 0; clock.run = null; selected = null; legal = []; render(); drawClocks();
+  timeoutDraw = cannotMate(c === 'w' ? 'b' : 'w');
+  if (mode === 'online' && !remote && net.ref) net.ref.update({flag: c, clock: {w: clock.w, b: clock.b}}).catch(() => {});
+  const winner = c === 'w' ? 'Black' : 'White';
+  busy = true; busySince = Date.now();
+  try {
+    A.music.stop(); A.sfx.klaxon(); flash('#ff2e4d', 600, .6); shake(1, 600);
+    $('#vignette').animate([{opacity: 0}, {opacity: 1}, {opacity: .3}, {opacity: 1}, {opacity: 0}], {duration: 1600});
+    const k = pieceAt[kingSq(c)];
+    if (k){ addEyes(k, camera.position, false); bubble(k, 'じ…時間がっ…!', 1500, 1.5); A.sfx.wail(); }
+    await bigText('TIME UP!!', '時間切れ', {color: 'var(--blood)', hold: 1400, sub: timeoutDraw ? `BUT ${winner.toUpperCase()} CANNOT CHECKMATE · DRAW` : `${c === 'w' ? 'WHITE' : 'BLACK'} RAN OUT OF TIME`});
+  } finally { busy = false; render(true); }
+  if (timeoutDraw) showContinue('A draw', `${c === 'w' ? 'White' : 'Black'} ran out of time, but ${winner} had no way to checkmate`);
+  else showContinue(`${winner} wins on time`, 'The clock shows no mercy');
+}
+
 let busySince = 0;
-async function commit(input, remote){
+async function commit(input, remote, remoteClock){
   busy = true; busySince = Date.now(); selected = null; legal = []; render();
   let mv = null;
   try {
+    if (flagged) return;
     mv = game.move(input);
     if (!mv) return;
+    if (tcOn()){
+      clockPause();
+      if (remote && remoteClock){ clock.w = remoteClock.w; clock.b = remoteClock.b; }
+      else clock[mv.color] += clock.inc;
+      clock.run = null; drawClocks();
+    }
     if (mode === 'online' && !remote && net.ref) net.push();
     if (mv.captured) await captureFx(mv); else await moveFx(mv);
     lastMove = {from: mv.from, to: mv.to}; render();
@@ -1604,6 +1775,7 @@ async function commit(input, remote){
     render(true);
   } finally {
     busy = false; panel();
+    if (mv && tcOn() && !game.game_over() && !flagged) clockStart(game.turn());
   }
   if (!mv) return;
   if (pendingRemote){ const d = pendingRemote; pendingRemote = null; applyRemote(d); return; }
@@ -1615,11 +1787,12 @@ function cpuTurn(){
   setTimeout(() => { let m = null; try { m = bestMove(); } catch(e){ console.error(e); } busy = false; if (m) commit({from: m.from, to: m.to, promotion: m.promotion}); else panel(); }, 380);
 }
 // Safety net: if anything ever leaves the board locked for too long, unlock it.
-setInterval(() => { if (busy && Date.now() - busySince > 30000){ busy = false; render(true); } }, 3000);
+// (A queen finish plus the full ending movie can legitimately run ~35 s, so the limit sits well above that.)
+setInterval(() => { if (busy && Date.now() - busySince > 90000){ busy = false; render(true); } }, 3000);
 function whyNot(){
   if (!started) return 'Press FIGHT! to start';
   if (busy) return 'Hold on, the animation is still playing';
-  if (game.game_over()) return 'This duel is over. Press New duel to play again';
+  if (game.game_over() || flagged) return 'This duel is over. Press New duel to play again';
   if (mode === 'cpu' && game.turn() !== playerColor) return 'The CPU is thinking';
   if (mode === 'online'){
     if (!net.code) return 'Create or join an online game first';
@@ -1712,7 +1885,7 @@ function bestMove(){
    - on claude.ai: the artifact's shared database (games/<code>)
    - anywhere else (e.g. GitHub Pages): a direct browser-to-browser link via PeerJS */
 const net = {kind: null, db: null, user: null, myId: null, ready: false, code: null, ref: null, unsub: null, my: null, data: null, peer: null, conn: null,
-  push(){ const ref = this.ref; ref.update({pgn: game.pgn(), n: game.history().length, at: Date.now()}).catch(() => note('That move did not reach your friend. Check your connection.', true)); }
+  push(){ const ref = this.ref; ref.update({pgn: game.pgn(), n: game.history().length, at: Date.now(), clock: tcOn() ? {w: clock.w, b: clock.b} : null}).catch(() => note('That move did not reach your friend. Check your connection.', true)); }
 };
 const note = (t, warn) => { const n = $('#onNote'); n.textContent = t; n.classList.toggle('warn', !!warn); };
 const CODE_CH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -1757,7 +1930,11 @@ function wireConn(conn){
     const d = m.d;
     if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return;
     const tmp = new Chess(); if (d.pgn && !tmp.load_pgn(d.pgn)) return;
-    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now()});
+    const num = v => typeof v === 'number' && isFinite(v) && v >= 0;
+    const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
+    const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
+    const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
+    if (net.ref) net.ref.receive({pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag});
   });
   conn.on('close', () => { if (net.conn === conn){ net.conn = null; note(net.myId === 'host' ? 'Your friend disconnected. They can rejoin with the same invite link.' : 'Lost the connection to your friend. Rejoin with the same code.', true); } });
 }
@@ -1781,13 +1958,13 @@ async function createGame(){
     peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
     const ref = p2pRef();
     attach(code, ref);
-    ref.update({pgn: '', n: 0, w: playerColor === 'w' ? 'host' : null, b: playerColor === 'b' ? 'host' : null, at: Date.now()});
+    ref.update({pgn: '', n: 0, w: playerColor === 'w' ? 'host' : null, b: playerColor === 'b' ? 'host' : null, at: Date.now(), tc: parseTc($('#tcSel').value), clock: null, flag: null});
     note('Send your friend the invite link (or the code). Keep this tab open while you play.');
     return;
   }
   const ref = net.db.doc('games/' + code);
   try {
-    await ref.set({pgn: '', n: 0, w: playerColor === 'w' ? net.myId : null, b: playerColor === 'b' ? net.myId : null, at: Date.now()});
+    await ref.set({pgn: '', n: 0, w: playerColor === 'w' ? net.myId : null, b: playerColor === 'b' ? net.myId : null, at: Date.now(), tc: parseTc($('#tcSel').value), clock: null, flag: null});
   } catch(e){ note(e && e.code === 'invalid_argument' ? 'You can view this page but not save games. Ask the owner for edit access.' : 'Could not create the game. Try again in a moment.', true); return; }
   attach(code, ref);
 }
@@ -1827,6 +2004,7 @@ function attach(code, ref){
   if (net.unsub) net.unsub();
   net.code = code; net.ref = ref; net.data = null; net.my = null;
   game.reset(); lastMove = null; selected = null; legal = []; clearEndFx(); syncPieces(true);
+  clockReset({base: 0, inc: 0});   // the game document says which time control applies
   $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeOut').textContent = code;
   note('Send this code to your friend. They open this page, choose Online friend and join with it.');
   hideModal(); started = true; A.music.start();
@@ -1839,7 +2017,7 @@ function leaveGame(){
   Object.assign(net, {code: null, ref: null, unsub: null, my: null, data: null});
   $('#onIdle').hidden = false; $('#onActive').hidden = true;
   note(IDLE_NOTE());
-  game.reset(); lastMove = null; clearEndFx(); render(true);
+  game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true);
 }
 async function drawPlayers(){
   const d = net.data; if (!d) return;
@@ -1869,29 +2047,36 @@ function onRemote(snap){
     if (net.kind === 'p2p') note('Connected to your friend. Keep this tab open while you play.');
   }
   drawPlayers();
-  if ((d.n || 0) === game.history().length){ panel(); return; }
-  if (busy){ pendingRemote = d; return; }
+  const tc = d.tc || {base: 0, inc: 0};
+  if (tc.base !== clock.base || tc.inc !== clock.inc){ clockReset(tc); if (d.clock){ clock.w = d.clock.w; clock.b = d.clock.b; } }
+  if (busy){ pendingRemote = d; return; }   // finish the current animation first; nothing (not even a timeout) is dropped
   applyRemote(d);
 }
 function applyRemote(d){
+  if (d.flag && !flagged && (d.n || 0) === game.history().length){ timeUp(d.flag, true); return; }
+  if ((d.n || 0) === game.history().length && !(d.n === 0 && (flagged || game.game_over()))){ panel(); return; }
   const tmp = new Chess(); if (d.pgn) tmp.load_pgn(d.pgn);
   const hist = tmp.history({verbose: true}), mine = game.history();
   if (hist.length === mine.length + 1 && hist.slice(0, -1).every((m, i) => m.san === mine[i])){
     const m = hist[hist.length - 1];
-    commit({from: m.from, to: m.to, promotion: m.promotion}, true);
+    commit({from: m.from, to: m.to, promotion: m.promotion}, true, d.clock || null);
     return;
   }
   if (hist.length === mine.length && hist.every((m, i) => m.san === mine[i])){ panel(); return; }
   game.reset(); if (d.pgn) game.load_pgn(d.pgn);
   const l = hist[hist.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; hideModal(); clearEndFx();
+  clockReset(d.tc || {base: 0, inc: 0});
+  if (d.clock){ clock.w = d.clock.w; clock.b = d.clock.b; }
+  if (tcOn() && hist.length && !game.game_over() && !d.flag) clockStart(game.turn());
+  if (d.flag) flagged = d.flag;
   if (!hist.length){ A.music.intensity(0); A.music.start(); }
   render(true);
 }
 function rematchOnline(){
   if (!net.ref || !net.data) return;
   const d = net.data;
-  net.ref.update({pgn: '', n: 0, w: d.b || null, b: d.w || null, at: Date.now()}).catch(() => note('Could not start the rematch. Try again.', true));
+  net.ref.update({pgn: '', n: 0, w: d.b || null, b: d.w || null, at: Date.now(), clock: null, flag: null}).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
 $('#joinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); joinGame($('#joinCode').value); });
@@ -1908,8 +2093,9 @@ document.addEventListener('pointerdown', () => { A.init(); if (started) A.music.
 /* ================= CONTROLS ================= */
 function seg(id, attr, val){ document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val)))); }
 function newGame(){
-  if (mode === 'online'){ if (net.code) rematchOnline(); else { game.reset(); lastMove = null; clearEndFx(); render(true); } return; }
+  if (mode === 'online'){ if (net.code) rematchOnline(); else { game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true); } return; }
   game.reset(); lastMove = null; selected = null; legal = []; busy = false;
+  clockReset(parseTc($('#tcSel').value));
   orientation = mode === 'cpu' ? playerColor : 'w';
   clearEndFx(); setCamSide(orientation);
   A.music.intensity(0); A.music.start();
@@ -1920,15 +2106,18 @@ $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('butto
   if (mode === 'online' && b.dataset.mode !== 'online' && net.code) leaveGame();
   mode = b.dataset.mode; seg('modeSeg', 'mode', mode); newGame(); });
 $('#sideSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || busy) return; playerColor = b.dataset.side; seg('sideSeg', 'side', playerColor); if (mode !== 'online') newGame(); else { orientation = playerColor; setCamSide(orientation); } });
+$('#tcSel').addEventListener('change', () => { if (busy) return; if (mode === 'pvp') newGame(); else if (mode === 'online' && !net.code) note('Your friend will play with the time control you pick here when you create the game.'); });
 $('#lvlSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; level = +b.dataset.lvl; seg('lvlSeg', 'lvl', level); });
 $('#newBtn').onclick = () => { if (!busy){ A.init(); started = true; hideModal(); newGame(); } };
 $('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; setCamSide(orientation); };
 $('#undoBtn').onclick = () => {
-  if (busy || mode === 'online' || !game.history().length) return;
+  if (busy || mode === 'online' || flagged || !game.history().length) return;
   game.undo(); if (mode === 'cpu' && game.turn() !== playerColor) game.undo();
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; clearEndFx();
-  A.music.intensity(game.in_check() ? 1 : 0); A.music.start(); render(true); cpuTurn();
+  A.music.intensity(game.in_check() ? 1 : 0); A.music.start(); render(true);
+  if (tcOn() && clock.run){ clockPause(); clockStart(game.turn()); }
+  cpuTurn();
 };
 const toggle = (btn, fn) => { const v = btn.getAttribute('aria-pressed') !== 'true'; btn.setAttribute('aria-pressed', String(v)); fn(v); };
 $('#musicBtn').onclick = e => toggle(e.currentTarget, v => { A.init(); A.music.setOn(v); });
