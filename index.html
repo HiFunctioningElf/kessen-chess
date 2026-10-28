@@ -2579,10 +2579,17 @@ function tryPremove(){
 }
 renderer.domElement.addEventListener('contextmenu', e => { if (premove || preSel){ e.preventDefault(); clearPremove(); render(); toast('Premove cleared'); } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && (premove || preSel) && $('#promo').hidden){ clearPremove(); render(); } });
+let cpuToken = 0;
 function cpuTurn(){
   if (mode !== 'cpu' || game.game_over() || game.turn() === playerColor || !started) return;
   busy = true; busySince = Date.now(); panel();
-  setTimeout(() => { let m = null; try { m = bestMove(); } catch(e){ console.error(e); } busy = false; if (m) commit({from: m.from, to: m.to, promotion: m.promotion}); else panel(); }, 380);
+  const token = ++cpuToken, fen = game.fen(), t0 = Date.now();
+  engineMove(Object.assign({fen, seen: seenKeys()}, CPU_LEVELS[level])).then(async m => {
+    const wait = 380 - (Date.now() - t0); if (wait > 0) await sleep(wait);   // a beat, even when the answer is instant
+    if (token !== cpuToken || mode !== 'cpu' || game.fen() !== fen) return;   // a new duel or an undo happened meanwhile
+    busy = false;
+    if (m) commit({from: m.from, to: m.to, promotion: m.promotion}); else panel();
+  });
 }
 // Safety net: if anything ever leaves the board locked for too long, unlock it.
 // (A queen finish plus the full ending movie can legitimately run ~35 s, so the limit sits well above that.)
@@ -2704,39 +2711,152 @@ renderer.domElement.addEventListener('pointerup', async e => {
   render();
 });
 
-/* ================= CPU (negamax + alpha-beta) ================= */
-function evaluate(g){
-  let s = 0; const b = g.board();
-  for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
-    const p = b[r][f]; if (!p) continue;
-    const c = 3.5 - Math.max(Math.abs(3.5 - f), Math.abs(3.5 - r));
-    let v = PV[p.type];
-    if (p.type === 'n') v += c * 10; else if (p.type === 'b') v += c * 6; else if (p.type === 'q') v += c * 3;
-    else if (p.type === 'p'){ const adv = p.color === 'w' ? 6 - r : r - 1; v += adv * adv * 2 + (f > 1 && f < 6 ? c * 5 : 0); }
-    else if (p.type === 'k') v -= c * 8;
-    s += p.color === 'w' ? v : -v;
+/* ================= CPU: iterative-deepening alpha-beta with a capture search, run in a Web Worker ================= */
+// Knows that repeating a position is a draw (so it presses on when winning), centralises its king and drives the enemy
+// king to the edge in endgames, and never stalls the animations: it thinks on a background thread when it can.
+// Self-contained so it can run in a Web Worker (via toString) or on the page. Needs the global `Chess` (chess.js 0.10.3).
+function kessenEngine(){
+  const PV = {p: 100, n: 320, b: 330, r: 500, q: 900, k: 0};
+  const PHASE_FULL = 6200;   // non-pawn material at the start (both sides)
+  const MATE = 100000;
+  // Scores from White's point of view.
+  function evaluate(g){
+    const b = g.board(); let s = 0, npm = 0, matW = 0, matB = 0, wk = null, bk = null;
+    for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
+      const p = b[r][f]; if (!p) continue;
+      if (p.type !== 'p' && p.type !== 'k') npm += PV[p.type];
+      if (p.color === 'w') matW += PV[p.type]; else matB += PV[p.type];
+      if (p.type === 'k'){ if (p.color === 'w') wk = [f, r]; else bk = [f, r]; }
+    }
+    const ph = Math.min(1, npm / PHASE_FULL);   // 1 = opening/middlegame, 0 = bare endgame
+    for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
+      const p = b[r][f]; if (!p) continue;
+      const c = 3.5 - Math.max(Math.abs(3.5 - f), Math.abs(3.5 - r));   // 0 at the edge, 3 in the centre
+      let v = PV[p.type];
+      if (p.type === 'n') v += c * 10;
+      else if (p.type === 'b') v += c * 6;
+      else if (p.type === 'q') v += c * 3;
+      else if (p.type === 'r'){ const seventh = p.color === 'w' ? r === 1 : r === 6; if (seventh) v += 20; }
+      else if (p.type === 'p'){ const adv = p.color === 'w' ? 6 - r : r - 1; v += adv * adv * (2 + 5 * (1 - ph)) + (f > 1 && f < 6 ? c * 5 * ph : 0); }
+      else if (p.type === 'k') v += ph * (-c * 10) + (1 - ph) * (c * 14);   // hide early, march to the centre late
+      s += p.color === 'w' ? v : -v;
+    }
+    // Mop-up: the side that is clearly ahead in a thin endgame drives the enemy king to the edge and brings its own king close.
+    const diff = matW - matB;
+    if (Math.abs(diff) >= 300 && ph < .5 && wk && bk){
+      const [lf, lr] = diff > 0 ? bk : wk;
+      const edge = Math.max(Math.abs(3.5 - lf), Math.abs(3.5 - lr));
+      const dist = Math.abs(wk[0] - bk[0]) + Math.abs(wk[1] - bk[1]);
+      const mop = edge * 22 + (14 - dist) * 8;
+      s += diff > 0 ? mop : -mop;
+    }
+    return s;
   }
-  return s;
-}
-const mscore = m => (m.captured ? PV[m.captured]*10 - PV[m.piece] : 0) + (m.promotion ? 800 : 0);
-const order = ms => ms.sort((a, b) => mscore(b) - mscore(a));
-function negamax(g, d, alpha, beta){
-  if (d === 0) return (g.turn() === 'w' ? 1 : -1) * evaluate(g);
-  const ms = g.moves({verbose: true});
-  if (!ms.length) return g.in_check() ? -100000 - d : 0;
-  order(ms); let best = -Infinity;
-  for (const m of ms){ g.move(m); const sc = -negamax(g, d - 1, -beta, -alpha); g.undo(); if (sc > best) best = sc; if (sc > alpha) alpha = sc; if (alpha >= beta) break; }
-  return best;
-}
-function bestMove(){
-  const depth = [1, 2, 3][level], noise = [90, 12, 4][level];
-  const g = new Chess(game.fen()), ms = order(g.moves({verbose: true}));
-  let best = null, bestSc = -Infinity;
-  for (const m of ms){
-    g.move(m); const sc = -negamax(g, depth - 1, -Infinity, -(bestSc - noise)) + Math.random() * noise; g.undo();
-    if (sc > bestSc){ bestSc = sc; best = m; }
+  const key = g => g.fen().split(' ').slice(0, 4).join(' ');
+  const mscore = m => (m.captured ? PV[m.captured] * 10 - PV[m.piece] : 0) + (m.promotion ? PV[m.promotion] : 0);
+  const order = ms => ms.sort((a, b) => mscore(b) - mscore(a));
+  function think({fen, seen, depth: maxDepth, ms: budget, noise, quiet}){
+    const g = new Chess(fen), deadline = Date.now() + budget, path = [];
+    const history = new Set(seen || []);   // positions already reached in the real game
+    let nodes = 0;
+    const timeUp = () => { if ((++nodes & 1023) === 0 && Date.now() > deadline) throw 'time'; };
+    const side = () => (g.turn() === 'w' ? 1 : -1);
+    function qs(alpha, beta, d){
+      timeUp();
+      const stand = side() * evaluate(g);
+      if (stand >= beta || d === 0) return stand;
+      if (stand > alpha) alpha = stand;
+      // only "good" captures (taking something worth at least the capturer) and promotions: cheap, and enough to see recaptures
+      const ms = order(g.moves({verbose: true}).filter(m => m.promotion || (m.captured && PV[m.captured] >= PV[m.piece] - 20)));
+      for (const m of ms){
+        if (!m.promotion && stand + PV[m.captured] + 200 < alpha) continue;   // delta pruning: even winning this can't catch up
+        g.move(m); const sc = -qs(-beta, -alpha, d - 1); g.undo();
+        if (sc >= beta) return sc;
+        if (sc > alpha) alpha = sc;
+      }
+      return alpha;
+    }
+    function search(d, alpha, beta, ply){
+      timeUp();
+      if (ply > 0){
+        const k = key(g);
+        if (history.has(k) || path.includes(k)) return 0;   // a repeat is a draw: avoid it when winning, seek it when losing
+      }
+      const ms = g.moves({verbose: true});
+      if (!ms.length) return g.in_check() ? -MATE + ply : 0;
+      if (d <= 0) return quiet ? qs(alpha, beta, 3) : side() * evaluate(g);
+      order(ms);
+      path.push(key(g));
+      let best = -Infinity;
+      for (const m of ms){
+        g.move(m); const sc = -search(d - 1, -beta, -alpha, ply + 1); g.undo();
+        if (sc > best) best = sc;
+        if (sc > alpha) alpha = sc;
+        if (alpha >= beta) break;
+      }
+      path.pop();
+      return best;
+    }
+    let rootMoves = order(g.moves({verbose: true}));
+    if (!rootMoves.length) return null;
+    let best = rootMoves[0], reached = 0;
+    path.push(key(g));
+    for (let d = 1; d <= maxDepth; d++){
+      try {
+        let bestSc = -Infinity, bestM = null; const scored = [];
+        for (const m of rootMoves){
+          g.move(m);
+          const sc = -search(d - 1, -Infinity, -(bestSc - noise), 1) + (noise ? Math.random() * noise : 0);
+          g.undo();
+          scored.push([m, sc]);
+          if (sc > bestSc){ bestSc = sc; bestM = m; }
+        }
+        best = bestM; reached = d;
+        rootMoves = scored.sort((a, b) => b[1] - a[1]).map(x => x[0]);   // best first for the next, deeper pass
+        if (bestSc > MATE - 100) break;   // found a forced mate
+      } catch (e){ if (e !== 'time') throw e; break; }
+      if (d >= 3 && Date.now() > deadline - budget * .45) break;   // the next depth would not finish in time
+    }
+    return {from: best.from, to: best.to, promotion: best.promotion, depth: reached, nodes};
   }
-  return best;
+  return think;
+}
+const CPU_LEVELS = [
+  {depth: 1, ms: 400, noise: 120, quiet: false},   // Rookie: one move deep, plenty of randomness
+  {depth: 2, ms: 1200, noise: 15, quiet: true},    // Rival
+  {depth: 8, ms: 3500, noise: 0, quiet: true}      // Final Boss: as deep as 3.5 s allows (at least 3 when it can)
+];
+const posKey = g => g.fen().split(' ').slice(0, 4).join(' ');
+// Every position reached so far in this game, so the engine can tell a repeat coming.
+function seenKeys(){
+  const r = new Chess(); if (!r.load_pgn(game.pgn())) return [posKey(game)];
+  const keys = []; do { keys.push(posKey(r)); } while (r.undo());
+  return keys;
+}
+const CHESS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
+let cpuWorker = null, workerBroken = false, jobId = 0;
+const workerJobs = new Map();
+let mainThink = null;
+const thinkHere = job => { try { return (mainThink = mainThink || kessenEngine())(job); } catch(e){ console.error(e); return null; } };
+function getWorker(){
+  if (cpuWorker || workerBroken) return cpuWorker;
+  try {
+    const src = `importScripts('${CHESS_URL}');\n${kessenEngine.toString()}\nconst think = kessenEngine();\n` +
+      'onmessage = e => { let r = null; try { r = think(e.data.job); } catch(err){} postMessage({id: e.data.id, r}); };';
+    cpuWorker = new Worker(URL.createObjectURL(new Blob([src], {type: 'text/javascript'})));
+    cpuWorker.onmessage = e => { const j = workerJobs.get(e.data.id); if (j){ workerJobs.delete(e.data.id); j(e.data.r); } };
+    // if the worker can't start (e.g. a sandbox blocks it), every pending and future job runs on the page instead
+    cpuWorker.onerror = () => { workerBroken = true; cpuWorker = null; const jobs = [...workerJobs.values()]; workerJobs.clear(); jobs.forEach(j => j(undefined)); };
+  } catch(e){ workerBroken = true; cpuWorker = null; }
+  return cpuWorker;
+}
+function engineMove(job){
+  return new Promise(res => {
+    const w = getWorker();
+    if (!w) return res(thinkHere(job));
+    const id = ++jobId; workerJobs.set(id, r => res(r === undefined ? thinkHere(job) : r));
+    w.postMessage({id, job});
+  });
 }
 
 /* ================= ONLINE (artifact shared database) ================= */
