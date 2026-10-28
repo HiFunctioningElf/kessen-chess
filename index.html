@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261028204609">
+<meta name="kessen-build" content="20261028204819">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -2079,11 +2079,9 @@ renderer.domElement.addEventListener('pointerup', async e => {
   const p = game.get(sq);
   if (p && p.color === game.turn() && sq !== selected){
     selected = sq; legal = game.moves({square: sq, verbose: true}); A.sfx.select();
-    if (!legal.length) toast(`That ${NAME[p.type].toLowerCase()} has no legal moves`);
   }
   else {
     if (p && p.color !== game.turn() && !selected) toast(`It's ${game.turn() === 'w' ? 'White' : 'Black'}'s turn`);
-    else if (selected && !opts.length && !p) toast('That piece cannot move there');
     selected = null; legal = [];
   }
   render();
