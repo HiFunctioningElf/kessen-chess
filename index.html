@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029182529">
+<meta name="kessen-build" content="20261029183128">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -37,7 +37,9 @@ body{
 #app{min-height:100%;display:flex;flex-direction:column}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
   padding-block:14px 6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.logo{display:flex;align-items:baseline;gap:10px}
+.logo{display:flex;align-items:center;gap:10px 14px}
+.topnav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.topnav .chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;margin:0}
 .logo-jp{font-family:var(--display);font-size:34px;color:var(--blood);-webkit-text-stroke:1px #000;text-shadow:3px 3px 0 #000;transform:rotate(-4deg);display:inline-block}
 .logo-en{font-family:var(--display);font-size:18px;letter-spacing:.12em;text-transform:uppercase}
 .toggles{display:flex;gap:6px;flex-wrap:wrap}
@@ -54,7 +56,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 @media (max-width:600px){
   .logo{flex-wrap:wrap;align-items:center;gap:6px 8px;width:100%}
   .logo-jp{font-size:26px}.logo-en{font-size:15px;white-space:nowrap;margin-right:auto}
-  .logo .chip,.donate-chip{margin-left:0}
+  .topnav{width:100%}
   .toggles{width:100%}
   .chip{min-height:34px;padding:6px 11px}
   .mghud .next{font-size:11px;white-space:nowrap}
@@ -517,8 +519,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mghud .next b{color:var(--gold)}
 .mghud .pow{background:rgba(12,10,23,.92);font-size:13px;padding:5px 10px;box-shadow:0 0 12px rgba(255,200,61,.3)}
 /* ---- Donations panel, Penny Dropper and the coffee jar ---- */
-.donate-chip{color:#ffb3d6;border-color:#ff8ac4;align-self:center;margin-left:4px}
-.donate-chip .amt{margin-left:6px;color:var(--gold);font-variant-numeric:tabular-nums}
+.donate-chip{color:#ffb3d6;border-color:#ff8ac4}
+.donate-chip .amt{color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
 #donate,#hist{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
   padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -537,6 +539,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .charity .cause{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 .charity .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
 .charity .meta a,.dfoot a,.split-note a{color:var(--volt)}
+.charity .cnote{font-size:11px;color:var(--muted);font-style:italic}
 .charity .raised{font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
 .charity .act{margin-top:auto;padding-top:4px}
 .dbtn{display:inline-block;text-align:center;background:var(--gold);color:var(--ink);border:2px solid #000;font-family:var(--display);padding:8px 12px;text-decoration:none;box-shadow:3px 3px 0 #000;align-self:flex-start}
@@ -634,7 +637,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 
 <div id="app">
   <header class="top">
-    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Games</button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></div>
+    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><nav class="topnav" aria-label="Pages"><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Match history</button><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></nav></div>
     <div class="toggles">
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
@@ -723,7 +726,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 </div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="histTitle"><div class="dcard">
-  <div class="dhead"><h2 id="histTitle"><small>棋譜</small>Game history</h2><button class="chip" id="histClose" type="button">Close</button></div>
+  <div class="dhead"><h2 id="histTitle"><small>棋譜</small>Match history</h2><button class="chip" id="histClose" type="button">Close</button></div>
   <div id="histBody"></div>
 </div></div>
 <div id="donate" hidden role="dialog" aria-modal="true" aria-labelledby="donTitle"><div class="dcard">
@@ -748,7 +751,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     </div>
   </section>
   <p class="dfoot">How the totals are counted: each Kessen fundraiser page's own public counter, plus donations made elsewhere that are listed with a receipt in the <a href="https://github.com/HiFunctioningElf/kessen-chess/blob/main/donations-ledger.json" target="_blank" rel="noopener">public ledger ↗</a>. Nothing is estimated.</p>
-  <p class="dfoot">Kessen Chess is not affiliated with or endorsed by these charities. Charity details come from the <a href="https://www.acnc.gov.au/charity/charities" target="_blank" rel="noopener">ACNC Charity Register ↗</a>.</p>
+  <p class="dfoot">Kessen Chess is not affiliated with or endorsed by these charities. Charity details come from the <a href="https://www.acnc.gov.au/charity/charities" target="_blank" rel="noopener">ACNC Charity Register ↗</a> (Smile Train's from the US IRS records).</p>
 </div></div>
 <div id="modal">
   <div class="mcard">
@@ -4987,7 +4990,7 @@ const resultText = g => g.winner == null ? 'DRAW' : g.me ? (g.winner === g.me ? 
 function openHistory(){
   A.init(); revJob++; rev = null;
   const log = gameLog(), body = $('#histBody');
-  $('#histTitle').innerHTML = '<small>棋譜</small>Game history';
+  $('#histTitle').innerHTML = '<small>棋譜</small>Match history';
   $('#histClose').textContent = 'Close';
   body.innerHTML = log.length ? '<div class="hl-list"></div>' : '<p class="hl-empty">No finished games yet. Play one and it will show up here, ready to review.</p>';
   log.forEach((g, i) => {
@@ -5138,7 +5141,7 @@ function openReview(g){
   revJob++;
   rev = {g, moves, fens, i: moves.length, flip: g.me === 'b', evals: (g.evals || []).slice(), arrows: true, retry: null, sel: null, res: null};
   $('#histTitle').innerHTML = '<small>検討</small>Game review';
-  $('#histClose').textContent = '← Games';
+  $('#histClose').textContent = '← Match history';
   $('#histBody').innerHTML = `<div class="rv">
     <div class="rv-left">
       <div class="rv-boardwrap"><div class="rv-eval" id="rvEval"><i></i><span id="rvEvalN"></span></div><div class="rv-board" id="rvBoard"></div></div>
@@ -6715,29 +6718,24 @@ function demo(pos, move){
    "Coming soon"; a total that can't be read is simply left out. Never put made-up numbers here. */
 // `page` = the Kessen Chess fundraiser page for that charity (its total can be counted);
 // until it exists, the button goes to the charity's own official donation page (`donate`), which has no public total.
+// `reg` = where to check the charity is real; `id` = its registration number (an Australian ABN, or a US EIN).
+// `abn` is only set for Australian charities: it matches receipts in the ledger.
 const CHARITIES = [
-  {name: 'Australian Conservation Foundation', cause: 'Environment', emoji: '🌏', abn: '22 007 498 482',
-   acnc: 'https://www.acnc.gov.au/charity/charities/d2e1368f-38af-e811-a960-000d3ad24282/profile',
-   donate: 'https://www.acf.org.au/donate', page: 'TODO', total: null},
-  {name: "Starlight Children's Foundation", cause: 'Sick kids', emoji: '⭐', abn: '80 931 522 157',
-   acnc: 'https://www.acnc.gov.au/charity/charities/af96203d-39af-e811-a963-000d3ad24077/profile',
-   donate: 'https://www.starlight.org.au/donate/', page: 'TODO', total: null},
-  {name: 'Beyond Blue', cause: 'Mental health', emoji: '💙', abn: '87 093 865 840',
-   acnc: 'https://www.acnc.gov.au/charity/charities/8bae377e-38af-e811-a963-000d3ad244fd/profile',
-   donate: 'https://www.beyondblue.org.au/donate', page: 'TODO', total: null},
-  {name: 'Foodbank Queensland', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209',
-   acnc: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile',
-   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'TODO', total: null},
-  {name: 'Craniofacial Australia', cause: 'Craniofacial care', emoji: '🩺', abn: '29 008 155 780',
-   acnc: 'https://www.acnc.gov.au/charity/charities/9f7e79c5-38af-e811-a95e-000d3ad24c60/profile',
-   donate: 'https://www.givenow.com.au/acmffdonations/donate', page: 'TODO', total: null},
-  {name: 'Cancer Council Queensland', cause: 'Cancer', emoji: '🎗️', abn: '48 321 126 727',
-   acnc: 'https://www.acnc.gov.au/charity/charities/0655bad9-39af-e811-a963-000d3ad24077/profile',
-   donate: 'https://donate.cancerqld.org.au/', page: 'TODO', total: null}
+  {name: 'Smile Train', cause: 'Cleft surgery for kids', emoji: '😁', abn: null, id: 'US EIN 13-3661416',
+   reg: {label: 'US registered charity ↗', url: 'https://projects.propublica.org/nonprofits/organizations/133661416'},
+   note: "A US charity: donations aren't tax-deductible in Australia.",
+   donate: 'https://www.smiletrain.org/?form=givenow', page: 'TODO', total: null},
+  {name: 'The Fred Hollows Foundation', cause: 'Restoring sight', emoji: '👓', abn: '46 070 556 642', id: 'ABN 46 070 556 642',
+   reg: {label: 'ACNC registered ↗', url: 'https://www.acnc.gov.au/charity/charities/b4a55fbf-38af-e811-a95e-000d3ad24c60/profile'},
+   donate: 'https://www.hollows.org/au/donate', page: 'TODO', total: null},
+  {name: 'Foodbank Queensland', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209', id: 'ABN 89 067 251 209',
+   reg: {label: 'ACNC registered ↗', url: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile'},
+   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'TODO', total: null}
 ];
 // `total` says where a page's live total can be read, or null for no number:
 //   {type: 'justgiving', page: '<page short name>'}  needs JUSTGIVING_APP_ID (a free key from developer.justgiving.com)
 //   {type: 'opencollective', slug: '<collective slug>'}
+//   {type: 'donordrive', host: 'www.mysmiletrain.org', participant: <participantID from your page's address>}  (Smile Train; no key needed)
 const JUSTGIVING_APP_ID = 'TODO';
 // The dev's coffee jar on Open Collective. Hidden until `url` and `slug` are filled in.
 // Goals fill in order: the first goal's amount, then the next on top of it.
@@ -6771,6 +6769,11 @@ async function readTotal(spec){
     if (!s || !s.totalAmountReceived || typeof s.totalAmountReceived.valueInCents !== 'number') return null;
     return {amount: s.totalAmountReceived.valueInCents / 100, currency: s.totalAmountReceived.currency, donors: typeof s.contributorsCount === 'number' ? s.contributorsCount : null};
   }
+  if (spec.type === 'donordrive' && spec.host && Number.isInteger(spec.participant)){
+    const j = await fetchJSON(`https://${spec.host}/api/participants/${spec.participant}`);
+    if (!j || typeof j.sumDonations !== 'number') return null;
+    return {amount: j.sumDonations, currency: 'USD', donors: typeof j.numDonations === 'number' ? j.numDonations : null};
+  }
   if (spec.type === 'justgiving' && isSet(JUSTGIVING_APP_ID) && isSet(spec.page)){
     const base = `https://api.justgiving.com/${encodeURIComponent(JUSTGIVING_APP_ID)}/v1/fundraising/pages/${encodeURIComponent(spec.page)}`;
     const j = await fetchJSON(base, {headers: {Accept: 'application/json'}});
@@ -6803,7 +6806,7 @@ async function loadCharityTotals(){
   else {
     const [live, ledger] = await Promise.all([Promise.all(CHARITIES.map(c => c.total && isSet(c.page) ? readTotal(c.total) : null)), loadLedger()]);
     per = CHARITIES.map((c, i) => {
-      const mine = ledger.filter(e => e.abn.replace(/\s/g, '') === c.abn.replace(/\s/g, '')), t = live[i];
+      const mine = c.abn ? ledger.filter(e => e.abn.replace(/\s/g, '') === c.abn.replace(/\s/g, '')) : [], t = live[i];
       if (!mine.length) return t;
       const extra = mine.reduce((a, e) => a + e.amount, 0), extraDonors = mine.reduce((a, e) => a + (Number.isInteger(e.donors) && e.donors > 0 ? e.donors : 1), 0);
       if (t && t.currency !== 'AUD') return t;   // can't add AUD receipts to another currency
@@ -6834,9 +6837,10 @@ function drawCharities(){
   CHARITIES.forEach((c, i) => {
     const card = document.createElement('article'); card.className = 'charity'; card.dataset.i = i;
     card.innerHTML = `<div class="ctop"><span class="em" aria-hidden="true"></span><div><b></b><div class="cause"></div></div></div>
-      <div class="meta"><a target="_blank" rel="noopener">ACNC registered ↗</a><span></span></div><div class="raised" hidden></div><div class="act"></div>`;
+      <div class="meta"><a target="_blank" rel="noopener"></a><span></span></div><div class="cnote" hidden></div><div class="raised" hidden></div><div class="act"></div>`;
     card.querySelector('.em').textContent = c.emoji; card.querySelector('b').textContent = c.name; card.querySelector('.cause').textContent = c.cause;
-    const acnc = card.querySelector('.meta a'); acnc.href = c.acnc; card.querySelector('.meta span').textContent = `ABN ${c.abn}`;
+    const reg = card.querySelector('.meta a'); reg.href = c.reg.url; reg.textContent = c.reg.label; card.querySelector('.meta span').textContent = c.id;
+    if (c.note){ const n = card.querySelector('.cnote'); n.hidden = false; n.textContent = c.note; }
     card.querySelector('.act').appendChild(charityLink(c, 'Donate ↗'));
     grid.appendChild(card);
   });

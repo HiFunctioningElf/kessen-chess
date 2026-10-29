@@ -25,7 +25,7 @@
 - **Power Level (戦闘力)**: a just-for-fun rating saved on your device (vs the CPU and online; style only counts in games of 10+ moves, and less against easier CPUs), climbing an anime rank ladder from *Background Extra* to *IT'S OVER 9000!!*. Style bonuses pop up the moment you earn them, once per game each: knight forks (*Family Fork* for king and queen), double check, en passant, underpromotion (the biggest payouts: +200 to +300, and +400 for an underpromotion checkmate), *Horse Delivery*, the king strolling into enemy land, smothered mates, mates by castling or en passant, back-rank mates, speedruns, comebacks, flawless and clutch wins, minigame wins and GODSPEED. A few taxes too, like bringing the queen out too early.
 - **En passant** gets a special movie: a beret, a baguette slap, and an uncomfortably long slow-motion action replay (tap to skip). Taking a pawn any other way keeps the action but skips the banners.
 - Resign with a white flag, offer a draw with a handshake (or get slapped), premove up to 6 moves, and resume a game after a reload.
-- **📜 Games**: every finished game is saved on your device, and Rude Fishy (Stockfish) grades it in the background straight away. The review has a board with coordinates and Fishy's best move as an arrow, an eval bar, an advantage graph you can tap to jump around, accuracy and average loss for each player, the opening's name, the key moments, and each move graded with the usual chess symbols: !! Brilliancy, ★ Fishy's Pick (best move), ! Sharp, ✓ Decent, ?! Sloppy (inaccuracy), ? Slip-up (mistake), ?? Howler (blunder) and ✗ Missed Chance. On a move that went wrong it shows the better move and the line after it, and **Try again** lets you replay that position and look for something better. You can also copy the game as an annotated PGN. Accuracy uses Lichess's published win-chance and accuracy formulas (no Lichess code).
+- **📜 Match history**: every finished game is saved on your device, and Rude Fishy (Stockfish) grades it in the background straight away. The review has a board with coordinates and Fishy's best move as an arrow, an eval bar, an advantage graph you can tap to jump around, accuracy and average loss for each player, the opening's name, the key moments, and each move graded with the usual chess symbols: !! Brilliancy, ★ Fishy's Pick (best move), ! Sharp, ✓ Decent, ?! Sloppy (inaccuracy), ? Slip-up (mistake), ?? Howler (blunder) and ✗ Missed Chance. On a move that went wrong it shows the better move and the line after it, and **Try again** lets you replay that position and look for something better. You can also copy the game as an annotated PGN. Accuracy uses Lichess's published win-chance and accuracy formulas (no Lichess code).
 - **WeLo**: Kessen's own rating (it replaced Elo), with dojo belts from White Belt to Grand Sensei. Everyone has one: online games rate you against your opponent's WeLo, CPU games against the CPU's (Rookie 800, Rival 1200, Final Boss 1700) at half the swing. Your first 15 games are placement. An online game you walk out of counts as a loss, and a CPU game where you used Undo is practice (unrated).
 - **Fighter names** are checked as you type: 2–16 characters, no reserved or rude names.
 - **Trailer**: open the game with `#trailer` on the end of the address and press FIGHT! for a two-minute goofy montage, ready to screen-record.
@@ -33,16 +33,13 @@
 
 ## Donations
 
-The 💝 **Donate** button links to fundraiser pages for six registered Australian charities. **Your donation goes straight to the charity. Kessen Chess never handles the money.** Each button goes to a Kessen Chess fundraiser page on the charity's own fundraising platform, or, until that page exists, to the charity's official donation page.
+The 💝 **Donate** button links to three charities. **Your donation goes straight to the charity. Kessen Chess never handles the money.** Each button goes to a Kessen Chess fundraiser page on the charity's own fundraising site, or, until that page exists, to the charity's official donation page.
 
-| Charity | Cause | ABN | ACNC register |
+| Charity | Cause | Registration | Fundraiser pages |
 |---|---|---|---|
-| Australian Conservation Foundation | Environment | 22 007 498 482 | [profile](https://www.acnc.gov.au/charity/charities/d2e1368f-38af-e811-a960-000d3ad24282/profile) |
-| Starlight Children's Foundation Australia | Sick kids | 80 931 522 157 | [profile](https://www.acnc.gov.au/charity/charities/af96203d-39af-e811-a963-000d3ad24077/profile) |
-| Beyond Blue | Mental health | 87 093 865 840 | [profile](https://www.acnc.gov.au/charity/charities/8bae377e-38af-e811-a963-000d3ad244fd/profile) |
-| Foodbank Queensland | Hunger | 89 067 251 209 | [profile](https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile) |
-| Craniofacial Australia (Australian Cranio-Maxillo Facial Foundation) | Craniofacial care | 29 008 155 780 | [profile](https://www.acnc.gov.au/charity/charities/9f7e79c5-38af-e811-a95e-000d3ad24c60/profile) |
-| Cancer Council Queensland | Cancer | 48 321 126 727 | [profile](https://www.acnc.gov.au/charity/charities/0655bad9-39af-e811-a963-000d3ad24077/profile) |
+| Smile Train | Cleft surgery for kids | US charity, EIN 13-3661416 ([IRS records](https://projects.propublica.org/nonprofits/organizations/133661416)). Not tax-deductible in Australia. | [mysmiletrain.org](https://www.mysmiletrain.org/index.cfm?fuseaction=donorDrive.event&eventID=517) (DonorDrive: its live total can be shown) |
+| The Fred Hollows Foundation | Restoring sight | ABN 46 070 556 642 ([ACNC profile](https://www.acnc.gov.au/charity/charities/b4a55fbf-38af-e811-a95e-000d3ad24c60/profile)) | [fundraise.hollows.org](https://fundraise.hollows.org/got-your-own-idea) |
+| Foodbank Queensland | Hunger | ABN 89 067 251 209 ([ACNC profile](https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile)) | |
 
 **Kessen Chess is not affiliated with or endorsed by these charities.**
 
@@ -55,11 +52,9 @@ The "$X raised by Y Kessen players" counter adds up the totals that the fundrais
 | Platform | Who uses it here | Can a web page read the total? |
 |---|---|---|
 | Open Collective | the dev's holiday fund | **Yes.** Public GraphQL API, readable from the browser. Shows the full amount given (`totalAmountReceived`) and the number of contributors. |
-| JustGiving | ACF, Beyond Blue, Foodbank QLD | **With a key.** The API answers browsers, but needs a free App ID from developer.justgiving.com. Counts only money donated online through the page (`totalRaisedOnline`), not offline amounts a page owner types in. Not yet tried with a real page. |
-| GoFundraise | Starlight (Australia) | No public total API found. |
-| Cancer Council QLD fundraising site / Do It For Cancer | Cancer Council QLD | No public total API found. |
-| GiveNow CrowdRaiser, MyCause | Craniofacial Australia | No public total API found. |
-| fundraise.beyondblue.org.au | Beyond Blue | No public total API found. |
+| DonorDrive (mysmiletrain.org) | Smile Train | **Yes.** Public API, readable from the browser with no key (`sumDonations`, `numDonations`). Totals are in US dollars, so they show on Smile Train's card but aren't added to the AUD counter. |
+| JustGiving | Foodbank QLD | **With a key.** The API answers browsers, but needs a free App ID from developer.justgiving.com. Counts only money donated online through the page (`totalRaisedOnline`), not offline amounts a page owner types in. Not yet tried with a real page. |
+| Funraisin (fundraise.hollows.org) | Fred Hollows | No public total API found. |
 
 **Donations made elsewhere.** Someone might give on a charity's own website instead of through a Kessen page. Those gifts show up in the counter only once they're listed in [`donations-ledger.json`](donations-ledger.json), the public receipts ledger. Add one entry per checked receipt: the charity's ABN, the amount in AUD, the date, and optionally how many people gave and where the (redacted) receipt can be seen. The game adds these on top of each page's live total, so never list a gift that was made through a Kessen fundraiser page, or it would count twice.
 
