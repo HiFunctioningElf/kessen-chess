@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029180745">
+<meta name="kessen-build" content="20261029180801">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -2657,10 +2657,10 @@ async function enPassantFx(mv){
   }
   lastMove = {from: mv.from, to: mv.to}; render();
 }
-/* ---- Tactic replays: a short cut-in the first time each player pulls off a fork, skewer, pin or discovered check.
+/* ---- Tactic replays: a short cut-in the first time each player pulls off a skewer, pin or discovered check.
    The camera swoops low onto the attacker, glowing lines draw the tactic, the targets shake, the name stamps in. ---- */
 const TACTIC_FX = {
-  fork: ['FORK!!', '両取り', '#3fe0ff', 'shing'], skewer: ['SKEWER!!', '串刺し', '#ff2e4d', 'clang'],
+  skewer: ['SKEWER!!', '串刺し', '#ff2e4d', 'clang'],
   pin: ['PINNED!!', '釘付け', '#ffc83d', 'clank'], disc: ['DISCOVERED CHECK!!', '開き王手', '#b06cff', 'zap']
 };
 async function tacticFx(t){
@@ -6346,7 +6346,7 @@ function noteStyle(mv){
   if (mv.piece === 'n' && !mate){
     const sqs = knightHops(mv.to).filter(q => { const p = game.get(q); return p && p.color === them && 'rqk'.includes(p.type); }), hit = sqs.map(q => game.get(q).type);
     const fork = hit.includes('k') && hit.includes('q') ? a('famfork', 'Family Fork (king and queen)', 35) : hit.length >= 2 ? a('fork', 'Forkful (knight fork)', 15) : false;
-    if (fork) pendingTactic = {type: 'fork', from: mv.to, targets: sqs};
+    // (forks earn style but get no replay)
   }
   // pins and skewers: along each line from the piece that moved, the first two enemy pieces in a row
   const lineT = mv.promotion || mv.piece;
