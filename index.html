@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029225750">
+<meta name="kessen-build" content="20261029230622">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -3439,12 +3439,15 @@ function mgFrame(key, title, jp){
   return F;
 }
 // The rules card and READY button. Everyone at this screen taps READY (the CPU is always ready);
-// online, both screens must be ready, and then they start the countdown together.
+// online, both screens must be ready, and then they start the countdown together. Online the card can't be left up
+// forever (holding the other player hostage): READY presses itself after MG_READY_S seconds.
+const MG_READY_S = 12;
 async function mgGate(F, rules, {count = true} = {}){
   const face = F.seat === 'face', here = face ? ['w', 'b'] : [mgMe()], ready = {}, cards = {}, gameKeys = F.key;   // the game's own keys come back after READY
   await new Promise(res => {
+    let left = MG_READY_S, tick = 0;
     const press = c => {
-      if (ready[c]) return; ready[c] = true; mgSfx.tick(true);
+      if (ready[c]) return; ready[c] = true; mgSfx.tick(true); clearInterval(tick);
       const btn = cards[c].querySelector('button'); btn.disabled = true; btn.textContent = 'READY ✓';
       for (const x of here) if (ready[x] && !here.every(y => ready[y])) cards[x].querySelector('.wait').textContent = `Waiting for ${mgName(OTHER(x))}…`;
       if (here.every(x => ready[x])){ F.key = gameKeys; res(); }
@@ -3459,6 +3462,12 @@ async function mgGate(F, rules, {count = true} = {}){
     }
     F.key = k => { const c = face ? ({a: 'w', l: 'b'})[k] : ([' ', 'Enter'].includes(k) ? mgMe() : null); if (c && !ready[c]){ press(c); return true; } return false; };
     setTimeout(() => cards[here[0]].querySelector('button').focus({preventScroll: true}), 50);
+    if (mode === 'online'){
+      const show = () => { const c = here[0]; if (ready[c]) return; cards[c].querySelector('button').textContent = `READY! (${left})`; cards[c].querySelector('.wait').textContent = `Starts by itself in ${left} s`; };
+      show();
+      tick = setInterval(() => { if (F.closed){ clearInterval(tick); return; } left--; if (left <= 0) press(here[0]); else show(); }, 1000);
+      F.timers.push(tick);
+    }
   });
   if (mode === 'online'){
     const c = mgMe(); cards[c].querySelector('.wait').textContent = `Waiting for ${mgName(OTHER(c))}…`;
