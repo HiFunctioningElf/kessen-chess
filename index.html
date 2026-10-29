@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029212126">
+<meta name="kessen-build" content="20261029224158">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -7281,7 +7281,7 @@ loadCharityTotals();   // fills the header chip's total once real numbers are co
    one name per player, nobody can touch anyone else's entry, and a leaderboard WeLo starts at 1000 and can only move
    by one game's worth (at most 64) at most once a minute. Results are still reported by each player's own browser,
    so the board is for fun, like WeLo itself. */
-const FIREBASE = {apiKey: 'TODO', projectId: 'TODO'};
+const FIREBASE = {apiKey: 'AIzaSyADkWlp7hDuzVJQlMhHkAoIU82OuIzuNig', projectId: 'kessen-chess'};
 const FB_ON = isSet(FIREBASE.apiKey) && isSet(FIREBASE.projectId);
 const FBH = Object.assign({auth: 'https://identitytoolkit.googleapis.com', token: 'https://securetoken.googleapis.com', db: 'https://firestore.googleapis.com'}, FIREBASE.hosts || {});
 const fbDocs = () => `projects/${FIREBASE.projectId}/databases/(default)/documents`;
