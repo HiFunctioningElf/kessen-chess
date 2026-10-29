@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029234313">
+<meta name="kessen-build" content="20261029235752">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -304,6 +304,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .fairplay .ok{color:#7dff8a}.fairplay .warn{color:var(--gold)}
 .fairplay small{color:var(--muted);line-height:1.4}
 .scouter .big{font-size:26px;display:block}
+.scouter .how{display:block;margin-top:6px;font-size:12px;color:#c9ffd0;opacity:.85}
+.scouter .sl{display:block;font-size:12px;opacity:.85}
+.fighter .fhow{font-size:11px;color:var(--muted);margin-top:2px}
 .scouter .rk{color:#ffe36b}
 .pl .pw{font-size:11px;color:var(--gold);margin-left:auto}
 .pcard{background:var(--night);border:3px solid var(--gold);padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center}
@@ -707,7 +710,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
-        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b> · WeLo <b id="fElo"></b></div></div>
+        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · <span title="Aura (闘気) is your rating: it rises with wins (most against stronger players) and with style (the style meter).">闘気 Aura <b id="fPower"></b></span> · WeLo <b id="fElo"></b></div><div class="fhow">Aura grows with your wins <i>and</i> how stylish you play.</div></div>
         <button class="chip" id="fEdit" type="button">Edit</button>
       </section>
       <section class="card powers" id="powersCard" hidden><div class="label">Power-ups</div><div id="powRows"></div></section>
@@ -5513,12 +5516,15 @@ $('#drawBtn').onclick = async () => {
   if (offerFx || !$('#drawChoice').hidden){ toast('A draw offer is already on the table'); return; }
   if (mode === 'pvp'){ pvpOffer = game.turn(); handIn(pvpOffer); showChoice(pvpOffer); return; }
   if (mode === 'cpu'){
-    await handIn(playerColor); await sleep(700);
-    // the CPU shakes unless it is clearly ahead on material
-    const cpu = playerColor === 'w' ? 'b' : 'w', mat = c => game.board().flat().reduce((a, p) => a + (p && p.color === c ? PV[p.type] : 0), 0);
-    if (isOver()) return removeOfferFx();
-    if (mat(cpu) - mat(playerColor) <= 100) endGame({type: 'draw', winner: null, by: playerColor});
-    else { await slapFx(); toast('The CPU smells victory'); }
+    await handIn(playerColor);
+    // The CPU thinks it over like a player would: it shakes only after move 20, and only if the engine says it isn't
+    // better (a draw against a strong CPU would otherwise be free rating). Before that it wants to keep fighting.
+    const cpu = playerColor === 'w' ? 'b' : 'w', fen = game.fen(), plies = game.history().length;
+    const [ev] = await Promise.all([plies >= 40 ? sfSearch(fen, 600) : null, sleep(700)]);
+    if (isOver() || game.fen() !== fen) return removeOfferFx();
+    const cpuEval = ev ? (game.turn() === cpu ? ev.score : -ev.score) : null;
+    if (plies >= 40 && cpuEval != null && cpuEval <= 30) endGame({type: 'draw', winner: null, by: playerColor});
+    else { await slapFx(); toast(plies < 40 ? 'The CPU wants to keep fighting (draws only after move 20)' : 'The CPU smells victory'); }
     return;
   }
   handIn(net.my); net.ref.update({drawOffer: net.my}).catch(() => {}); toast('Draw offered. It stands until your friend moves');
@@ -6216,7 +6222,7 @@ async function drawPlayers(){
     const card = d['p' + c];
     nm.textContent = id ? ((card && card.name) || (ps[id] && ps[id].name) || (id === net.myId ? 'You' : 'Your friend')) : 'Waiting for a player…';
     row.appendChild(nm);
-    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `WeLo ${card.welo} · ${beltOf(card.welo)}`; row.appendChild(pw); }
+    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `Aura ${card.power ? card.power.toLocaleString() : '?'} · ${rankOf(card.power || 0)}`; pw.title = `WeLo ${card.welo} · ${beltOf(card.welo)}`; row.appendChild(pw); }
     if (id && id === net.myId){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; row.appendChild(y); }
     else if (card && card.pid && card.pid !== MY_PID){
       const fav = document.createElement('button'); fav.type = 'button'; fav.className = 'fav' + (isFriend(card.pid) ? ' on' : '');
@@ -6414,7 +6420,30 @@ document.addEventListener('pointerdown', () => { A.init(); if (started) A.music.
 
 /* ================= CONTROLS ================= */
 function seg(id, attr, val){ document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val)))); }
+// the game in progress: what it was started as (mode and side can be switched before newGame() runs)
+let liveGame = {mode: null, me: null};
+const forfeitable = (plies, prac) => plies >= 6 && !prac && !trailerOn;
+function forfeitCpuGame(){
+  if (liveGame.mode !== 'cpu' || !started || isOver() || !forfeitable(game.history().length, practice)) return;
+  const keep = [mode, playerColor]; mode = 'cpu'; playerColor = liveGame.me;
+  ended = {type: 'resign', winner: OTHER(liveGame.me)};
+  const r = rateGame(); recordGame();
+  [mode, playerColor] = keep;
+  if (r && r.aura) toast(`Unfinished game vs the CPU counted as a loss. Aura ${r.before.toLocaleString()} → ${r.after.toLocaleString()}`);
+}
+// the same for a saved CPU game you choose not to continue
+function forfeitSavedGame(){
+  const g = savedGame; savedGame = null; if (!g || g.mode !== 'cpu' || !g.pgn) return;
+  const c = new Chess(); if (!c.load_pgn(g.pgn) || c.game_over() || !forfeitable(c.history().length, g.practice)) return;
+  const keep = [mode, playerColor, level]; mode = 'cpu'; playerColor = g.playerColor || 'w'; level = g.level ?? level;
+  resetStyle(); ratedLevel = Math.min(level, g.ratedLevel ?? level); game.load_pgn(g.pgn); ended = {type: 'resign', winner: OTHER(playerColor)};
+  const r = rateGame(); recordGame();
+  [mode, playerColor, level] = keep; ended = null; game.reset();
+  try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+  if (r && r.aura) setTimeout(() => toast(`Your unfinished game vs the CPU counted as a loss. Aura ${r.before.toLocaleString()} → ${r.after.toLocaleString()}`), 1200);
+}
 function newGame(){
+  forfeitCpuGame();
   mgPlayedAt = 0; seatAsked = false;
   if (mode === 'online'){ if (net.code){ if (net.my) showEnd('Rematch?', 'Same rules with sides swapped, or change them first.', '再戦'); } else { game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true); } return; }
   game.reset(); lastMove = null; selected = null; legal = []; busy = false;
@@ -6424,6 +6453,7 @@ function newGame(){
   A.music.intensity(0); A.music.start();
   render(true);
   saveGame();
+  liveGame = {mode, me: mode === 'cpu' ? playerColor : null};
   if (started && !trailerOn){ A.sfx.fight(); flash('#fff', 300, .6); bigText('FIGHT!', '決戦', {hold: 500}); setTimeout(cpuTurn, 900); }   // the trailer has its own captions
 }
 $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || busy) return;
@@ -6452,7 +6482,7 @@ $('#flipSeg').addEventListener('click', e => {
 $('#undoBtn').onclick = () => {
   if (busy || mode === 'online' || flagged || ended || !game.history().length) return;
   game.undo(); if (mode === 'cpu' && game.turn() !== playerColor) game.undo();
-  if (mode === 'cpu' && !practice){ practice = true; toast("Undo used: this game is practice now (no 戦闘力 or WeLo)."); }
+  if (mode === 'cpu' && !practice){ practice = true; toast("Undo used: this game is practice now (no Aura or WeLo)."); }
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; clearEndFx();
   A.music.intensity(game.in_check() ? 1 : 0); A.music.start(); render(true);
@@ -6526,7 +6556,7 @@ function showEnd(title, sub, jp){
   $('#mRe').disabled = mode === 'online' && !net.my;
   $('#modal').hidden = false; $('#mRe').focus();
 }
-/* ---- Fighter profile (this device) and the 戦闘力 Power Level ---- */
+/* ---- Fighter profile (this device) and the Aura (闘気) ranks ---- */
 const CRESTS = ['k', 'q', 'r', 'b', 'n', 'p'], CREST_COLORS = ['#ffc83d', '#ff2e4d', '#3fe0ff', '#b06cff', '#7dff8a'];
 const RANKS = [[0, 'Background Extra'], [300, 'Comic Relief'], [600, 'Side Character'], [900, 'Mysterious Transfer Student'], [1300, 'The Rival'],
   [1550, 'Tournament Arc Contender'], [1800, 'Main Character'], [2100, 'Protagonist With a Tragic Backstory'], [2500, 'Final Boss'], [3200, 'Secret Final Form'],
@@ -6541,11 +6571,9 @@ const BELTS = [[0, 'White Belt'], [700, 'Yellow Belt'], [850, 'Green Belt'], [10
 const beltOf = w => BELTS.filter(([min]) => w >= min).pop()[1];
 const weloK = cpu => (profile.weloGames < 15 ? 48 : profile.welo >= 1600 ? 24 : 32) * (cpu ? .5 : 1);
 function weloRate(opp, score, cpu){
-  const mine = profile.welo, expected = 1 / (1 + 10 ** ((opp - mine) / 400));
+  const mine = profile.welo, expected = 1 / (1 + 10 ** ((Math.max(mine - 400, Math.min(mine + 400, opp)) - mine) / 400));
   profile.welo = Math.max(100, Math.round(mine + weloK(cpu) * (score - expected)));
   profile.weloGames++; profile.weloPeak = Math.max(profile.weloPeak || 0, profile.welo);
-  const delta = profile.welo - mine;
-  setTimeout(() => boardQueue(delta, score === 1), 0);   // after this frame: the leaderboard code is further down the script
   return {before: mine, after: profile.welo, opp, placement: profile.weloGames <= 15 ? profile.weloGames : 0};
 }
 // An online game in progress is noted on this device; if it never finishes (tab closed, Leave mid-game) it's a loss.
@@ -6553,18 +6581,40 @@ const PENDING_KEY = 'kessen-pending';
 function markPending(){
   if (mode !== 'online' || !net.my || !(net.data && net.data.w && net.data.b) || isOver() || game.history().length < 2) return;
   const theirs = net.data['p' + OTHER(net.my)];
-  try { localStorage.setItem(PENDING_KEY, JSON.stringify({code: net.code, opp: theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000})); } catch(e){}
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify({code: net.code, opp: theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, aura: theirs && Number.isFinite(theirs.power) && theirs.power > 0 ? theirs.power : 1000})); } catch(e){}
 }
 const clearPending = () => { try { localStorage.removeItem(PENDING_KEY); } catch(e){} };
 function settleAbandoned(why){
   let p = null; try { p = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch(e){}
   if (!p) return; clearPending();
-  const r = weloRate(Number.isFinite(p.opp) ? p.opp : 1000, 0);
+  const r = weloRate(Number.isFinite(p.opp) ? p.opp : 1000, 0), a = auraRate(auraFromShow(Number.isFinite(p.aura) ? p.aura : 1000), 0, false, 0);
   profile.losses++; profile.onlineGames++; saveProfile();
-  toast(`${why} WeLo ${r.before} → ${r.after}`);
+  toast(`${why} Aura ${a.before.toLocaleString()} → ${a.after.toLocaleString()} · WeLo ${r.before} → ${r.after}`);
+}
+/* ---- Aura (闘気): Kessen's headline rating, and what the leaderboard ranks. It rises with WINS and with STYLE.
+   Underneath is a hidden chess rating R (like WeLo): beating someone stronger than you raises it most, losing to someone
+   weaker drops it most, CPU games count half (Rookie 800, Rival 1200, Final Boss 1700). Style then shapes each change:
+   a stylish game makes a gain bigger (up to +50%) and a loss smaller (up to -25%), but it never turns a loss into a gain,
+   so losing on purpose with fireworks only ever costs Aura. Simulated over thousands of games: an honest player settles
+   at their real strength, and the most stylish players settle about 110 rating points (~25% more Aura) above it.
+   Grinding games, farming the Rookie or switching CPU level can't pump it (see also ratedLevel).
+   The Aura you see is R on an anime scale: 1000 at R 1000, doubling every 300 points, so OVER 9000 needs R ~1950. ---- */
+const auraShow = R => Math.round(1000 * 2 ** ((R - 1000) / 300));
+const auraFromShow = a => Math.max(100, Math.min(4000, 1000 + 300 * Math.log2(Math.max(1, a) / 1000)));
+// style points from one game -> how much they shape it (0 to 0.5; a game of nothing but taxes, down to -0.15)
+const styleBoost = pts => pts >= 0 ? .5 * (1 - Math.exp(-pts / 300)) : -Math.min(.15, -pts / 200);
+function auraRate(oppR, score, cpu, stylePts){
+  const R = profile.auraR, E = 1 / (1 + 10 ** ((Math.max(R - 400, Math.min(R + 400, oppR)) - R) / 400)), d = score - E, s = styleBoost(stylePts);
+  const K = (profile.auraGames < 15 ? 48 : R >= 1600 ? 24 : 32) * (cpu ? .5 : 1);
+  const m = d >= 0 ? 1 + s : 1 - s / 2, dR = Math.max(-64, Math.min(64, K * d * m));   // the leaderboard's rules allow 64 a game
+  const before = profile.power, plain = auraShow(R + Math.max(-64, Math.min(64, K * d))) - before;
+  profile.auraR = Math.max(100, Math.min(4000, R + dR)); profile.auraGames++;
+  profile.power = auraShow(profile.auraR); profile.auraPeak = Math.max(profile.auraPeak || 0, profile.power);
+  setTimeout(() => boardQueue(dR, score === 1), 0);   // after this frame: the leaderboard code is further down the script
+  return {before, after: profile.power, plain, styled: profile.power - before - plain, s, m, win: d >= 0, placement: profile.auraGames <= 15 ? profile.auraGames : 0};
 }
 const PROFILE_KEY = 'kessen-profile';
-let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0, welo: null, weloGames: 0, weloPeak: 0};
+let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 1000, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0, welo: null, weloGames: 0, weloPeak: 0, auraR: null, auraGames: 0, auraPeak: 0};
 try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch(e){}
 // a save from an older version, or one edited by hand, must never break the game: keep only sane values
 if (!Number.isFinite(profile.power) || profile.power < 0) profile.power = 500;
@@ -6575,11 +6625,18 @@ if (!CRESTS.includes(profile.crest)) profile.crest = 'n';
 if (!CREST_COLORS.includes(profile.color)) profile.color = CREST_COLORS[0];
 // WeLo replaced Elo: anyone who played online keeps their number, everyone else starts at 1000
 if (!Number.isFinite(profile.welo)){ profile.welo = profile.onlineGames > 0 ? profile.elo : 1000; profile.weloGames = profile.onlineGames || 0; profile.weloPeak = profile.welo; }
+// Aura replaced the old Power Level (which only ever grew with games played): everyone starts from their WeLo, with a
+// fresh 15-game placement. `power` stays as the Aura you see, so it's what your fighter card shows other players.
+var auraIntro = false;
+if (!(Number.isFinite(profile.auraR) && profile.auraR >= 100 && profile.auraR <= 4000)){ auraIntro = profile.wins + profile.losses + profile.draws > 0; profile.auraR = profile.welo; profile.auraGames = 0; profile.auraPeak = 0; }
+if (!Number.isFinite(profile.auraGames) || profile.auraGames < 0) profile.auraGames = 0;
+profile.power = auraShow(profile.auraR); profile.auraPeak = Math.max(profile.auraPeak || 0, profile.power);
 const fighterName = () => profile.name || 'Nameless Challenger';
 function saveProfile(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch(e){} drawFighter(); shareProfile(); }
 function drawFighter(){
   $('#fCrest').textContent = GLYPH[profile.crest] + VS; $('#fCrest').style.setProperty('--c', profile.color);
   $('#fName').textContent = fighterName(); $('#fRank').textContent = rankOf(profile.power); $('#fPower').textContent = profile.power.toLocaleString();
+  $('#fPower').title = `Aura ${profile.power.toLocaleString()} (peak ${(profile.auraPeak || profile.power).toLocaleString()})${profile.auraGames < 15 ? ` · placement ${profile.auraGames}/15` : ''}`;
   $('#fElo').textContent = profile.welo; $('#fElo').parentElement.title = `WeLo ${profile.welo} · ${beltOf(profile.welo)} (peak ${profile.weloPeak})${profile.weloGames < 15 ? ` · placement ${profile.weloGames}/15` : ''} · online: ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
 }
 // The name checker: length, characters, reserved names and a rude-word filter (also catching 0→o, 1→i style swaps).
@@ -6641,9 +6698,10 @@ $('#fEdit').onclick = () => {
   $('#prof').hidden = false; $('#pName').focus();
 };
 drawFighter();
+if (auraIntro){ saveProfile(); setTimeout(() => toast('Power Level is now Aura (闘気): a real rating from your wins AND your style. It restarts from your WeLo with 15 placement games.'), 2500); }
 setTimeout(() => settleAbandoned('Your unfinished online game counted as a loss.'), 1500);
 // Style: every move can earn style for whoever played it (you, your friend, the CPU), shown on each player's style
-// meter during the game. In a rated game (vs CPU or online) your style also goes into your Power Level.
+// meter during the game. In a rated game (vs CPU or online) your style also shapes your Aura.
 // Each bonus pays once per player per game (so a Takeback can't farm it). A few cheeky taxes too.
 const STYLE0 = () => ({lines: [], seen: {}, checks: 0, worst: 0, promos: 0, castled: false, lostAny: false, hadPow: false, usedPow: false});
 var style = null;   // (var, so the panel can ask before this line has run)
@@ -6806,46 +6864,56 @@ function rateGame(){
   else if (flagged) winner = timeoutDraw ? null : (flagged === 'w' ? 'b' : 'w');
   else if (game.in_checkmate()) winner = game.turn() === 'w' ? 'b' : 'w';
   const out = winner === null ? 'draw' : winner === me ? 'win' : 'loss';
-  const table = mode === 'cpu' ? {win: [40, 90, 200][ratedLevel], loss: [-60, -40, -20][ratedLevel], draw: [10, 25, 60][ratedLevel]} : {win: 150, loss: -60, draw: 20};
-  // Style counts in full online and against the Final Boss, less against easier CPUs, and not at all in a game under
-  // 10 moves (so you can't Bongcloud, resign and repeat to farm it). Taxes always count.
-  const moves = Math.ceil(game.history().length / 2), st = style[me];
-  const counts = moves >= 10, mult = mode === 'cpu' ? [.5, .75, 1][ratedLevel] : 1, styled = (t, p) => [t, p > 0 ? Math.round(p * mult) : p];
-  const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]]];
-  if (counts) lines.push(...st.lines.map(([t, p]) => styled(t, p)));
-  else if (st.lines.some(l => l[1] > 0)) lines.push(['Style (only counts in games of 10+ moves)', 0]);
-  if (counts && mult < 1 && st.lines.some(l => l[1] > 0)) lines.push([`(style ×${mult} against the ${CPU_NAMES[ratedLevel]} CPU)`, 0]);
+  const quick = Math.ceil(game.history().length / 2) < 10 && (out === 'draw' || (ended && ['resign', 'abandon'].includes(ended.type)));
+  if (quick && out !== 'loss'){ profile[out === 'win' ? 'wins' : 'draws']++; saveProfile();
+    return lastRating = {unrated: out === 'draw' ? 'A draw before move 10 isn\'t rated.' : 'Your opponent gave up before move 10, so this one isn\'t rated.', before: profile.power, after: profile.power, lines: []}; }
+  // Style counts in games of 10+ moves (so you can't Bongcloud, resign and repeat to farm it). Taxes always count.
+  const moves = Math.ceil(game.history().length / 2), st = style[me], counts = moves >= 10;
+  const lines = counts ? st.lines.slice() : st.lines.filter(l => l[1] < 0);
+  if (!counts && st.lines.some(l => l[1] > 0)) lines.push(['(style only counts in games of 10+ moves)', 0]);
   if (ended && ended.type === 'resign' && winner !== me) lines.push(['White Flag Tax', -10]);
   if (out === 'draw' && game.in_stalemate()) lines.push(['Tea Party (stalemate)', 20]);
   if (out === 'draw' && game.in_threefold_repetition()) lines.push(['Déjà Vu Tax', -5]);
   // the whole game's story
   if (out === 'win' && counts){
-    if (st.worst <= -9) lines.push(styled('Anime Comeback (won from a queen down)', 150));
-    else if (st.worst <= -5) lines.push(styled('Plot Armor Comeback (won from 5+ down)', 80));
-    if (!st.lostAny) lines.push(styled('Flawless Victory (lost nothing)', 60));
-    if (flagged) lines.push(styled('Clock Bully (won on time)', 15));
-    else if (tcOn() && clock[me] <= 5000) lines.push(styled(`Clutch (won with ${Math.max(0, clock[me] / 1000).toFixed(1)} s left)`, 40));
-    if (!st.castled && moves >= 20) lines.push(styled('Never Castled, Never Scared', 10));
-    if (st.hadPow && !st.usedPow) lines.push(styled('Purist (won without power-ups)', 40));
+    if (st.worst <= -9) lines.push(['Anime Comeback (won from a queen down)', 150]);
+    else if (st.worst <= -5) lines.push(['Plot Armor Comeback (won from 5+ down)', 80]);
+    if (!st.lostAny) lines.push(['Flawless Victory (lost nothing)', 60]);
+    if (flagged) lines.push(['Clock Bully (won on time)', 15]);
+    else if (tcOn() && clock[me] <= 5000) lines.push([`Clutch (won with ${Math.max(0, clock[me] / 1000).toFixed(1)} s left)`, 40]);
+    if (!st.castled && moves >= 20) lines.push(['Never Castled, Never Scared', 10]);
+    if (st.hadPow && !st.usedPow) lines.push(['Purist (won without power-ups)', 40]);
   }
-  if (moves >= 80) lines.push(styled('Marathon (80+ moves)', 20));
-  const before = profile.power, delta = lines.reduce((a, l) => a + l[1], 0);
-  profile.power = Math.max(0, before + delta); profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
-  // WeLo: against your online opponent's (as their screen shared it) or the CPU's fixed rating
+  if (moves >= 80 && counts) lines.push(['Marathon (80+ moves)', 20]);
+  const stylePts = lines.reduce((a, l) => a + l[1], 0), score = out === 'win' ? 1 : out === 'draw' ? .5 : 0;
+  profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
+  // Aura and WeLo: against your online opponent's (as their screen shared it) or the CPU's fixed rating
   const theirs = mode === 'online' && net.data && net.data['p' + OTHER(me)];
-  const welo = weloRate(mode === 'cpu' ? WELO_CPU[ratedLevel] : theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, out === 'win' ? 1 : out === 'draw' ? .5 : 0, mode === 'cpu');
+  const oppAura = mode === 'cpu' ? WELO_CPU[ratedLevel] : auraFromShow(theirs && Number.isFinite(theirs.power) && theirs.power > 0 ? theirs.power : 1000);
+  const aura = auraRate(oppAura, score, mode === 'cpu', stylePts);
+  const welo = weloRate(mode === 'cpu' ? WELO_CPU[ratedLevel] : theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, score, mode === 'cpu');
   if (mode === 'online'){ profile.onlineGames++; if (out === 'win') profile.onlineWins++; }
   saveProfile();
-  return lastRating = {before, after: profile.power, welo, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
+  const vs = mode === 'cpu' ? `the ${CPU_NAMES[ratedLevel]} CPU` : (theirs && theirs.name) || 'your opponent';
+  return lastRating = {before: aura.before, after: aura.after, aura, welo, lines, stylePts, out, vs, rankUp: rankOf(aura.after) !== rankOf(aura.before) && aura.after > aura.before, over9000: aura.before < 9001 && aura.after >= 9001};
 }
 // The scouter readout on the end screen: lists the bonuses and counts the number up.
 function showScouter(r){
   const el = $('#mScouter'); if (!r){ el.hidden = true; return; }
-  if (r.practice){ el.innerHTML = 'PRACTICE GAME<br>You used Undo, so this one doesn\'t count for 戦闘力 or WeLo.'; el.hidden = false; return; }
-  const sign = n => (n >= 0 ? '+' : '') + n;
-  el.innerHTML = `戦闘力 POWER LEVEL<span class="big" id="scN">${r.before.toLocaleString()}</span>` + r.lines.map(([t, n]) => `${t} ${sign(n)}`).join('<br>') +
+  if (r.practice){ el.innerHTML = 'PRACTICE GAME<br>You used Undo, so this one doesn\'t count for Aura or WeLo.'; el.hidden = false; return; }
+  if (r.unrated){ el.innerHTML = `UNRATED<br>${r.unrated}`; el.hidden = false; return; }
+  const sign = n => (n >= 0 ? '+' : '') + n.toLocaleString(), a = r.aura, rk = STYLE_RANKS[styleRank(r.stylePts)];
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
+  const res = `${r.out === 'win' ? 'Win' : r.out === 'loss' ? 'Loss' : 'Draw'} vs ${esc(r.vs)}: ${sign(a.plain)}`;
+  const sty = Math.abs(a.s) < .005 ? 'Style: no effect this time' : a.s > 0
+    ? (a.win ? `Style ${rk[1]} (${r.stylePts}) boosted the gain ×${a.m.toFixed(2)}: ${sign(a.styled)}` : `Style ${rk[1]} (${r.stylePts}) softened the loss by ${Math.round((1 - a.m) * 100)}%: ${sign(a.styled)}`)
+    : `Style taxes (${r.stylePts}): ${sign(a.styled)}`;
+  el.innerHTML = `闘気 AURA<span class="big" id="scN">${r.before.toLocaleString()}</span>${res}<br>${sty}` +
+    r.lines.map(([t, n]) => `<span class="sl">· ${esc(t)}${n ? ` ${sign(n)} style` : ''}</span>`).join('') +
+    (a.placement ? `<br>Placement ${a.placement}/15 (bigger swings)` : '') +
     (r.rankUp ? `<br><span class="rk">RANK UP! ${rankOf(r.after).toUpperCase()}</span>` : '') +
     (r.welo ? `<br>WeLo ${r.welo.before} → <b>${r.welo.after}</b> (${(r.welo.after >= r.welo.before ? '+' : '') + (r.welo.after - r.welo.before)}) · ${beltOf(r.welo.after)}${beltOf(r.welo.after) !== beltOf(r.welo.before) ? (r.welo.after > r.welo.before ? ' · NEW BELT!' : '') : ''}${r.welo.placement ? ` · placement ${r.welo.placement}/15` : ''}` : '');
+  el.insertAdjacentHTML('beforeend', '<span class="how">Aura = wins (most against stronger players) + style (how stylish you played).</span>');
   el.hidden = false; A.sfx.beep();
   const t0 = performance.now(), n = $('#scN');
   const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1200); n.textContent = Math.round(r.before + (r.after - r.before) * k).toLocaleString(); if (k < 1) requestAnimationFrame(tick); else { n.textContent = r.after.toLocaleString(); if (r.rankUp) A.sfx.promote(); } };
@@ -6904,9 +6972,9 @@ function claimName(){
   box.remove();   // the same box is reused for end-of-game screens: the name question only belongs to the first one
   return true;
 }
-$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); loadEpVoice(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); loadEpVoice(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; if (!trailerOn) forfeitSavedGame(); newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Straight into random-opponent matchmaking from the start screen
-$('#mMatch').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
+$('#mMatch').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; forfeitSavedGame(); hideModal(); $('#mOn').click(); quickMatch(); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
   '#oracle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle'],
@@ -7465,7 +7533,7 @@ async function openBoard(){
   more.hidden = !(boardSize < 50 && c.rows.length >= boardSize);
   const mine = fbAuth && fbAuth.uid;
   note.textContent = rows.length
-    ? 'Every player starts at 1000 with their first rated game. Each game moves it like your WeLo: CPU games half as much, placement games more.'
+    ? 'Ranked by Aura: wins (most against stronger players) boosted by how stylish you play. Everyone starts at 1,000; CPU games count half.'
     : 'Nobody on the board yet. Finish a rated game to be the first!';
   rows.forEach((x, i) => {
     const li = document.createElement('li'); li.className = 'lb-row' + (x.uid === mine ? ' me' : '');
@@ -7475,8 +7543,8 @@ async function openBoard(){
     li.querySelector('.nm b').textContent = typeof x.name === 'string' ? x.name.slice(0, 16) : '?';
     if (x.uid === mine){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; li.querySelector('.nm b').appendChild(y); }
     const welo = Number.isFinite(x.welo) ? x.welo : 1000, games = Number.isFinite(x.games) ? x.games : 0;
-    li.querySelector('.nm > span').textContent = `${beltOf(welo)} · ${games} game${games === 1 ? '' : 's'}`;
-    li.querySelector('.wl').textContent = welo;
+    li.querySelector('.nm > span').textContent = `${rankOf(auraShow(welo))} · ${games} game${games === 1 ? '' : 's'}`;
+    li.querySelector('.wl').textContent = auraShow(welo).toLocaleString();
     list.appendChild(li);
   });
   // you, if you're not in the list (looked up once per cached board)
@@ -7490,7 +7558,7 @@ async function openBoard(){
   const n = await fbFetch(`${FBH.db}/v1/${fbDocs()}:runAggregationQuery`, {method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({structuredAggregationQuery: {structuredQuery: {from: [{collectionId: 'players'}], where: {fieldFilter: {field: {fieldPath: 'welo'}, op: 'GREATER_THAN', value: {integerValue: String(me.welo)}}}}, aggregations: [{alias: 'n', count: {}}]}})});
   const above = n.ok && Array.isArray(n.j) && n.j[0] && n.j[0].result ? Number(n.j[0].result.aggregateFields.n.integerValue) : null;
-  const t = `You: ${me.name} · WeLo ${me.welo} · ${me.games} game${me.games === 1 ? '' : 's'}${above != null ? ` · rank ${above + 1}` : ''}`;
+  const t = `You: ${me.name} · Aura ${auraShow(me.welo).toLocaleString()} · ${me.games} game${me.games === 1 ? '' : 's'}${above != null ? ` · rank ${above + 1}` : ''}`;
   showMe(t); boardStore(Object.assign(c, {meUid: mine, meText: t}));
 }
 function closeBoard(){ $('#board').hidden = true; $('#boardBtn').focus(); }
