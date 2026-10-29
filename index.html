@@ -7505,6 +7505,8 @@ function clipStop(){
 }
 // one frame of the clip: the board, the particles, then the page's captions and HUD drawn on top
 function clipFrame(){
+  const now = performance.now(); if (now - (clip.last || 0) < 1000 / CLIP.FPS - 4) return;   // the clip runs at 30 fps, the board may run faster
+  clip.last = now;
   const view = stageEl.getBoundingClientRect(), c = clip.cx, k = clip.cv.width / view.width;
   if (!view.width) return;
   c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0c0a17'; c.fillRect(0, 0, clip.cv.width, clip.cv.height);
