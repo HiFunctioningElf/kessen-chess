@@ -33,13 +33,14 @@
 
 ## Donations
 
-The 💝 **Donate** button links to three charities. **Your donation goes straight to the charity. Kessen Chess never handles the money.** Each button goes to a Kessen Chess fundraiser page on the charity's own fundraising site, or, until that page exists, to the charity's official donation page.
+The 💝 **Donate** button links to two charities. **Your donation goes straight to the charity. Kessen Chess never handles the money.** Each button goes to the Kessen Chess fundraiser page on the charity's own fundraising site.
+
+**Goals.** Each fundraiser aims for $1,000 (US$1,000 for Smile Train, A$1,000 for Foodbank Queensland). A banner under the header shows both goals, and **if both are reached, Kessen Chess comes to Android**. The bars fill only from the totals the fundraising sites publish (see below); until a page's total can be read, the banner shows just its goal. The goals and the promise are set by `goal` in `CHARITIES` and `GOAL_PRIZE` in `index.html`.
 
 | Charity | Cause | Registration | Fundraiser pages |
 |---|---|---|---|
-| Smile Train | Cleft surgery for kids | US charity, EIN 13-3661416 ([IRS records](https://projects.propublica.org/nonprofits/organizations/133661416)). Not tax-deductible in Australia. | [mysmiletrain.org](https://www.mysmiletrain.org/index.cfm?fuseaction=donorDrive.event&eventID=517) (DonorDrive: its live total can be shown) |
-| The Fred Hollows Foundation | Restoring sight | ABN 46 070 556 642 ([ACNC profile](https://www.acnc.gov.au/charity/charities/b4a55fbf-38af-e811-a95e-000d3ad24c60/profile)) | [fundraise.hollows.org](https://fundraise.hollows.org/got-your-own-idea) |
-| Foodbank Queensland | Hunger | ABN 89 067 251 209 ([ACNC profile](https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile)) | |
+| Smile Train | Cleft surgery for kids | US charity, EIN 13-3661416 ([IRS records](https://projects.propublica.org/nonprofits/organizations/133661416)). Not tax-deductible in Australia. | [Kessen Chess: Checkmate for Smiles](https://www.mysmiletrain.org/campaigns/Kessen-Chess--Checkmate-for-Smiles) (DonorDrive) |
+| Foodbank Queensland | Hunger | ABN 89 067 251 209 ([ACNC profile](https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile)) | [Kessen Chess on JustGiving](https://www.justgiving.com/page/kessen-chess) |
 
 **Kessen Chess is not affiliated with or endorsed by these charities.**
 
@@ -54,9 +55,8 @@ The "$X raised by Y Kessen players" counter adds up the totals that the fundrais
 | Platform | Who uses it here | Can a web page read the total? |
 |---|---|---|
 | Open Collective | the dev's holiday fund | **Yes.** Public GraphQL API, readable from the browser. Shows the full amount given (`totalAmountReceived`) and the number of contributors. |
-| DonorDrive (mysmiletrain.org) | Smile Train | **Yes.** Public API, readable from the browser with no key (`sumDonations`, `numDonations`). Totals are in US dollars, so they show on Smile Train's card but aren't added to the AUD counter. |
-| JustGiving | Foodbank QLD | **With a key.** The API answers browsers, but needs a free App ID from developer.justgiving.com. Counts only money donated online through the page (`totalRaisedOnline`), not offline amounts a page owner types in. Not yet tried with a real page. |
-| Funraisin (fundraise.hollows.org) | Fred Hollows | No public total API found. |
+| DonorDrive (mysmiletrain.org) | Smile Train | **Yes.** Public API, readable from the browser with no key (`sumDonations`, `numDonations`). Totals are in US dollars, so they show on Smile Train's card but aren't added to the AUD counter. **Not switched on yet:** it needs the page's participant ID in `CHARITIES`. |
+| JustGiving | Foodbank QLD | **With a key.** The API answers browsers, but needs a free App ID from developer.justgiving.com. Counts only money donated online through the page (`totalRaisedOnline`), not offline amounts a page owner types in. Not yet tried with a real page. **Not switched on yet:** the page is set (`kessen-chess`), but `JUSTGIVING_APP_ID` is still `TODO`. |
 
 **Donations made elsewhere.** Someone might give on a charity's own website instead of through a Kessen page. Those gifts show up in the counter only once they're listed in [`donations-ledger.json`](donations-ledger.json), the public receipts ledger. Add one entry per checked receipt: the charity's ABN, the amount in AUD, the date, and optionally how many people gave and where the (redacted) receipt can be seen. The game adds these on top of each page's live total, so never list a gift that was made through a Kessen fundraiser page, or it would count twice.
 
