@@ -71,7 +71,7 @@ To set it all up, fill in the `CHARITIES` and `COFFEE` settings at the top of th
 
 ## Leaderboard and unique names
 
-The 🏆 **Leaderboard** shows the top 50 players by WeLo, and where you stand. Fighter names are unique: nobody can take a name someone else holds, capitals or not, and rude names are refused. It runs on Firebase's free plan. Until Firebase is set up, the button stays hidden and names stay per device.
+The 🏆 **Leaderboard** shows the top 20 players by WeLo (the top 50 on request), and where you stand. To stay well inside Firebase's free daily allowance, each device keeps the board for 5 minutes, so opening it again doesn't read anything. Fighter names are unique: nobody can take a name someone else holds, capitals or not, and rude names are refused. It runs on Firebase's free plan. Until Firebase is set up, the button stays hidden and names stay per device.
 
 **How it stays fair.** The rules in [`firebase/firestore.rules`](firebase/firestore.rules) are checked by Firebase's servers, so no browser can get around them: one name per player, names refused by the same rude-word lists as the game, and nobody can change anyone else's entry. A leaderboard WeLo starts at 1000 with a player's first rated game, and each later update may add one game, move it by at most 64 and come at least a minute after the last. Results are still reported by each player's own browser, so like WeLo itself it's for fun.
 
