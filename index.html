@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029202125">
+<meta name="kessen-build" content="20261029202929">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -270,6 +270,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .m-title{font-family:var(--display);font-size:clamp(22px,6vw,32px);line-height:1.15;text-wrap:balance}
 .m-sub{color:var(--muted);line-height:1.6}
 .m-actions{display:flex;gap:10px;flex-wrap:wrap}
+.m-name{display:flex;flex-direction:column;gap:8px;text-align:left}
+.m-name[hidden]{display:none}
+.m-name input{background:var(--ink);border:2px solid var(--line);padding:10px 12px;font-size:16px;font-weight:700}
 .m-actions .btn{font-size:18px;padding:14px}
 .rules{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
 #promo,#prof{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(8,5,18,.55)}
@@ -800,6 +803,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <div class="scouter" id="mScouter" hidden></div>
     <div class="fairplay" id="mFair" hidden></div>
     <div class="m-sub" id="mSub">A 3D board, a cut-in for every capture, an alarm for every check, and a shattering king at checkmate. Play the CPU, a friend on this screen, or a friend online. The battle music and sound effects are synthesized live in your browser.</div>
+    <div class="m-name" id="mName" hidden><label class="label" for="mNameIn">Choose your fighter name</label>
+      <input id="mNameIn" maxlength="16" placeholder="Nameless Challenger" autocomplete="nickname" aria-describedby="mNameCheck">
+      <div class="pcheck" id="mNameCheck" aria-live="polite">Saved on this device with your WeLo and match history. You can change it any time.</div></div>
     <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button><button class="btn" id="mMatch">Find an online match</button></div>
   </div>
 </div>
@@ -6550,6 +6556,13 @@ function settleAbandoned(why){
 const PROFILE_KEY = 'kessen-profile';
 let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0, welo: null, weloGames: 0, weloPeak: 0};
 try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch(e){}
+// a save from an older version, or one edited by hand, must never break the game: keep only sane values
+if (!Number.isFinite(profile.power) || profile.power < 0) profile.power = 500;
+for (const k of ['wins', 'losses', 'draws', 'elo', 'onlineGames', 'onlineWins', 'weloGames', 'weloPeak']) if (!Number.isFinite(profile[k]) || profile[k] < 0) profile[k] = 0;
+if (profile.welo != null && !(Number.isFinite(profile.welo) && profile.welo >= 100 && profile.welo <= 4000)) profile.welo = null;
+if (typeof profile.name !== 'string') profile.name = '';
+if (!CRESTS.includes(profile.crest)) profile.crest = 'n';
+if (!CREST_COLORS.includes(profile.color)) profile.color = CREST_COLORS[0];
 // WeLo replaced Elo: anyone who played online keeps their number, everyone else starts at 1000
 if (!Number.isFinite(profile.welo)){ profile.welo = profile.onlineGames > 0 ? profile.elo : 1000; profile.weloGames = profile.onlineGames || 0; profile.weloPeak = profile.welo; }
 const fighterName = () => profile.name || 'Nameless Challenger';
@@ -6834,9 +6847,27 @@ $('#pgnBtn').onclick = () => {
   const pgn = game.pgn({max_width: 72}) || '(no moves yet)';
   try { navigator.clipboard.writeText(pgn).then(() => toast('PGN copied'), () => toast('Copy failed')); } catch(e){ toast('Copy failed'); }
 };
-$('#mGo').onclick = () => { A.init(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+// First visit: the start screen asks for a fighter name (optional; blank keeps "Nameless Challenger").
+const firstVisit = !profile.name && !profile.named;
+if (firstVisit){
+  $('#mName').hidden = false;
+  $('#mNameIn').oninput = () => { const v = $('#mNameIn').value, r = checkName(v), el = $('#mNameCheck');
+    el.textContent = v.trim() ? r.msg : 'Saved on this device with your WeLo and match history. You can change it any time.'; el.className = 'pcheck' + (v.trim() ? r.ok ? ' ok' : ' bad' : ''); };
+  $('#mNameIn').onkeydown = e => { if (e.key === 'Enter') $('#mGo').click(); };
+}
+// Ask the browser to keep this site's saved data (name, WeLo, match history) instead of clearing it to free space.
+const keepSaves = () => { try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch(e){} };
+function claimName(){
+  const box = $('#mName'); if (!box || box.hidden) return true;
+  const v = $('#mNameIn').value, r = checkName(v);
+  if (!r.ok){ $('#mNameIn').oninput(); $('#mNameIn').focus(); return false; }
+  profile.name = v.trim().replace(/\s+/g, ' ').slice(0, 16); profile.named = true; saveProfile();
+  box.remove();   // the same box is reused for end-of-game screens: the name question only belongs to the first one
+  return true;
+}
+$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Straight into random-opponent matchmaking from the start screen
-$('#mMatch').onclick = () => { A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
+$('#mMatch').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
   '#oracle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle'],
