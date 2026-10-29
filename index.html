@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029174320">
+<meta name="kessen-build" content="20261029175356">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -3150,8 +3150,25 @@ async function commit(input, remote, remoteClock){
    players pick how they sit: face to face (screen flat between them, White at the bottom edge, Black's half turned
    round to face them) or pass the phone (one at a time: White plays the whole game full screen, then hands the phone to Black,
    who gets the very same challenge; the better result wins). */
-// ?mgEvery=N (testing only) makes minigames come round faster
-const MG_EVERY = Math.max(2, +new URLSearchParams(location.search).get('mgEvery') || 16);
+// Minigames come round less often as pieces come off the board, and stop in the endgame:
+// 20+ pieces (not counting kings) every 8 moves, 12–19 every 12, 7–11 every 18, 6 or fewer none at all.
+// ?mgEvery=N (testing only) uses a fixed gap of N plies instead.
+const MG_TEST = +new URLSearchParams(location.search).get('mgEvery') || 0;
+const MG_GAPS = [[20, 16], [12, 24], [7, 36]];   // [at least this many pieces, plies between minigames]
+const mgGap = pieces => MG_TEST ? Math.max(2, MG_TEST) : (MG_GAPS.find(([min]) => pieces >= min) || [0, Infinity])[1];
+const piecesOn = g => g.board().flat().filter(p => p && p.type !== 'k').length;
+// When each minigame fell, worked out by replaying the moves (the gap is checked against the pieces on the board
+// after every move, so a big trade pushes the next one further away at once). The same on both screens online,
+// and after a reload. Cached until the move list changes.
+let mgPlan = {key: null, at: [], last: 0};
+function mgSchedule(){
+  const h = game.history(), key = h.join(' ');
+  if (mgPlan.key === key) return mgPlan;
+  const g = new Chess(), fen = game.header && game.header().FEN, at = []; let last = 0;
+  if (fen) g.load(fen);
+  h.forEach((m, i) => { g.move(m); if (i + 1 - last >= mgGap(piecesOn(g))){ at.push(i + 1); last = i + 1; } });
+  return mgPlan = {key, at, last};
+}
 const OTHER = c => (c === 'w' ? 'b' : 'w');
 const mgPick = a => a[Math.floor(Math.random() * a.length)];
 let minigamesOn = true; try { minigamesOn = localStorage.getItem('kessen-minigames') !== 'off'; } catch(e){}
@@ -3168,7 +3185,7 @@ function drawGameMode(){
   const kessen = mgEnabled(), locked = matchLive() || (mode === 'online' && !!net.code);
   seg('gmSeg', 'gm', kessen ? 'kessen' : 'classic');
   $('#gmSeg').querySelectorAll('button').forEach(b => { b.disabled = locked; });
-  $('#gmNote').textContent = (kessen ? `Kessen: a minigame every ${MG_EVERY / 2} moves (Quick-draw, Blade Timing, Kunai Storm, Magical Dance); the winner earns a power-up.` : 'Classic: just chess.') +
+  $('#gmNote').textContent = (kessen ? 'Kessen: minigames (Quick-draw, Blade Timing, Kunai Storm, Magical Dance) every 8 moves, less often as pieces come off, and none in the endgame. The winner earns a power-up.' : 'Classic: just chess.') +
     (locked ? (mode === 'online' && net.code ? ' Set by the game creator.' : ' Locked until this duel ends.') : '');
   $('#seatField').hidden = !(mode === 'pvp' && kessen);
   if (typeof drawQmNote === 'function') drawQmNote();
@@ -3188,7 +3205,8 @@ const mgEnabled = () => mode === 'online' && net.data ? net.data.mg !== false : 
 let mgPlayedAt = 0;   // the ply of the last minigame: a Takeback can't replay one for another power-up
 function shouldMinigame(){
   const n = game.history().length;
-  if (!mgEnabled() || !started || isOver() || !n || n % MG_EVERY || n <= mgPlayedAt) return false;
+  if (!mgEnabled() || !started || isOver() || !n || n <= mgPlayedAt) return false;
+  const plan = mgSchedule(); if (plan.at[plan.at.length - 1] !== n) return false;
   if (mode === 'online' && !(net.my && net.data && net.data.w && net.data.b)) return false;
   mgPlayedAt = n; return true;
 }
@@ -4598,8 +4616,9 @@ const MINIGAMES = [
   {name: 'Kunai Storm', jp: '苦無', play: () => kunaiStorm()},
   {name: 'Magical Dance', jp: '☆', play: () => magicalDance()}
 ];
-const minigameAt = n => MINIGAMES[Math.max(0, Math.floor(n / MG_EVERY) - 1) % MINIGAMES.length];   // the one played at ply n
-const upcomingMinigame = () => MINIGAMES[Math.floor(game.history().length / MG_EVERY) % MINIGAMES.length];
+// they take turns: the first minigame of a game is Quick-draw, the second Blade Timing, and so on
+const minigameAt = n => MINIGAMES[Math.max(0, mgSchedule().at.indexOf(n)) % MINIGAMES.length];   // the one played at ply n
+const upcomingMinigame = () => MINIGAMES[mgSchedule().at.length % MINIGAMES.length];
 async function playMinigame(){
   const n = game.history().length, g = minigameAt(n);
   mgBox = mgBox.filter(m => m.id === n); mgAns = {};   // old rounds' messages are no use now
@@ -4614,11 +4633,11 @@ const seededRandom = s => () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ 
 function drawHud(){
   const hud = $('#mgHud'), on = mgEnabled() && started && !isOver() && (mode !== 'online' || !!(net.data && net.data.w && net.data.b));
   hud.hidden = !on; if (!on) return;
-  const plies = MG_EVERY - (game.history().length % MG_EVERY), moves = Math.ceil(plies / 2);
+  const n = game.history().length, gap = mgGap(piecesOn(game)), plies = Math.max(1, mgSchedule().last + gap - n), moves = Math.ceil(plies / 2);
   const rows = mode === 'pvp' ? [game.turn()] : mode === 'cpu' ? [playerColor] : net.my ? [net.my] : [];
-  hud.innerHTML = `<span class="next">⚔️ <b></b> in ${moves} move${moves === 1 ? '' : 's'}</span>` +
+  hud.innerHTML = (isFinite(gap) ? `<span class="next">⚔️ <b></b> in ${moves} move${moves === 1 ? '' : 's'}</span>` : '<span class="next" title="6 pieces or fewer: the endgame is pure chess">⚔️ No more minigames: endgame</span>') +
     rows.flatMap(c => powers[c].map(p => `<button class="pow" type="button" data-c="${c}" data-p="${p}" ${canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${powIcon(p)}${POWERS[p][1]}</button>`)).join('');
-  hud.querySelector('.next b').textContent = upcomingMinigame().name;
+  if (isFinite(gap)) hud.querySelector('.next b').textContent = upcomingMinigame().name;
 }
 $('#mgHud').addEventListener('click', e => { const b = e.target.closest('.pow'); if (b) usePower(b.dataset.c, b.dataset.p); });
 
@@ -6130,8 +6149,11 @@ function noteStyle(mv){
   if (mv.flags.includes('q')){ styleState.castled = true; award('cq', 'Long Way Round (castled queenside)', 10); }
   if (mv.promotion){
     styleState.promos++;
-    if (mv.promotion === 'n' && check) award('horse', 'Horse Delivery (knight promotion with check)', 40);
-    else if (mv.promotion !== 'q') award('under', '...Really? Bonus (underpromotion)', 25);
+    // underpromotion is the height of style: it pays big (the silliest pick pays most)
+    if (mv.promotion === 'n' && check) award('horse', 'Horse Delivery (knight promotion with check)', 300);
+    else if (mv.promotion === 'n') award('under', 'Horse Girl Energy (promoted to a knight)', 200);
+    else if (mv.promotion === 'r') award('under', 'Why Not a Queen? (promoted to a rook)', 200);
+    else if (mv.promotion === 'b') award('under', 'A Bishop?! Of All Things (promoted to a bishop)', 250);
     else award('glow', 'Glow Up (promoted a pawn)', 15);
     if (styleState.promos >= 2) award('factory', 'Pawn Factory (two promotions)', 30);
   }
@@ -6154,7 +6176,7 @@ function noteStyle(mv){
     const smothered = mv.piece === 'n' && around.every(q => { const p = game.get(q); return p && p.color !== me; });
     if (mv.flags.includes('e')) award('epmate', 'Baguette to the Face (en passant checkmate)', 200);
     else if (/[kq]/.test(mv.flags)) award('castlemate', 'Castle Crusher (checkmate by castling)', 150);
-    else if (mv.promotion && mv.promotion !== 'q') award('twist', 'Plot Twist (underpromotion checkmate)', 150);
+    else if (mv.promotion && mv.promotion !== 'q') award('twist', 'Plot Twist (underpromotion checkmate)', 400);
     else if (smothered) award('smother', 'Smothered in Love (smothered mate)', 120);
     else if (mv.piece === 'p') award('pawnmate', 'Humiliation (checkmate with a pawn)', 100);
     else if (mv.piece === 'k') award('kingmate', 'Humiliation (checkmate with a king)', 120);
