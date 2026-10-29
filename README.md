@@ -9,12 +9,19 @@
 - **CPU**: three levels (Rookie, Rival, Final Boss). The CPU thinks in a background thread.
 - **Same screen**: two players on one device, with optional auto-flip
 - **Online friend**: click *Create game*, then *Copy invite link* and send it to your friend. Keep your tab open while you play.
-- **Random opponent**: get paired with whoever else is searching at the same time. *Find an online match* on the start screen jumps straight in.
+- **Quick match**: get paired with someone else searching right now who picked the same game mode (Classic or Kessen) and time control. *Find an online match* on the start screen jumps straight in.
 
 ## Extras
 
-- **Minigames** every 8 full moves, taking turns: Red Hands (slap first), Memory Flash (repeat the pattern) and Mate in One (fastest checkmate wins). The winner earns a power-up: Sensei's Hint, Takeback, Time Heist (clock games) or Rude Fishy (an eval bar with opinions, for 3 moves; not in same-screen games, since both players would see it). Your next minigame and your power-ups show in the corner of the board.
+- **Minigames** every 8 full moves, taking turns, each a full-screen duel of about half a minute:
+  - **居合 Quick-draw**: wait for 斬!!, then draw first. Watch for fakes. A draw of 100 ms or less is **GODSPEED**: a cut-scene and an instant win.
+  - **斬 Blade Timing**: both blades sweep at once; stop yours in the gold. Five cuts, most points wins.
+  - **苦無 Kunai Storm**: race to land your kunai through a spinning ring of iron blocks. Best of 3 stages.
+  - **☆ Magical Dance**: HENSHIN!! A 30-second rhythm dance-off as magical girls.
+
+  Against the CPU you face Ronin; online, both screens get the very same challenge. On one shared screen you choose how you sit before the match: **face to face** (the screen flat between you, each half turned to its player) or **pass the phone** (one at a time, the same challenge for both). The winner earns a power-up: Sensei's Hint, Takeback, Time Heist (clock games) or Rude Fishy (an eval bar with opinions, for 3 moves; not in same-screen games, since both players would see it). Your next minigame and your power-ups show in the corner of the board.
 - **Power Level (戦闘力)**: a just-for-fun rating saved on your device, with style bonuses for things like en passant and underpromotion.
+- **En passant** gets a special movie: a beret, a baguette slap, and an uncomfortably long slow-motion action replay (tap to skip). Taking a pawn any other way keeps the action but skips the banners.
 - Resign with a white flag, offer a draw with a handshake (or get slapped), premove up to 6 moves, and resume a game after a reload.
 - **📜 Games**: every finished game is saved on your device. Open one to step through it move by move (buttons or arrow keys). Rude Fishy (Stockfish) grades each move with names that are kinder than the usual ones: 🌌 Galaxy Brain (best move), 👨‍🍳 Chef's Kiss, 🍙 Solid Snack, 🍜 Wobbly Noodle (inaccuracy), 🌼 Oopsie Daisy (mistake) and 🍌 Banana Peel (blunder). It also shows what Rude Fishy would have played instead.
 - **Elo**: online games also update a standard Elo rating (everyone starts at 1200), shown on your fighter card along with your online wins.
@@ -73,9 +80,10 @@ Online games connect the two browsers directly over WebRTC, using [PeerJS](https
 - [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT): online play
 - [Stockfish](https://github.com/official-stockfish/Stockfish) (GPLv3), through the [stockfish.js](https://github.com/nmrugg/stockfish.js) 10.0.2 browser build on cdnjs: powers the Rude Fishy eval bar. It's loaded from the CDN at runtime and isn't part of this repository; its source code is at the links above.
 - Fonts from Google Fonts (SIL Open Font License): Dela Gothic One, Zen Kaku Gothic New, Noto Sans Symbols 2
+- Magical Dance song: ["Anime-esque Intro-Outro Theme"](https://opengameart.org/content/anime-esque-intro-outro-theme) by CleytonKauffman, CC0 (public domain), from OpenGameArt. It's the only audio file in the game, in `audio/`.
 - The en passant voice clip plays through YouTube's official embed: "How to Pronounce En Passant" by Julien Miquel. It's credited on screen and never downloaded.
 
-The browser generates all music and sound effects live with the Web Audio API, so the game has no audio files. The music is an original composition written in code.
+Apart from the Magical Dance song, the browser generates all music and sound effects live with the Web Audio API. The battle music is an original composition written in code.
 
 ## License
 

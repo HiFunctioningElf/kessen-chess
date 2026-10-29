@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029091500">
+<meta name="kessen-build" content="20261029163124">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -271,6 +271,18 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .pcard .opts button > span{display:block;line-height:1;transform:translateY(.15em)}
 .tricolor{position:absolute;inset:0;background:linear-gradient(90deg,#0055a4 0 33.4%,#fff 33.4% 66.6%,#ef4135 66.6%);mix-blend-mode:screen;opacity:0}
 .pastry{position:absolute;top:0;font-size:clamp(26px,4vw,44px);line-height:1;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.5))}
+.confetto{position:absolute;top:0;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* en passant action replays: a VHS frame */
+.ep-vhs{position:fixed;inset:0;pointer-events:none;color:#fff;font:700 clamp(13px,2.2vw,20px)/1 ui-monospace,Consolas,monospace;text-shadow:2px 2px 0 #000}
+.ep-vhs .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 2px,transparent 2px 4px)}
+.ep-vhs[data-m=rew] .scan{background:repeating-linear-gradient(0deg,rgba(255,255,255,.14) 0 2px,transparent 2px 7px);animation:epRoll .25s linear infinite}
+.ep-vhs .rec{position:absolute;left:4vw;top:calc(11vh + 14px);color:#ff3b3b;animation:epBlink 1s steps(2) infinite}
+.ep-vhs .spd{position:absolute;right:4vw;top:calc(11vh + 14px)}
+.ep-vhs .tc{position:absolute;left:4vw;bottom:calc(11vh + 14px);font-weight:500}
+.ep-vhs .skip{position:absolute;right:4vw;bottom:calc(11vh + 14px);font:700 11px var(--body);opacity:.75}
+.ep-vhs .cap{position:absolute;left:50%;bottom:calc(11vh + 44px);transform:translateX(-50%);max-width:92vw;text-align:center;font-family:var(--display);font-weight:400;font-size:clamp(20px,4.6vw,46px);line-height:1.1;-webkit-text-stroke:1.5px #000;paint-order:stroke fill;text-shadow:4px 4px 0 #0055a4}
+@keyframes epBlink{50%{opacity:0}}
+@keyframes epRoll{to{background-position:0 14px}}
 .eptv{position:fixed;right:max(16px,3vw);top:calc(11vh + 14px);z-index:65;width:min(280px,calc(100vw - 32px));background:#111;border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 #000;
   transform:translateY(calc(-100% - 11vh - 60px)) rotate(3deg);transition:transform .35s cubic-bezier(.2,1.3,.4,1);pointer-events:none}
 .eptv.on{transform:translateY(0) rotate(-2deg)}
@@ -297,45 +309,175 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .pow{background:var(--night);border:1px solid var(--gold);color:var(--text);padding:5px 9px;font-weight:700;font-size:12px;cursor:pointer}
 .pow:disabled{opacity:.45;cursor:not-allowed}
 .pow.theirs{border-color:var(--line);cursor:default}
-.mg{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px;background:rgba(12,10,23,.9);user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.mg-title{font-family:var(--display);font-size:clamp(22px,4vw,38px);color:var(--blood);-webkit-text-stroke:1px #000;text-shadow:3px 3px 0 #000;text-align:center;line-height:1.1}
-.mg-title small{display:block;font-size:.42em;color:var(--muted);letter-spacing:.2em}
-.mg-score{display:flex;gap:16px;align-items:center;font-family:var(--display);font-size:clamp(16px,2.6vw,24px)}
-.mg-msg{min-width:8ch;text-align:center;color:var(--gold)}
-.mg-arena{position:relative;flex:1;width:min(100%,520px);min-height:150px}
-.mg-hands{position:absolute;left:50%;width:min(56%,290px);max-height:58%;transform:translateX(-50%);overflow:visible}
-.mg-hands.top{top:6%;z-index:2}
-.mg-hands.bot{bottom:4%}
-.mg-pop{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(28px,6vw,56px);color:#fff;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:4px 4px 0 var(--blood);white-space:nowrap;pointer-events:none;z-index:3}
-.mg-roles{font-size:13px;color:var(--muted);text-align:center}
-.mg-ctrls{display:flex;gap:10px;width:100%;justify-content:center;flex-wrap:wrap}
-.mg-side{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:min(46%,220px);flex:1;max-width:280px}
-.mg-side .who{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center}
-.mg-side .row{display:flex;gap:6px}
-.mg-btn{flex:1;padding:14px 8px;font-family:var(--display);font-size:18px;border:3px solid #000;box-shadow:3px 3px 0 #000;cursor:pointer;color:#111;background:var(--gold)}
-.mg-btn.fake{background:#d9d2f0;font-size:15px;flex:.6}
-.mg-btn.pull{background:var(--volt)}
+/* ---- Minigames: a full-screen duel. data-seat: solo (you at the bottom), face (face to face, Black's half turned round), pass (pass the phone, one at a time) ---- */
+.mgx{position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;gap:8px;color:var(--text);
+  background:radial-gradient(ellipse 80% 60% at 30% 10%,rgba(255,46,77,.16),transparent 60%),radial-gradient(ellipse 60% 50% at 90% 90%,rgba(63,224,255,.08),transparent 60%),radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.6px) 0 0/14px 14px,var(--ink);
+  padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain;-webkit-tap-highlight-color:transparent;animation:mgIn .25s ease-out}
+@keyframes mgIn{from{opacity:0;transform:scale(1.03)}}
+.mgx-head{flex:none;text-align:center}
+.mgx[data-seat=face] .mgx-head{display:none}
+.mg-title{font-family:var(--display);font-size:clamp(20px,4.4vw,32px);color:var(--blood);-webkit-text-stroke:1px #000;text-shadow:3px 3px 0 #000;line-height:1.1;text-align:center}
+.mg-title small{display:block;font:700 10px var(--body);color:var(--muted);letter-spacing:.2em;-webkit-text-stroke:0;text-shadow:none;margin-top:5px}
+.mgx-body{flex:1;min-height:0;width:100%;margin:0 auto;display:grid;gap:10px;position:relative}
+.mgx[data-seat=solo] .mgx-body{max-width:560px;grid-template:"top" auto "mid" minmax(0,1fr) "bot" auto/minmax(0,1fr)}
+.mgx[data-seat=face] .mgx-body{max-width:620px;grid-template:"top" minmax(0,1fr) "mid" auto "bot" minmax(0,1fr)/minmax(0,1fr)}
+.mgx[data-seat=pass] .mgx-body{max-width:560px;grid-template:"top" auto "mid" minmax(0,1fr) "bot" auto/minmax(0,1fr)}
+.mgx-mid{grid-area:mid;position:relative;min-height:0;min-width:0}
+.mgx-p{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px}
+.mgx-p[data-pos=top]{grid-area:top}.mgx-p[data-pos=bot]{grid-area:bot}
+.mgx[data-seat=face] .mgx-p[data-pos=top]{transform:rotate(180deg)}
+.mgx-area{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
+/* vs CPU, online and passing the phone, the opponent's strip at the top sizes to what's in it */
+.mgx[data-seat=solo] .mgx-p[data-pos=top] .mgx-area,.mgx[data-seat=pass] .mgx-p[data-pos=top] .mgx-area{flex:none}
+.mgx-tag{flex:none;display:flex;align-items:center;gap:8px;min-width:0;background:var(--night);border:1px solid var(--line);box-shadow:3px 3px 0 #000;padding:5px 10px;font-family:var(--display);font-size:clamp(13px,3.4vw,16px)}
+.mgx-p[data-c=w] .mgx-tag{border-left:4px solid #fffaf0}.mgx-p[data-c=b] .mgx-tag{border-left:4px solid var(--gold)}
+.mgx-tag .k{font-family:var(--chess);font-size:1.3em;line-height:1}
+.mgx-tag b{font-weight:400;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mgx-tag .you{flex:none;font:700 9px/1 var(--body);letter-spacing:.14em;color:#111;background:var(--gold);padding:3px 5px}
+.mgx-tag .ttl{display:none;flex:none;color:var(--blood);-webkit-text-stroke:.5px #000}
+.mgx[data-seat=face] .mgx-tag .ttl{display:inline}
+.mgx-tag .pts{margin-left:auto;flex:none;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mgx-say{flex:none;min-height:1.35em;text-align:center;font-family:var(--display);font-size:clamp(13px,3.4vw,18px);line-height:1.25;color:var(--gold);-webkit-text-stroke:.5px #000;text-shadow:2px 2px 0 #000;padding:0 4px}
+.mgx-big{position:absolute;inset:0;z-index:8;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;text-align:center;padding:0 8px}
+.mgx-big.on{display:flex}
+.mgx-big .m{max-width:100%;overflow-wrap:anywhere;font-family:var(--display);font-size:clamp(28px,8vw,64px);line-height:1.05;color:var(--c,var(--gold));-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:4px 4px 0 #000;transform:rotate(-4deg);animation:mgStamp .22s cubic-bezier(.3,1.6,.6,1)}
+.mgx-big .s{font:400 clamp(12px,3.2vw,18px)/1.3 var(--display);color:#fff;-webkit-text-stroke:.5px #000;text-shadow:2px 2px 0 #000;background:rgba(12,10,23,.78);padding:3px 10px}
+.mgx-big.count .m{font-size:clamp(70px,22vw,150px);color:#fff;text-shadow:6px 6px 0 var(--blood)}
+.mgx-big.go .m{font-size:clamp(80px,26vw,180px);color:#fff;text-shadow:6px 6px 0 #000,0 0 40px #fff}
+.mgx-big.go .s{font-size:clamp(26px,8vw,52px);color:var(--gold);background:none;-webkit-text-stroke:2px #000;text-shadow:4px 4px 0 #000}
+.mgx-big.psych .m{color:var(--muted);font-size:clamp(40px,12vw,80px)}
+.mgx-big.end .m{font-size:clamp(34px,10vw,80px)}
+@keyframes mgStamp{from{transform:scale(2.2) rotate(-12deg);opacity:0}}
+.mgx-div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 6px;font:400 11px var(--display);letter-spacing:.12em;color:var(--muted);border-block:2px dashed var(--line)}
+.mgx-div span:last-child{transform:rotate(180deg)}
+/* the signal: red and yellow, under three flashes a second */
+.mgx.signal,.mgx.signal .qd-scene{animation:mgSiren .4s steps(2) infinite}
+.mgx.signal{box-shadow:inset 0 0 0 8px #fff,inset 0 0 0 14px #000}
+.mgx.signal .qd-sun,.mgx.signal .qd-tone{opacity:0}
+@keyframes mgSiren{0%{background:#e8241a}50%{background:#ffd23a}}
+/* rules card + READY */
+.mgx-ready{position:absolute;inset:0;z-index:9;display:grid;place-items:center;padding:8px;background:rgba(12,10,23,.9)}
+.mgx-card{width:min(100%,430px);max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);box-shadow:4px 4px 0 #000;padding:14px 16px;display:flex;flex-direction:column;gap:10px;text-align:center}
+.mgx-card h3{margin:0;font:400 clamp(18px,4.6vw,24px)/1.1 var(--display);color:var(--blood);-webkit-text-stroke:1px #000;text-shadow:2px 2px 0 #000}
+.mgx-card p{margin:0;font-size:14px;line-height:1.55}
+.mgx-card p b{color:var(--gold);font-weight:700}
+.mgx-card .keys{font-size:12px;color:var(--muted)}
+.mgx-card .turn{margin:0;font:400 13px var(--display);letter-spacing:.08em;color:var(--gold)}
+.mgx-card .turn span{font-family:var(--chess);font-size:1.3em}
+.mgx-card .wait{min-height:1.2em;font-size:13px;color:var(--muted)}
+.mg-btn{padding:14px 10px;font:400 20px/1 var(--display);color:#111;background:var(--gold);border:3px solid #000;box-shadow:3px 3px 0 #000;cursor:pointer;touch-action:manipulation}
 .mg-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
-.mg-btn:disabled{opacity:.35}
-.mg-btn kbd{display:block;font:700 10px var(--body);opacity:.7}
-/* new minigames: Memory Flash tiles and the Mate in One board */
-.mg-center{display:grid;place-items:center;container-type:size}
-@media (max-width:600px){.mg{position:fixed;z-index:40;padding:16px 12px}}
-.mem{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:min(300px,96cqw,96cqh);aspect-ratio:1}
-.mem-t{border:2px solid #000;cursor:pointer;transition:transform .08s,background .08s}
-.mem-t.l{background:#a86a84}.mem-t.d{background:#4a1d3e}
-.mem-t.lit{background:var(--gold);box-shadow:0 0 18px var(--gold);transform:scale(1.06)}
-.mem-t.hit{background:var(--volt)}.mem-t.miss{background:var(--blood)}
-.mem-t:disabled{cursor:default}
-.m1{display:flex;flex-direction:column;align-items:center;gap:6px}
-.m1-cap{font-weight:700;font-size:13px;color:var(--muted);text-align:center}
-.m1-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(340px,96cqw,calc(100cqh - 52px));aspect-ratio:1;border:3px solid #000}
-.m1-sq{border:0;padding:0;display:grid;place-items:center;font-family:var(--chess);font-size:min(30px,11cqw,6cqh);line-height:1;cursor:pointer;position:relative}
-.m1-sq.l{background:#a86a84}.m1-sq.d{background:#4a1d3e}
-.m1-sq > span{display:block;transform:translateY(.15em)}
-.m1-sq.sel{box-shadow:inset 0 0 0 3px var(--volt)}
-.m1-sq.dot::after{content:"";position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(63,224,255,.85)}
-.m1-time{font:700 15px ui-monospace,Consolas,monospace;color:var(--gold);font-variant-numeric:tabular-nums}
+.mg-btn:disabled{background:var(--volt);cursor:default}
+.mg-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+/* same screen: how are you sitting? */
+.mgx-seat{margin:auto;width:min(100%,560px);display:flex;flex-direction:column;gap:14px;text-align:center}
+.seat-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seat-opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:var(--panel);border:1px solid var(--line);box-shadow:4px 4px 0 #000;color:var(--text);cursor:pointer;font-family:var(--body)}
+.seat-opt svg{width:min(110px,26vw);height:auto}
+.seat-opt b{font:400 18px var(--display);color:var(--gold)}
+.seat-opt span{font-size:12.5px;line-height:1.5;color:var(--muted)}
+.seat-opt[aria-pressed=true]{border-color:var(--gold);box-shadow:4px 4px 0 #000,0 0 18px rgba(255,200,61,.35)}
+.seat-opt:hover,.seat-opt:focus-visible{border-color:var(--gold);outline:none}
+.mgx-seat .note{font-size:12px;color:var(--muted);margin:0}
+@media (max-width:420px){.seat-opts{grid-template-columns:1fr}.seat-opt{display:grid;grid-template-columns:72px 1fr;column-gap:12px;align-items:center;text-align:left}.seat-opt svg{grid-row:1/3;width:72px}.seat-opt b{align-self:end}.seat-opt span{align-self:start}}
+/* 居合 Quick-draw: a dusk duel */
+.qd-scene{position:relative;flex:1;min-height:110px;width:100%;overflow:hidden;border:3px solid #000;box-shadow:4px 4px 0 #000,0 0 30px rgba(255,46,77,.18);background:linear-gradient(180deg,#0c0a17 0%,#17122b 38%,#3a0716 64%,#a8173a 76%,#ff2e4d 82%)}
+.mgx-mid > .qd-scene{height:100%}
+.qd-sun{position:absolute;left:50%;top:50%;height:64%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#ffd0d8 0,#ff6a82 45%,#ff2e4d 62%,rgba(255,46,77,0) 71%);box-shadow:0 0 60px rgba(255,46,77,.5)}
+.qd-ground{position:absolute;left:0;right:0;bottom:0;height:24%;background:var(--ink)}
+.qd-ground::before{content:"";position:absolute;left:0;right:0;top:-10px;height:12px;background:var(--ink);clip-path:polygon(0 100%,8% 30%,15% 80%,26% 20%,38% 70%,50% 40%,62% 85%,74% 25%,86% 75%,100% 35%,100% 100%)}
+.qd-tone{position:absolute;inset:0;pointer-events:none;background:radial-gradient(rgba(0,0,0,.28) 1px,transparent 1.6px) 0 0/7px 7px;-webkit-mask:linear-gradient(180deg,#000,transparent 55%);mask:linear-gradient(180deg,#000,transparent 55%)}
+.qd-speed{position:absolute;inset:-60%;pointer-events:none;opacity:0;z-index:2;background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0deg 5deg,rgba(255,255,255,.7) 5deg 6deg,transparent 6deg 9deg,rgba(255,255,255,.35) 9deg 9.6deg);-webkit-mask:radial-gradient(circle,transparent 20%,#000 42%);mask:radial-gradient(circle,transparent 20%,#000 42%)}
+.qd-speed.on{opacity:1;animation:qdJit .12s steps(2) infinite}
+@keyframes qdJit{50%{transform:rotate(2deg)}}
+.sam{position:absolute;bottom:20%;width:min(26%,46vh);height:auto;aspect-ratio:.8;max-height:60%;overflow:visible;z-index:3}
+.sam.l{left:14%}.sam.r{right:14%;transform:scaleX(-1)}
+.sam.cw{color:#fffaf0}.sam.cw g.body{stroke:#000;stroke-width:2.5}
+.sam.cb{color:#1b1328}.sam.cb g.body{stroke:var(--gold);stroke-width:2}
+.sam .eye{fill:#fff}.sam.cw .eye{fill:#0c0a17}
+.sam .obi{fill:var(--blood)}.sam.cb .obi{fill:var(--gold)}
+.sam .blade{fill:#e8eef8;stroke:#000;stroke-width:.8}
+.sam g.body{transform-origin:32px 98px;transition:transform .5s cubic-bezier(.5,0,.75,0)}
+.sam .blade{transform-origin:44px 52px;transition:transform .12s ease-out}
+.sam.drawn .blade{transform:rotate(-120deg)}
+.sam.fall g.body{transform:rotate(80deg) translateY(10px)}
+.sam.flinch g.body{transform:rotate(-6deg)}
+.sam .sweat{opacity:0;transition:opacity .15s}.sam.flinch .sweat,.sam.fall .sweat{opacity:1}
+.qd-leaf{position:absolute;top:-8%;left:60%;width:14px;height:8px;border-radius:0 100%;background:var(--blood);opacity:0;pointer-events:none;z-index:4}
+.qd-leaf.on{animation:qdLeaf 2.2s linear}
+@keyframes qdLeaf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:.9;transform:translate(-90px,260px) rotate(540deg)}}
+.qd-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5}.qd-flash.on{animation:qdFlash .45s ease-out}
+@keyframes qdFlash{0%{opacity:.95}100%{opacity:0}}
+.qd-slash{position:absolute;left:10%;right:10%;top:48%;height:4px;background:#fff;box-shadow:0 0 14px #fff;transform:rotate(-14deg) scaleX(0);opacity:0;pointer-events:none;z-index:5}
+.qd-slash.on{animation:qdSlash .4s ease-out}
+@keyframes qdSlash{0%{transform:rotate(-14deg) scaleX(0);opacity:1}40%{transform:rotate(-14deg) scaleX(1);opacity:1}100%{transform:rotate(-14deg) scaleX(1);opacity:0}}
+.qd-bub{position:absolute;top:5%;z-index:6;max-width:46%}.qd-bub.l{left:3%}.qd-bub.r{right:3%}
+.qd-bub .qd-say{position:relative;background:#fff;color:#111;font:400 clamp(10px,2.6vw,15px)/1.25 var(--display);padding:5px 8px;border:3px solid #111;border-radius:14px;box-shadow:3px 3px 0 #111;text-align:center;animation:qdPop .22s cubic-bezier(.3,1.6,.6,1)}
+.qd-bub .qd-say::after{content:"";position:absolute;bottom:-12px;width:16px;height:12px;background:#111;clip-path:polygon(0 0,100% 0,30% 100%)}
+.qd-bub.l .qd-say::after{left:22%}.qd-bub.r .qd-say::after{right:22%;clip-path:polygon(0 0,100% 0,70% 100%)}
+.qd-bub .qd-say.shout{background:var(--gold);border-radius:3px}
+@keyframes qdPop{from{transform:scale(.2) rotate(-8deg);opacity:0}}
+.qd-pad{flex:none;min-height:clamp(64px,13vh,120px);display:grid;place-items:center;text-align:center;padding:8px;border:3px solid #000;box-shadow:4px 4px 0 #000;font:400 clamp(20px,5.6vw,38px)/1.05 var(--display);cursor:pointer;transition:background .1s,color .1s}
+.qd-pad.pw{background:#fffaf0;color:#0c0a17}.qd-pad.pb{background:#1b1328;color:var(--gold);border-color:var(--gold)}
+.qd-pad.wait{opacity:.82}.qd-pad.idle{opacity:.6}
+.qd-pad.go{background:#fff;color:var(--blood);border-color:#000;animation:qdPulse .25s ease-in-out infinite alternate}
+.qd-pad.won{background:var(--gold);color:#111;border-color:#000}.qd-pad.lost{background:#3a0716;color:#ffb3c0;border-color:#000}.qd-pad.drew{background:var(--volt);color:#111;border-color:#000}
+@keyframes qdPulse{to{transform:scale(1.03)}}
+.gs-cv{position:absolute;inset:0;width:100%;height:100%;z-index:12;background:#000}
+/* 斬 Blade Timing: straw posts and sweeping meters */
+.bl-spot{position:absolute;bottom:13%;height:68%;aspect-ratio:.34;transform:translateX(-50%);z-index:3}
+.bl-spot.l{left:30%}.bl-spot.r{left:70%}.bl-spot.mid{left:50%}
+.bl-spot .post{display:block;height:100%;width:100%;overflow:visible}
+.post .pt{transition:transform .5s cubic-bezier(.3,.7,.4,1),opacity .5s;transform-box:fill-box;transform-origin:center}
+.post.cut .pt{transform:translate(30%,-12%) rotate(28deg);opacity:0;transition-delay:0s,.25s}
+.post .nickmark{opacity:0}.post.nick .nickmark{opacity:1}
+.post.none{animation:blWobble .4s;transform-origin:50% 100%}
+@keyframes blWobble{25%{transform:rotate(-4deg)}75%{transform:rotate(3deg)}}
+.bl-name{position:absolute;left:50%;bottom:-17%;transform:translateX(-50%);white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis;font:400 clamp(10px,2.6vw,13px)/1 var(--display);padding:3px 7px;border:2px solid #111}
+.bl-name.tw{background:#fffaf0;color:#111}.bl-name.tb{background:#1b1328;color:var(--gold);border-color:var(--gold)}
+.bl-stamp{position:absolute;left:50%;top:-10%;transform:translateX(-50%);white-space:nowrap;font:400 clamp(13px,3.6vw,20px)/1 var(--display);-webkit-text-stroke:1px #000;text-shadow:2px 2px 0 #000;opacity:0;z-index:4}
+.bl-stamp.on{opacity:1;animation:blStamp .25s cubic-bezier(.3,1.6,.6,1)}
+@keyframes blStamp{from{transform:translateX(-50%) scale(2);opacity:0}}
+.bl-stamp.s3{color:var(--gold)}.bl-stamp.s1{color:#fff}.bl-stamp.s0{color:var(--muted)}
+.bl-meter{position:relative;flex:none;height:clamp(52px,9vh,72px);background:var(--night);border:3px solid #000;box-shadow:3px 3px 0 #000;overflow:hidden;cursor:pointer}
+.bl-meter.small{height:34px}
+.bl-meter .ticks{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(255,255,255,.07) calc(10% - 1px) 10%);pointer-events:none}
+.bl-meter .zone{position:absolute;top:0;bottom:0;background:rgba(255,200,61,.22);border-left:2px solid rgba(255,200,61,.75);border-right:2px solid rgba(255,200,61,.75)}
+.bl-meter .perf{position:absolute;top:0;bottom:0;background:var(--gold)}
+.bl-meter .mark{position:absolute;top:-4px;bottom:-4px;left:0;width:6px;margin-left:-3px}
+.bl-meter.mw .mark{background:#fffaf0;box-shadow:0 0 0 2px #000,0 0 10px rgba(255,255,255,.8)}
+.bl-meter.mb .mark{background:#1b1328;box-shadow:0 0 0 2px var(--gold),0 0 10px rgba(255,200,61,.6)}
+.bl-meter .mark.stop{width:9px;margin-left:-4.5px}
+.bl-meter .hint{position:absolute;right:8px;bottom:4px;font:400 11px var(--display);color:var(--muted);pointer-events:none;text-shadow:1px 1px 0 #000}
+.bl-meter.s3{box-shadow:3px 3px 0 #000,0 0 18px var(--gold)}.bl-meter.s3 .hint{color:var(--gold)}.bl-meter.s1 .hint{color:#fff}
+/* 苦無 Kunai Storm: one canvas under both halves; each half is that player's throwing zone */
+.mgx-body.overlay{grid-template:"all" minmax(0,1fr)/minmax(0,1fr) !important}
+.mgx-body.overlay .mgx-mid{grid-area:all;height:100%}
+.mgx-body.overlay .mgx-p{position:absolute;justify-content:flex-end;padding:8px;cursor:pointer}
+.mgx-body.overlay .mgx-p[data-pos=top]{top:0;left:0;right:0;height:50%}
+.mgx-body.overlay .mgx-p[data-pos=bot]{bottom:0;left:0;right:0;height:50%}
+.mgx[data-seat=solo] .mgx-body.overlay .mgx-p[data-pos=top],.mgx[data-seat=pass] .mgx-body.overlay .mgx-p[data-pos=top]{justify-content:flex-start}
+.mgx-body.overlay .mgx-area{display:none}
+.mgx-body.overlay .mgx-tag{background:rgba(23,18,43,.86)}
+.ks-cv{position:absolute;inset:0;width:100%;height:100%;border:3px solid #000;box-shadow:4px 4px 0 #000}
+/* ☆ Magical Dance: lanes and pads for each dancer; vs CPU / online the opponent gets a small window */
+.mgx[data-game=dn] .mgx-mid{display:none}
+.mgx[data-game=dn][data-seat=solo] .mgx-body{grid-template:"top" auto "bot" minmax(0,1fr)/minmax(0,1fr)}
+.mgx[data-game=dn][data-seat=face] .mgx-body{grid-template:"top" minmax(0,1fr) "bot" minmax(0,1fr)/minmax(0,1fr)}
+.mgx[data-game=dn][data-seat=pass] .mgx-body{grid-template:"top" auto "bot" minmax(0,1fr)/minmax(0,1fr)}
+.dn-wrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px}
+.dn-wrap.dn-mini{flex:none;height:clamp(64px,12vh,104px)}
+.dn-cv{flex:1;min-height:0;width:100%;border:3px solid #000;box-shadow:4px 4px 0 #000;background:#17122b}
+.dn-pads{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dn-pad{position:relative;height:clamp(52px,9vh,76px);font:400 clamp(22px,6vw,32px)/1 var(--display);color:#111;background:var(--pc);border:3px solid #000;box-shadow:3px 3px 0 #000;cursor:pointer;touch-action:none}
+.dn-pad.on,.dn-pad:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000;filter:brightness(1.25)}
+.dn-pad kbd{position:absolute;right:5px;bottom:3px;font:700 9px var(--body);opacity:.7}
+@media (prefers-reduced-motion:reduce){
+  .mgx,.mgx-big .m,.qd-bub .qd-say,.bl-stamp.on,.qd-pad.go,.qd-speed.on{animation:none}
+  .mgx.signal,.mgx.signal .qd-scene{animation:none;background:#e8241a}
+  .sam g.body{transition:none}
+}
 /* on-board HUD: next minigame + your power-ups */
 .mghud{position:absolute;left:10px;top:10px;z-index:2;display:flex;gap:6px;flex-wrap:wrap;align-items:center;max-width:calc(100% - 170px)}
 .mghud .next{background:rgba(12,10,23,.88);border:2px solid var(--line);padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.04em}
@@ -459,6 +601,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
         <div class="field" id="gmField"><span class="label">Game mode</span>
           <div class="seg" id="gmSeg"><button data-gm="classic" aria-pressed="false">Classic</button><button data-gm="kessen" aria-pressed="true">Kessen</button></div>
           <div class="note" id="gmNote"></div></div>
+        <div class="field" id="seatField" hidden><span class="label">Minigame seating</span>
+          <div class="seg" id="seatSeg"><button data-seat="face" aria-pressed="true">Face to face</button><button data-seat="pass" aria-pressed="false">Pass the phone</button></div>
+          <div class="note" id="seatNote"></div></div>
         <div class="field" id="flipField"><span class="label">Board view</span>
           <div class="seg" id="flipSeg"><button data-flip="on" aria-pressed="false">Auto-flip</button><button data-flip="off" aria-pressed="true">Fixed</button></div></div>
         <div class="field" id="lvlField"><span class="label">CPU level</span>
@@ -474,7 +619,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
           <span class="label">Online duel</span>
           <div id="onIdle" class="field">
             <button class="btn primary" id="createBtn">Create game</button>
-            <button class="btn" id="qmBtn" type="button">Random opponent</button>
+            <button class="btn" id="qmBtn" type="button">Quick match</button>
+            <div class="note" id="qmNote"></div>
             <form class="joinrow" id="joinForm"><input id="joinCode" maxlength="6" placeholder="Code" autocomplete="off" aria-label="Game code"><button class="btn" type="submit" style="flex:none">Join</button></form>
           </div>
           <div id="onActive" class="field" hidden>
@@ -668,7 +814,7 @@ const A = (() => {
     stop(){ playing = false; clearInterval(timer); },
     setOn(v){ musicOn = v; if (!v) this.stop(); else this.start(); },
     intensity(v){ intensity = v; },
-    duck(ms){ if (!ok()) return; const t = ctx.currentTime; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(.1, t, .04); musicBus.gain.setTargetAtTime(MUSIC_VOL, t + ms/1000, .35); }
+    duck(ms, to = .1){ if (!ok()) return; const t = ctx.currentTime; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setTargetAtTime(to, t, .04); musicBus.gain.setTargetAtTime(MUSIC_VOL, t + ms/1000, .35); }
   };
   const sfx = {
     setOn(v){ sfxOn = v; if (sfxBus) sfxBus.gain.value = v ? 1 : 0; },
@@ -795,7 +941,11 @@ const A = (() => {
     boing(){ if (!ok()) return; const t = now(); osc('sine', 180, t, .7, .35, sfxBus, {to: 980, glide: .6}); osc('triangle', 186, t, .7, .1, sfxBus, {to: 990, glide: .6}); },
     ding(){ if (!ok()) return; const t = now(); [1, 2.76, 5.4].forEach((r, i) => osc('sine', 1320 * r, t, 1.1 - i * .3, .09 / (i + 1), sfxBus)); }
   };
-  return {init, music, sfx};
+  // raw voices on the effects bus, for the minigames' own sounds and the Magical Dance song
+  const syn = {ok: () => !!(ok() && sfxBus), t: () => ctx.currentTime, lat: () => (ctx.outputLatency || ctx.baseLatency || 0),
+    osc: (type, f, t, dur, vol, o) => osc(type, f, t, dur, vol, sfxBus, o), nz: (t, dur, vol, o) => nz(t, dur, vol, sfxBus, o),
+    ctx: () => ctx, bus: () => sfxBus};
+  return {init, music, sfx, syn};
 })();
 
 /* ================= 2D PARTICLE OVERLAY ================= */
@@ -1806,7 +1956,7 @@ function panel(){
   else if (mode === 'online'){
     if (!net.code) s = 'Create or join an online game';
     else if (!net.my) s = `Watching. ${side} to move`;
-    else if (!(net.data && net.data.w && net.data.b)) s = /^QMATC/.test(net.code) ? 'Searching for a random opponent…' : `Waiting for your friend to join with code ${net.code}`;
+    else if (!(net.data && net.data.w && net.data.b)) s = isQM(net.code) ? `Searching for a ${qmWhat()} opponent…` : `Waiting for your friend to join with code ${net.code}`;
     else s = (t === net.my ? 'Your move' : "Friend's move") + (game.in_check() ? '. Check!' : '');
   }
   else if (game.in_check()) s = `${side} is in check!`;
@@ -2250,6 +2400,10 @@ function dressFrench(g, toward){
   [-.27, -.09, .09, .27].forEach(y => { const sc = new THREE.Mesh(new THREE.BoxGeometry(.03, .1, .02), EPM.score); sc.position.set(.035, y, 0); sc.rotation.x = .6; loaf.add(sc); });
   return {kit, beret, eyes, holder, piv};
 }
+// The slap: the loaf held out flat at face height and swept across the victim's face from the side.
+// e = 0 wound up, EP_HIT = the moment it lands, 1 = the follow-through.
+const EP_HIT = .64;
+function epSlap(fr, e){ fr.holder.position.set(.02, .52, -.24); fr.holder.rotation.set(0, .95 - 1.9 * e, -1.47); }
 function tricolor(ms = 900){
   const el = document.createElement('div'); el.className = 'tricolor'; fxEl.insertBefore(el, $('#flash'));
   return el.animate([{opacity: 0, transform: 'translateX(-100%)'}, {opacity: .55, transform: 'translateX(0)', offset: .3}, {opacity: .55, transform: 'translateX(0)', offset: .7}, {opacity: 0, transform: 'translateX(100%)'}], {duration: ms, easing: 'ease-in-out'}).finished.then(() => el.remove());
@@ -2261,6 +2415,135 @@ function pastries(n = 14){
     el.style.left = (Math.random() * 100) + 'vw'; fxEl.appendChild(el);
     const dur = 1600 + Math.random() * 1200, rot = (Math.random() - .5) * 720;
     el.animate([{transform: 'translateY(-12vh) rotate(0deg)'}, {transform: `translateY(112vh) rotate(${rot}deg)`}], {duration: dur, delay: Math.random() * 500, easing: 'ease-in', fill: 'backwards'}).finished.then(() => el.remove());
+  }
+}
+// French confetti: bleu, blanc, rouge, everywhere. `slow` stretches the fall (for slow motion).
+function confetti(n = 80, slow = 1){
+  const cols = ['#0055a4', '#ffffff', '#ef4135'];
+  for (let i = 0; i < (RM ? 12 : n); i++){
+    const el = document.createElement('div'), w = 6 + Math.random() * 7; el.className = 'confetto';
+    el.style.cssText = `background:${cols[i % 3]};left:${Math.random() * 100}vw;width:${w}px;height:${w * .45}px`; fxEl.appendChild(el);
+    const dur = (2200 + Math.random() * 1800) * slow, sway = (Math.random() - .5) * 180, spin = (Math.random() - .5) * 1440;
+    el.animate([{transform: 'translate(0,-8vh) rotate(0deg) rotateX(0deg)'}, {transform: `translate(${sway}px,110vh) rotate(${spin}deg) rotateX(${spin * 2}deg)`}],
+      {duration: dur, delay: Math.random() * 700 * slow, easing: 'cubic-bezier(.3,.1,.7,1)', fill: 'backwards'}).finished.then(() => el.remove());
+  }
+}
+// The victim's face ripples like a pond: a private copy of its geometry, pushed along the normals by a ring wave from the hit.
+function faceRipple(piece, th, at){
+  const P = at || V3(.17 * Math.cos(th), .58, -.17 * Math.sin(th)), clones = new Map(), swaps = [], hidden = [];
+  for (const o of piece.children){
+    if (o.isLineSegments){ if (o.visible){ hidden.push(o); o.visible = false; } continue; }
+    if (!o.isMesh || !o.geometry.attributes.normal) continue;
+    let c = clones.get(o.geometry);
+    if (!c){ const g = o.geometry.clone(); c = {g, base: Float32Array.from(g.attributes.position.array), n: g.attributes.normal.array}; clones.set(o.geometry, c); }
+    swaps.push([o, o.geometry]); o.geometry = c.g;
+  }
+  return {
+    P,
+    // t: seconds since the hit (in slow-motion time), amp: how hard
+    set(t, amp){
+      for (const c of clones.values()){
+        const p = c.g.attributes.position.array, b = c.base, n = c.n;
+        for (let i = 0; i < p.length; i += 3){
+          const dx = b[i] - P.x, dy = b[i + 1] - P.y, dz = b[i + 2] - P.z, r = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          let s = 0;
+          if (amp){
+            if (r < .05 + t * 1.6) s = amp * Math.sin((r - t * 1.6) * 40) * Math.exp(-r * 2.6) * Math.exp(-t * 2);
+            s -= amp * 1.6 * Math.exp(-r * r * 60) * Math.exp(-t * 3);   // the dent where the baguette lands
+          }
+          p[i] = b[i] + n[i] * s; p[i + 1] = b[i + 1] + n[i + 1] * s; p[i + 2] = b[i + 2] + n[i + 2] * s;
+        }
+        c.g.attributes.position.needsUpdate = true;
+      }
+    },
+    undo(){ swaps.forEach(([o, g]) => { o.geometry = g; }); clones.forEach(c => c.g.dispose()); hidden.forEach(o => { o.visible = true; }); }
+  };
+}
+// A slowed-down BONK: lower, longer and heavier the slower the replay.
+function epBonk(speed){
+  const S = A.syn; if (!S.ok()) return; const t = S.t() + .01, st = Math.sqrt(1 / speed), f = 340 * Math.sqrt(speed);
+  S.osc('sine', f, t, .18 * st, .8, {to: f / 3, glide: .18 * st}); S.nz(t, .12 * st, .6, {type: 'lowpass', f0: 1400 * Math.sqrt(speed) + 200});
+  S.osc('sine', 42, t, .6 * st, .5, {to: 24}); S.nz(t, .5 * st, .18, {f0: 600 * Math.sqrt(speed) + 150, q: 3});
+}
+// INSTANT REPLAY: the hit again in slow motion from a low angle, then ULTRA slow motion on the victim's face
+// (ENHANCE. ENHANCE AGAIN.), then BAGUETTE CAM. Uncomfortably long on purpose. A tap skips to the end.
+async function epReplays({g, fr, victim, ve, a, a2, v, d, perp, mid}){
+  const rip = faceRipple(victim, ve.face.rotation.y), cvEl = renderer.domElement;
+  const hud = document.createElement('div'); hud.className = 'ep-vhs';
+  hud.innerHTML = '<div class="scan"></div><div class="rec">● REPLAY</div><div class="spd"></div><div class="tc">00:00:00:00</div><div class="cap"></div><div class="skip">tap to skip the replays</div>';
+  fxEl.appendChild(hud);
+  let frames = 30 * 41 + 7, rate = 0, skip = false;   // the tape is already 41 seconds in, as replay tapes are
+  const tc = setInterval(() => { frames = Math.max(0, frames + rate); const f = Math.floor(frames), s = Math.floor(f / 30); hud.querySelector('.tc').textContent = `00:00:${String(s % 60).padStart(2, '0')}:${String(f % 30).padStart(2, '0')}`; }, 33);
+  const mode = (m, spd, r) => { hud.dataset.m = m; hud.querySelector('.spd').textContent = spd; rate = r; };
+  const cap = (t, col) => { const c = hud.querySelector('.cap'); c.textContent = t; c.style.color = col || '#fff'; if (t) c.animate([{transform: 'translateX(-50%) scale(1.6)', opacity: 0}, {transform: 'translateX(-50%) scale(1)', opacity: 1}], {duration: 220, easing: 'ease-out'}); };
+  const filt = f => { cvEl.style.filter = f; };
+  // replay tweens can all be cut short by a tap
+  const live = new Set();
+  const stw = (ms, fn = () => {}) => { const p = tween(ms, fn), tw = [...tweens].pop(); if (skip) tw.t0 = -1e9; live.add(tw); return p.then(() => { live.delete(tw); }); };
+  const onSkip = () => { if (skip) return; skip = true; live.forEach(tw => { tw.t0 = -1e9; }); hud.querySelector('.skip').textContent = 'skipping… (it was getting weird)'; };
+  addEventListener('pointerdown', onSkip, true); addEventListener('keydown', onSkip, true);
+  controls.minDistance = .02;   // ENHANCE gets very close
+  // poses
+  const lean = {x: d.z * -.12, z: d.x * .12};
+  let swE = 1;
+  const swingAt = e => { swE = e; epSlap(fr, e); g.position.lerpVectors(a, a2, Math.min(1, e / EP_HIT)); g.position.y = BASEY; };
+  const follow = k => swingAt(EP_HIT + (1 - EP_HIT) * Math.min(1, k * 4));
+  const recoil = s => { victim.rotation.x = d.z * .35 * s; victim.rotation.z = -d.x * .35 * s; ve.whites.forEach(w => { w.scale.y = 1 - .75 * Math.min(1, s * 1.6); }); };
+  const cut = (p, t) => { camera.position.copy(p); controls.target.copy(t); camera.lookAt(t); };
+  const crumbs = slow => { const s = screenOf(victim.localToWorld(rip.P.clone())); burst(s.x, s.y, {n: 26, kind: 'dust', colors: ['#e9b25e', '#c98a3a', '#f8e1b0'], speed: 9 * slow, size: 3, life: 36 / slow, g: .25 * slow * slow, drag: .99}); burst(s.x, s.y, {n: 30, kind: 'spark', colors: ['#0055a4', '#ffffff', '#ef4135'], speed: 10 * slow, size: 3, life: 30 / slow, drag: .99}); };
+  const rewind = async (ms, line) => {
+    mode('rew', '◀◀ ×-8', -3); cap(line || ''); filt('grayscale(1) contrast(1.35) brightness(1.08)'); A.sfx.rewind(ms / 1000);
+    const e0 = swE, rx = victim.rotation.x, rz = victim.rotation.z, w0 = ve.whites[0].scale.y;
+    await stw(ms, k => {
+      const e = easeIO(k); swingAt(e0 * (1 - e));
+      victim.rotation.x = rx * (1 - e) + (Math.random() - .5) * .02; victim.rotation.z = rz * (1 - e); ve.whites.forEach(w => { w.scale.y = w0 + (1 - w0) * e; }); rip.set(0, 0);
+    });
+    swingAt(0); g.position.copy(a); g.rotation.x = lean.x; g.rotation.z = lean.z; recoil(0);
+  };
+  try {
+    // the real hit: a quick wobble, then FREEZE FRAME
+    await stw(450, k => { rip.set(k * .45, .05); recoil(Math.min(1, k * 2) * .6); }); swE = 1;
+    mode('play', '❚❚ PAUSE', 0); filt('saturate(1.5) contrast(1.15)'); cap('FREEZE FRAME.', '#ffc83d'); A.sfx.glare();
+    await stw(900);
+    // REPLAY 1: slow motion ×0.25 from down low on the other side
+    await rewind(900, 'INSTANT REPLAY');
+    cut(mid.clone().addScaledVector(perp, -1.9).setY(.32), mid.clone().setY(.5));
+    mode('play', '▶ ×0.25', .25); filt('sepia(.22) saturate(1.35) contrast(1.06)'); cap('SLOW MOTION ×0.25');
+    await stw(700, k => swingAt(EP_HIT * easeIn(k)));
+    epBonk(.25); crumbs(.25); confetti(30, 4);
+    await stw(1900, k => { follow(k); rip.set(k * .5, .08); recoil(Math.min(1, k * 1.4) * .6); });
+    // REPLAY 2: ULTRA slow motion, right on the face
+    await rewind(1000, 'AGAIN. CLOSER.');
+    victim.updateMatrixWorld(true); const F = victim.localToWorld(rip.P.clone());
+    // in front of the face, a little to the side, so the loaf comes in across the frame
+    // in front of the face, a little to the side, so the loaf comes across the frame
+    cut(F.clone().addScaledVector(d, -.62).addScaledVector(perp, .42).add(V3(0, .1, 0)), F);
+    mode('play', '▶ ×0.03', .03); filt('sepia(.3) saturate(1.4) contrast(1.1)'); cap('ULTRA SLOW MOTION ×0.03', '#3fe0ff'); A.sfx.heartbeat();
+    await stw(4200, k => { swingAt(EP_HIT * easeIn(k)); if (k > .5 && !hud.dataset.h){ hud.dataset.h = 1; cap('here it comes…'); A.sfx.heartbeat(); } });
+    epBonk(.03); crumbs(.08); confetti(70, 5); cap('CONTACT.', '#ef4135'); buzz(120);
+    try { say('Noooooooon !', {rate: .1, pitch: .2}); } catch(e){}
+    let z = 0;
+    await stw(5600, k => {
+      follow(k * .5); rip.set(k * .65, .11); recoil(Math.min(1, k * 1.1) * .65);
+      if (k > .3 && z === 0){ z = 1; cap('ENHANCE.', '#ffc83d'); A.sfx.glare(); cut(F.clone().addScaledVector(d, -.36).addScaledVector(perp, .24).add(V3(0, .06, 0)), F); }
+      if (k > .64 && z === 1){ z = 2; cap('ENHANCE AGAIN.', '#ffc83d'); A.sfx.glare(); cut(F.clone().addScaledVector(d, -.21).addScaledVector(perp, .13).add(V3(0, .04, 0)), F.clone().add(V3(0, .02, 0))); }
+    });
+    // REPLAY 3: BAGUETTE CAM, riding the loaf all the way in
+    await rewind(1100, 'ONE. MORE. TIME.');
+    const c0 = a.clone().addScaledVector(d, -.55).addScaledVector(perp, .18).setY(1.05), c1 = F.clone().addScaledVector(d, -.2).addScaledVector(perp, .05).add(V3(0, .04, 0));
+    cut(c0, F); mode('play', '▶ ×0.1', .1); filt('sepia(.25) saturate(1.5) contrast(1.12) hue-rotate(-8deg)'); cap('BAGUETTE CAM™', '#e9b25e');
+    await stw(2600, k => { const e = easeIn(k); swingAt(EP_HIT * e); camera.position.lerpVectors(c0, c1, e); camera.lookAt(controls.target); });
+    epBonk(.1); crumbs(.15); confetti(60, 3); buzz(80);
+    await stw(2600, k => { follow(k * .7); rip.set(k * .55, .1); recoil(Math.min(1, k * 1.3) * .65); const j = (1 - k) * .02; camera.position.copy(c1).add(V3((Math.random() - .5) * j, (Math.random() - .5) * j, (Math.random() - .5) * j)); camera.lookAt(controls.target); });
+    mode('play', '■ STOP', 0); cap('(the referee has left the building)', '#a99fc7');
+    await stw(1500);
+  } finally {
+    removeEventListener('pointerdown', onSkip, true); removeEventListener('keydown', onSkip, true);
+    clearInterval(tc); hud.remove(); filt(''); rip.undo(); controls.minDistance = .5;
+    // back to the wide shot for the launch
+    const back = mid.clone().addScaledVector(perp, 2.5).setY(1.55);
+    cut(back, mid.clone().setY(.45));
+    swingAt(1); recoil(.6);
   }
 }
 async function enPassantFx(mv){
@@ -2293,19 +2576,27 @@ async function enPassantFx(mv){
     const ve = victim ? addEyes(victim, a, false) : null;
     if (victim){ bubble(victim, 'Quoi?!', 1000, 1.4); await tween(450, k => { victim.position.x = v.x + Math.sin(k * 60) * .03; }); victim.position.x = v.x; }
     // 4. wind up (lean back, baguette high) and... EN PASSANT!
-    await tween(380, k => { fr.holder.rotation.z = .35 + .9 * easeIO(k); g.rotation.x = d.z * -.12 * k; g.rotation.z = d.x * .12 * k; });
+    const hp0 = fr.holder.position.clone(), hr0 = fr.holder.rotation.clone();
+    await tween(380, k => {
+      const e = easeIO(k); epSlap(fr, 0); const hp1 = fr.holder.position.clone(), hr1 = fr.holder.rotation.clone();
+      fr.holder.position.lerpVectors(hp0, hp1, e); fr.holder.rotation.set(hr0.x + (hr1.x - hr0.x) * e, hr0.y + (hr1.y - hr0.y) * e, hr0.z + (hr1.z - hr0.z) * e);
+      g.rotation.x = d.z * -.12 * k; g.rotation.z = d.x * .12 * k;
+    });
     await voice.started;
     bigText('EN PASSANT!', 'アン・パッサン', {hold: 1500, color: '#0055a4', size: .75, rot: -4, sub: '« ahn pah-SAHN »'});
     await sleep(650);
     const a2 = a.clone().addScaledVector(d, .22);
-    await tween(170, k => { fr.holder.rotation.z = 1.25 - 3 * easeIn(k); g.position.lerpVectors(a, a2, k); g.position.y = BASEY; });
-    // 5. BONK: crumbs everywhere, the victim is launched off the board
+    await tween(170, k => { epSlap(fr, EP_HIT * easeIn(k)); g.position.lerpVectors(a, a2, k); g.position.y = BASEY; });
+    tween(150, k => epSlap(fr, EP_HIT + (1 - EP_HIT) * k));   // follow-through, across the face
+    // 5. BONK: crumbs everywhere… and then the action replays nobody asked for, then the victim is launched off the board
     A.sfx.bonk(); A.sfx.impact(.6); shake(.7, 380); camShake = Math.max(camShake, .2);
     const vs = screenOf(v.clone().setY(.7));
     burst(vs.x, vs.y, {n: 40, kind: 'dust', colors: ['#e9b25e', '#c98a3a', '#f8e1b0'], speed: 9, size: 3, life: 36, g: .25});
     ring(vs.x, vs.y, 120, '#fff', 6); word(v.clone().setY(1.1), 'PAF!!', {size: 46, color: '#ef4135', rot: 12});
+    if (victim && ve && !RM){ A.music.duck(40000); await epReplays({g, fr, victim, ve, a, a2, v, d, perp, mid}); }
     if (victim){
       A.sfx.boing(); if (ve) ve.whites.forEach(w => { w.scale.y = .25; });
+      if (!RM){ confetti(150); pastries(30); A.sfx.accordion(); }
       const out = v.clone().addScaledVector(d, 6).setY(0);
       await tween(1000, k => {
         victim.position.lerpVectors(v, out, k); victim.position.y = BASEY + Math.sin(Math.PI * Math.min(1, k * .8)) * 3.4 + k * 2.4;
@@ -2319,7 +2610,7 @@ async function enPassantFx(mv){
     pastries(16);
     await voice.done;
     // 6. a dainty diagonal hop onto the square it passed, a tip of the beret: voilà
-    fr.holder.rotation.z = .35; g.rotation.x = g.rotation.z = 0;
+    fr.holder.position.set(.02, .42, -.26); fr.holder.rotation.set(0, 0, .35); g.rotation.x = g.rotation.z = 0;
     g.position.copy(a);
     await fly(mv.from, mv.to, false, 480);
     bubble(g, 'Voilà!', 1100, 1.5); say('Voilà !', {rate: .9, pitch: 1.2}); A.sfx.ding();
@@ -2327,7 +2618,7 @@ async function enPassantFx(mv){
     await sleep(250);
   } finally {
     if (victim && victim.parent) scene.remove(victim);
-    bars(['#lbTop', '#lbBot'], false); card.remove();
+    bars(['#lbTop', '#lbBot'], false); card.remove(); A.music.duck(1);
     await camRestore(650);
   }
   lastMove = {from: mv.from, to: mv.to}; render();
@@ -2338,7 +2629,9 @@ async function captureFx(mv){
   const power = .7 + PV[mv.captured] / 900 * .9;
   const vSq = mv.flags.includes('e') ? mv.to[0] + mv.from[1] : mv.to;
   A.music.duck(2200);
-  if (cutins){ A.sfx.riser(); speedLines(innerWidth/2, innerHeight/2, 1000); await cutIn(mv); }
+  // Taking a pawn keeps all the action but skips the cut-in banner and the shout at the end
+  const pawn = mv.captured === 'p';
+  if (cutins){ A.sfx.riser(); speedLines(innerWidth/2, innerHeight/2, 1000); if (!pawn) await cutIn(mv); }
   const vc = center(vSq), victim = pieceAt[vSq];
   speedLines(vc.x, vc.y, 520, 'rgba(255,46,77,.5)');
   let moved = false;
@@ -2356,6 +2649,7 @@ async function captureFx(mv){
   speedLines(c2.x, c2.y, 260);
   if (!moved) await fly(mv.from, mv.to, false, 380);
   lastMove = {from: mv.from, to: mv.to}; render();
+  if (pawn){ await sleep(450); return; }
   const [en, jp] = mv.captured === 'q' ? ['QUEEN DOWN!!', '撃破'] : BOOM[Math.floor(Math.random() * BOOM.length)];
   await bigText(en, jp, {hold: 380 + power*240, size: mv.captured === 'q' ? .8 : 1, rot: (Math.random()*10 - 8) | 0});
 }
@@ -2833,19 +3127,37 @@ async function commit(input, remote, remoteClock){
   }
   cpuTurn();
 }
-/* ================= MINIGAMES: Red Hands every 8 full moves; the winner earns a power-up ================= */
+/* ================= MINIGAMES: a duel every 8 full moves; the winner earns a power-up =================
+   Four games take turns: 居合 Quick-draw, 斬 Blade Timing, 苦無 Kunai Storm and ☆ Magical Dance. Each is a short
+   head-to-head duel of about half a minute, played full screen.
+   Seats: vs the CPU (Ronin) and online, you're at the bottom and your opponent at the top. On a shared screen the
+   players pick how they sit: face to face (screen flat between them, White at the bottom edge, Black's half turned
+   round to face them) or pass the phone (one at a time: White plays the whole game full screen, then hands the phone to Black,
+   who gets the very same challenge; the better result wins). */
 // ?mgEvery=N (testing only) makes minigames come round faster
-const MG_EVERY = Math.max(2, +new URLSearchParams(location.search).get('mgEvery') || 16), MG_WIN = 2, SLAP_MS = 380, FLINCH_MS = 450, LIVE_MS = 3000;
+const MG_EVERY = Math.max(2, +new URLSearchParams(location.search).get('mgEvery') || 16);
 const OTHER = c => (c === 'w' ? 'b' : 'w');
+const mgPick = a => a[Math.floor(Math.random() * a.length)];
 let minigamesOn = true; try { minigamesOn = localStorage.getItem('kessen-minigames') !== 'off'; } catch(e){}
+// Same screen only: how the two players sit for minigames. The first minigame of every match asks again.
+let seating = 'face'; try { if (localStorage.getItem('kessen-seating') === 'pass') seating = 'pass'; } catch(e){}
+let seatAsked = false;
 // Game mode is picked before a match: Classic is pure chess, Kessen adds the minigames and power-ups. It can't change mid-match.
 const matchLive = () => started && !isOver() && (mode === 'online' ? !!net.code : game.history().length > 0);
+const SEAT_NOTE = {
+  face: 'Screen flat between you: White sits at the bottom edge, Black across the table. Each half of the screen turns to face its player.',
+  pass: 'One at a time: White plays first, then passes the phone to Black, who gets the very same challenge. The better result wins.'
+};
 function drawGameMode(){
   const kessen = mgEnabled(), locked = matchLive() || (mode === 'online' && !!net.code);
   seg('gmSeg', 'gm', kessen ? 'kessen' : 'classic');
   $('#gmSeg').querySelectorAll('button').forEach(b => { b.disabled = locked; });
-  $('#gmNote').textContent = (kessen ? `Kessen: a minigame every ${MG_EVERY / 2} moves (Red Hands, Memory Flash, Mate in One); the winner earns a power-up.` : 'Classic: just chess.') +
+  $('#gmNote').textContent = (kessen ? `Kessen: a minigame every ${MG_EVERY / 2} moves (Quick-draw, Blade Timing, Kunai Storm, Magical Dance); the winner earns a power-up.` : 'Classic: just chess.') +
     (locked ? (mode === 'online' && net.code ? ' Set by the game creator.' : ' Locked until this duel ends.') : '');
+  $('#seatField').hidden = !(mode === 'pvp' && kessen);
+  if (typeof drawQmNote === 'function') drawQmNote();
+  seg('seatSeg', 'seat', seating);
+  $('#seatNote').textContent = SEAT_NOTE[seating];
 }
 $('#gmSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled || busy) return;
@@ -2853,7 +3165,10 @@ $('#gmSeg').addEventListener('click', e => {
   try { localStorage.setItem('kessen-minigames', minigamesOn ? 'on' : 'off'); } catch(err){}
   if (mode !== 'online' && started) newGame(); else panel();
 });
-const mgEnabled = () => mode === 'online' ? !!(net.data && net.data.mg !== false) : minigamesOn;
+function setSeating(s){ seating = s === 'pass' ? 'pass' : 'face'; seatAsked = true; try { localStorage.setItem('kessen-seating', seating); } catch(e){} drawGameMode(); }
+$('#seatSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setSeating(b.dataset.seat); });
+// online, the game creator's choice rules once you're in a game; before that (creating one, or a quick match) it's yours
+const mgEnabled = () => mode === 'online' && net.data ? net.data.mg !== false : minigamesOn;
 let mgPlayedAt = 0;   // the ply of the last minigame: a Takeback can't replay one for another power-up
 function shouldMinigame(){
   const n = game.history().length;
@@ -2862,309 +3177,1409 @@ function shouldMinigame(){
   mgPlayedAt = n; return true;
 }
 // who is a person at this screen (the CPU and an online friend are not)
-const humanHere = c => mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
-// White's hands are cream with an ink outline; Black's are dark with a light outline, so they show up on the dark board.
-const HAND_INK = {w: ['#fffaf0', '#000'], b: ['#2b2350', '#fffaf0']};
-const HAND_SVG = (c, flip) => `<svg class="mg-hands ${flip ? 'top' : 'bot'}" viewBox="0 0 220 120" aria-hidden="true"><g stroke="${HAND_INK[c][1]}" stroke-width="5" stroke-linejoin="round">${[0, 1].map(i => `
-  <g transform="translate(${i ? 205 : 15} ${flip ? 118 : 2}) scale(${i ? -1 : 1} ${flip ? -1 : 1})" fill="${HAND_INK[c][0]}" class="hand">
-    <rect x="8" y="46" width="74" height="62" rx="24"/><rect x="12" y="6" width="15" height="52" rx="7.5"/><rect x="30" y="0" width="15" height="58" rx="7.5"/>
-    <rect x="48" y="3" width="15" height="55" rx="7.5"/><rect x="65" y="12" width="14" height="46" rx="7"/><rect x="74" y="58" width="36" height="15" rx="7.5" transform="rotate(-28 78 66)"/>
-  </g>`).join('')}</g></svg>`;
-let rhInput = null;   // routes a (colour, action) press to the attempt in progress
-let mgListener = null; // online: the attempt in progress listens to the friend's minigame messages
-const mgSend = (m, peerMsg) => { if (net.ref) net.ref.update({mg: Object.assign({from: net.my, s: Date.now() + Math.random()}, m)}).catch(() => {}); };
-async function redHands(){
-  const first = (game.history().length / MG_EVERY) % 2 ? 'b' : 'w', score = {w: 0, b: 0};
-  A.music.duck(40000); A.sfx.fight();
-  const ov = document.createElement('div'); ov.className = 'mg'; ov.id = 'mg';
-  ov.innerHTML = `<div class="mg-title">赤い手 RED HANDS<small>MINIGAME · WINNER GETS A POWER-UP</small></div>
-    <div class="mg-score"><span class="gw">${GLYPH.k}${VS}</span><span id="mgSW">0</span><span class="mg-msg" id="mgMsg">GET READY</span><span id="mgSB">0</span><span class="gb">${GLYPH.k}${VS}</span></div>
-    <div class="mg-roles" id="mgRoles"></div>
-    <div class="mg-arena" id="mgArena"></div>
-    <div class="mg-ctrls"><div class="mg-side" id="mgCtl_w"></div><div class="mg-side" id="mgCtl_b"></div></div>`;
-  stageEl.appendChild(ov);
-  const keys = e => {
-    if (!rhInput || e.repeat) return;
-    const k = e.key.toLowerCase(), pvpKeys = {a: ['w', 'main'], s: ['w', 'fake'], l: ['b', 'main'], k: ['b', 'fake']};
-    if (mode === 'pvp' && pvpKeys[k]){ e.preventDefault(); rhInput(...pvpKeys[k]); return; }
-    const me = mode === 'cpu' ? playerColor : net.my;
-    if (mode !== 'pvp' && (k === ' ' || k === 'a' || k === 'l')){ e.preventDefault(); rhInput(me, 'main'); }
-    if (mode !== 'pvp' && (k === 'f' || k === 's' || k === 'k')){ e.preventDefault(); rhInput(me, 'fake'); }
-  };
-  document.addEventListener('keydown', keys);
-  let k = 0;
-  try {
-    while (score.w < MG_WIN && score.b < MG_WIN && k < 7 && !isOver()){
-      const att = k % 2 ? OTHER(first) : first;
-      const res = mode === 'online' ? await rhAttemptOnline(ov, att, k) : await rhAttemptLocal(ov, att);
-      if (!res) break;   // the link dropped: call it off
-      if (res.pt) score[res.pt]++;
-      $('#mgSW').textContent = score.w; $('#mgSB').textContent = score.b;
-      await sleep(1200); k++;
+// Pass the phone: whose turn it is (null otherwise)
+let passTurn = null;
+const passing = () => mode === 'pvp' && seating === 'pass';
+const humanHere = c => passing() ? c === passTurn : mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
+const mgMe = () => mode === 'cpu' ? playerColor : mode === 'online' ? net.my : passing() ? passTurn : null;   // null face to face
+const mgSeat = () => mode === 'pvp' ? seating : 'solo';
+// where each colour sits: White at the bottom on a shared screen (Black's half turns round face to face); you at the bottom otherwise
+const mgPos = c => mode === 'pvp' && !passing() ? (c === 'w' ? 'bot' : 'top') : (c === mgMe() ? 'bot' : 'top');
+function mgName(c){
+  if (mode === 'pvp') return SIDE(c);
+  if (c === mgMe()) return profile.name || 'You';
+  if (mode === 'cpu') return 'Ronin';
+  const card = net.data && net.data['p' + c]; return (card && card.name) || 'Your friend';
+}
+// "YOU WIN" reads better than your own name on your own screen
+const mgWho = c => c === mgMe() && !passing() ? 'YOU' : mgName(c).toUpperCase();
+
+/* ---- Minigame sounds, through the game's own effects bus (so the SFX toggle mutes them) ---- */
+const SY = A.syn;
+const mgSfx = {
+  signal(){ if (!SY.ok()) return; const t = SY.t() + .01; SY.osc('square', 1400, t, .28, .16); SY.osc('sawtooth', 700, t, .28, .13); SY.osc('square', 1870, t + .02, .2, .07); SY.nz(t, .12, .3, {type: 'highpass', f0: 3000}); },
+  slash(){ if (!SY.ok()) return; const t = SY.t() + .01; SY.nz(t, .3, .6, {type: 'highpass', f0: 2200}); SY.nz(t, .2, .35, {f0: 6500, f1: 1400, q: 2}); },
+  whiff(){ if (!SY.ok()) return; SY.nz(SY.t() + .01, .15, .22, {type: 'highpass', f0: 3500}); },
+  thud(){ if (!SY.ok()) return; const t = SY.t() + .01; SY.nz(t, .22, .55, {type: 'lowpass', f0: 320}); SY.osc('sine', 120, t, .2, .4, {to: 50}); },
+  tick(hi){ if (!SY.ok()) return; SY.osc('triangle', hi ? 1320 : 880, SY.t() + .01, .07, .08); },
+  chin(){ if (!SY.ok()) return; const t = SY.t() + .01; SY.osc('square', 2600, t, .07, .1); SY.osc('triangle', 3400, t, .14, .08); },
+  gong(){ if (!SY.ok()) return; const t = SY.t() + .01; [1, 1.5, 2.76].forEach((r, i) => SY.osc('sine', 110 * r, t, 1.8 - i * .4, .32 / (i + 1))); },
+  thunk(hi){ if (!SY.ok()) return; const t = SY.t() + .01; SY.nz(t, .1, .5, {type: 'lowpass', f0: 520}); SY.osc('triangle', hi ? 170 : 130, t, .1, .22); },
+  throw(){ if (!SY.ok()) return; SY.nz(SY.t() + .01, .09, .18, {type: 'highpass', f0: 2900}); }
+};
+
+/* ---- Online: minigame messages go straight over the data channel (not through the game state),
+   so quick taps from both players never overwrite each other ---- */
+const MG_MSG = ['rdy', 'png', 'pog', 'go', 'qd', 'cut', 'thr', 'stk', 'ks', 'dsc', 'dend'];
+let mgBox = [], mgHooks = [], mgAns = {};
+const mgSend = m => { if (net.conn && net.conn.open){ try { net.conn.send({t: 'mg', m: Object.assign({from: net.my}, m)}); } catch(e){} } };
+function mgRecv(raw){
+  const num = v => typeof v === 'number' && isFinite(v);
+  if (!raw || typeof raw !== 'object' || !MG_MSG.includes(raw.t) || !num(raw.id) || !num(raw.k)) return;
+  const m = {t: raw.t, id: raw.id, k: raw.k, v: num(raw.v) ? raw.v : null, x: num(raw.x) ? raw.x : null, r: raw.r === 1 ? 1 : 0, from: raw.from === 'w' || raw.from === 'b' ? raw.from : null};
+  if (!m.from || m.from === net.my) return;
+  // they're still waiting on something we already sent (it was lost while the link blipped): send it again
+  const ans = mgAns[`${m.id}:${m.k}:${m.t}`]; if (m.r && ans) mgSend(ans);
+  mgBox.push(m); if (mgBox.length > 400) mgBox.shift();
+  mgHooks.slice().forEach(h => h(m));
+}
+const mgOn = fn => { mgHooks.push(fn); return () => { mgHooks = mgHooks.filter(h => h !== fn); }; };
+function mgWait(test, ms){
+  return new Promise(res => {
+    const hit = mgBox.find(test); if (hit) return res(hit);
+    let t = 0; const off = mgOn(m => { if (test(m)){ clearTimeout(t); off(); res(m); } });
+    t = setTimeout(() => { off(); res(null); }, ms);
+  });
+}
+// Tell the friend my value for a round and wait for theirs, re-asking every 1.5 s until it arrives.
+async function mgSwap(id, k, t, mine, ms = 12000){
+  const msg = Object.assign({id, k, t}, mine); mgAns[`${id}:${k}:${t}`] = Object.assign({}, msg, {r: 0});
+  const t0 = Date.now(); let got = null;
+  while (!got && Date.now() - t0 < ms && !isOver() && net.code){ mgSend(Object.assign({}, msg, {r: 1})); got = await mgWait(m => m.id === id && m.k === k && m.t === t, 1500); }
+  return got;
+}
+// Both screens start a round together: White pings until Black answers, says go, then waits half the round trip itself.
+async function mgSync(id, k){
+  if (mode !== 'online') return true;
+  if (net.my === 'w'){
+    for (let i = 0; i < 45 && net.code && !isOver(); i++){
+      const t0 = performance.now(); mgSend({id, k, t: 'png', v: i});
+      if (await mgWait(m => m.id === id && m.k === k && m.t === 'pog' && m.v === i, 900)){
+        mgSend({id, k, t: 'go'}); await sleep((performance.now() - t0) / 2); return true;
+      }
     }
-  } finally { rhInput = null; mgListener = null; document.removeEventListener('keydown', keys); }
-  const winner = score.w > score.b ? 'w' : score.b > score.w ? 'b' : null;
-  $('#mgMsg').textContent = winner ? `${SIDE(winner).toUpperCase()} WINS` : 'NO WINNER';
+    return false;
+  }
+  const answer = m => { if (m.id === id && m.k === k && m.t === 'png') mgSend({id, k, t: 'pog', v: m.v}); };
+  const off = mgOn(answer);
+  const go = await mgWait(m => m.id === id && m.k === k && m.t === 'go', 45000);
+  off(); return !!go;
+}
+
+/* ---- The full-screen frame every minigame is built in ---- */
+function mgFrame(key, title, jp){
+  const seat = mgSeat(), ov = document.createElement('div'), name = `${jp} ${title.toUpperCase()}`;
+  ov.className = 'mgx'; ov.id = 'mg'; ov.dataset.seat = seat; ov.dataset.game = key;
+  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', `${title} minigame`);
+  ov.innerHTML = `<div class="mgx-head"><div class="mg-title">${name}<small>MINIGAME · THE WINNER GETS A POWER-UP</small></div></div>
+    <div class="mgx-body"><div class="mgx-mid"></div></div><div class="mgx-big" aria-live="assertive"></div>`;
+  document.body.appendChild(ov);
+  const body = ov.querySelector('.mgx-body'), P = {};
+  const F = {ov, body, mid: ov.querySelector('.mgx-mid'), P, seat, name, id: game.history().length, closed: false, timers: [], offs: [], input: null, key: null, raf: 0};
+  for (const c of ['w', 'b']){
+    const el = document.createElement('section'); el.className = 'mgx-p'; el.dataset.c = c; el.dataset.pos = mgPos(c);
+    el.innerHTML = `<div class="mgx-tag"><span class="k ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span><b></b>${c === mgMe() && !passing() ? '<span class="you">YOU</span>' : passing() ? '<span class="you" hidden>NOW PLAYING</span>' : ''}<span class="ttl">${jp}</span><span class="pts"></span></div>
+      <div class="mgx-area"></div><div class="mgx-say" aria-live="polite"></div><div class="mgx-big"></div>`;
+    el.querySelector('b').textContent = mgName(c);
+    body.appendChild(el);
+    P[c] = {el, area: el.querySelector('.mgx-area'), sayEl: el.querySelector('.mgx-say'), ptsEl: el.querySelector('.pts'), bigEl: el.querySelector('.mgx-big')};
+  }
+  // big shouts face every player: one per half face to face, one across the screen otherwise
+  F.views = seat === 'face' ? [P.w.bigEl, P.b.bigEl] : [ov.querySelector(':scope > .mgx-big')];
+  F.after = (ms, fn) => { const t = setTimeout(() => { if (!F.closed) fn(); }, ms); F.timers.push(t); return t; };
+  F.wait = ms => new Promise(r => setTimeout(r, ms));
+  F.say = (c, t) => { P[c].sayEl.textContent = t || ''; if (t) P[c].sayEl.animate([{transform: 'scale(1.25)'}, {transform: 'scale(1)'}], {duration: 180, easing: 'ease-out'}); };
+  F.pts = (c, t) => { P[c].ptsEl.textContent = t; };
+  let bigT = 0;
+  F.big = (main, sub = '', o = {}) => {
+    clearTimeout(bigT);
+    for (const v of F.views){
+      v.className = 'mgx-big' + (main ? ' on' : '') + (o.cls ? ' ' + o.cls : '');
+      v.style.setProperty('--c', o.color || 'var(--gold)');
+      v.innerHTML = main ? `<span class="m"></span>${sub ? '<span class="s"></span>' : ''}` : '';
+      if (main){ v.querySelector('.m').textContent = main; if (sub) v.querySelector('.s').textContent = sub; }
+    }
+    if (main && o.ms) bigT = F.after(o.ms, () => F.big(''));
+  };
+  if (passing()) mgTurn(F, 'w');
+  F.close = () => { F.closed = true; passTurn = null; F.timers.forEach(clearTimeout); F.offs.forEach(f => f()); cancelAnimationFrame(F.raf); document.removeEventListener('keydown', onKey); ov.remove(); A.music.duck(1); };
+  // Taps: your half on a shared screen, anywhere otherwise. Buttons (READY, the dance pads) handle themselves.
+  ov.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    e.preventDefault();
+    if (!F.input) return;
+    if (F.seat === 'face'){ const h = e.target.closest('.mgx-p'); if (h) F.input(h.dataset.c, e.timeStamp); }
+    else if (mgMe()) F.input(mgMe(), e.timeStamp);
+  });
+  const onKey = e => {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (F.key && F.key(k, e.timeStamp)){ e.preventDefault(); return; }
+    if (!F.input) return;
+    const c = F.seat === 'face' ? ({a: 'w', l: 'b'})[k] : ([' ', 'Enter', 'a', 'l'].includes(k) ? mgMe() : null);
+    if (c){ e.preventDefault(); F.input(c, e.timeStamp); }
+  };
+  document.addEventListener('keydown', onKey);
+  return F;
+}
+// The rules card and READY button. Everyone at this screen taps READY (the CPU is always ready);
+// online, both screens must be ready, and then they start the countdown together.
+async function mgGate(F, rules, {count = true} = {}){
+  const face = F.seat === 'face', here = face ? ['w', 'b'] : [mgMe()], ready = {}, cards = {};
+  await new Promise(res => {
+    const press = c => {
+      if (ready[c]) return; ready[c] = true; mgSfx.tick(true);
+      const btn = cards[c].querySelector('button'); btn.disabled = true; btn.textContent = 'READY ✓';
+      for (const x of here) if (ready[x] && !here.every(y => ready[y])) cards[x].querySelector('.wait').textContent = `Waiting for ${mgName(OTHER(x))}…`;
+      if (here.every(x => ready[x])){ F.key = null; res(); }
+    };
+    for (const c of here){
+      const host = face ? F.P[c].el : F.body, r = rules(c), card = document.createElement('div');
+      card.className = 'mgx-ready';
+      const turn = passing() ? `<p class="turn"><span class="${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span> ${SIDE(c).toUpperCase()}'S TURN${c === 'b' ? ' · PASS THE PHONE OVER' : ''}</p>` : '';
+      card.innerHTML = `<div class="mgx-card">${turn}<h3>${F.name}</h3><p>${r.how}</p><p class="keys">${r.keys}</p><button type="button" class="mg-btn go">READY!</button><div class="wait"></div></div>`;
+      host.appendChild(card); cards[c] = card;
+      card.querySelector('button').addEventListener('click', () => press(c));
+    }
+    F.key = k => { const c = face ? ({a: 'w', l: 'b'})[k] : ([' ', 'Enter'].includes(k) ? mgMe() : null); if (c && !ready[c]){ press(c); return true; } return false; };
+    setTimeout(() => cards[here[0]].querySelector('button').focus({preventScroll: true}), 50);
+  });
+  if (mode === 'online'){
+    const c = mgMe(); cards[c].querySelector('.wait').textContent = `Waiting for ${mgName(OTHER(c))}…`;
+    if (!await mgSwap(F.id, 0, 'rdy', {v: 1}, 90000)) return false;
+  }
+  Object.values(cards).forEach(c => c.remove());
+  if (!await mgSync(F.id, 1)) return false;
+  if (count) for (const n of ['3', '2', '1']){ F.big(n, '', {cls: 'count'}); mgSfx.tick(n === '1'); await F.wait(620); }
+  F.big('');
+  return true;
+}
+async function mgEnd(F, winner, why = ''){
+  F.input = null; F.key = null;
+  const head = winner === 'both' ? 'BOTH WIN!' : winner ? `${mgWho(winner)} WIN${winner === mgMe() ? '' : 'S'}!` : (why || 'NO WINNER');
+  F.big(head, winner === 'both' ? 'A POWER-UP EACH' : winner ? 'POWER-UP INCOMING' : 'NO POWER-UP THIS TIME', {cls: 'end'});
   A.sfx[winner ? 'heroic' : 'draw']();
-  await sleep(1300); ov.remove();
+  await F.wait(2200); F.close();
   return winner;
 }
-// Draws the hands and the controls for one attempt.
-function rhSetup(ov, att){
-  const def = OTHER(att), arena = ov.querySelector('#mgArena');
-  arena.innerHTML = HAND_SVG(att, true) + HAND_SVG(def, false) + '<div class="mg-pop" id="mgPop"></div>';
-  ov.querySelector('#mgRoles').textContent = `${SIDE(att)} slaps · ${SIDE(def)} dodges`;
-  for (const c of ['w', 'b']){
-    const box = ov.querySelector('#mgCtl_' + c), mine = humanHere(c), slapper = c === att;
-    const keyMain = mode === 'pvp' ? (c === 'w' ? 'A' : 'L') : 'Space', keyFake = mode === 'pvp' ? (c === 'w' ? 'S' : 'K') : 'F';
-    box.innerHTML = !mine ? '' : `<div class="who">${SIDE(c)} · ${slapper ? 'slapper' : 'dodger'}</div><div class="row">${slapper
-      ? `<button class="mg-btn fake" data-a="fake" disabled>Fake<kbd>${keyFake}</kbd></button><button class="mg-btn" data-a="main" disabled>SLAP!<kbd>${keyMain}</kbd></button>`
-      : `<button class="mg-btn pull" data-a="main" disabled>PULL!<kbd>${keyMain}</kbd></button>`}</div>`;
-    box.querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); if (rhInput) rhInput(c, b.dataset.a); }));
+// Pass the phone: this player moves to the bottom of the frame and their tag lights up.
+function mgTurn(F, c){
+  passTurn = c;
+  for (const x of ['w', 'b']){ F.P[x].el.dataset.pos = x === c ? 'bot' : 'top'; const y = F.P[x].el.querySelector('.you'); if (y) y.hidden = x !== c; F.say(x, ''); }
+}
+// Same screen: the first minigame of a match asks how the two of you are sitting.
+const SEAT_ART = {
+  face: `<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="34" y="22" width="52" height="76" fill="#17122b" stroke="#000" stroke-width="4"/><line x1="34" y1="60" x2="86" y2="60" stroke="#ffc83d" stroke-width="2" stroke-dasharray="4 4"/>
+    <text x="60" y="48" text-anchor="middle" font-size="18" transform="rotate(180 60 42)" fill="#1b1328" stroke="#ffd36b" stroke-width="1">♚</text><text x="60" y="88" text-anchor="middle" font-size="18" fill="#fffaf0" stroke="#22183a" stroke-width="1">♚</text>
+    <circle cx="60" cy="9" r="7" fill="#1b1328" stroke="#ffc83d" stroke-width="2"/><circle cx="60" cy="111" r="7" fill="#fffaf0" stroke="#000" stroke-width="2"/></svg>`,
+  pass: `<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="44" y="26" width="32" height="56" rx="4" fill="#17122b" stroke="#000" stroke-width="4"/><text x="60" y="60" text-anchor="middle" font-size="16" fill="#ffc83d">⇄</text>
+    <path d="M24 100 Q60 114 96 100" fill="none" stroke="#ffc83d" stroke-width="3" stroke-dasharray="5 4"/><path d="M89 95 L97 100 L88 105" fill="none" stroke="#ffc83d" stroke-width="3"/>
+    <circle cx="18" cy="88" r="9" fill="#fffaf0" stroke="#000" stroke-width="2"/><circle cx="102" cy="88" r="9" fill="#1b1328" stroke="#ffc83d" stroke-width="2"/></svg>`
+};
+function mgSeatPick(){
+  return new Promise(res => {
+    const ov = document.createElement('div'); ov.className = 'mgx'; ov.id = 'mg'; ov.dataset.seat = 'solo';
+    ov.innerHTML = `<div class="mgx-seat"><div class="mg-title">HOW ARE YOU SITTING?<small>SAME-SCREEN MINIGAMES</small></div>
+      <div class="seat-opts">${['face', 'pass'].map(s => `<button type="button" class="seat-opt" data-seat="${s}" aria-pressed="${s === seating}">${SEAT_ART[s]}<b>${s === 'face' ? 'Face to face' : 'Pass the phone'}</b><span>${SEAT_NOTE[s]}</span></button>`).join('')}</div>
+      <p class="note">You can change this any time under <b>Minigame seating</b>.</p></div>`;
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => { const b = e.target.closest('.seat-opt'); if (!b) return; mgSfx.tick(true); setSeating(b.dataset.seat); ov.remove(); res(); });
+    setTimeout(() => ov.querySelector(`.seat-opt[data-seat="${seating}"]`).focus({preventScroll: true}), 50);
+  });
+}
+/* ---- 居合 Quick-draw: wait for the signal, then draw first. First to 2 duels.
+   Drawing early gets you cut. A draw of 100 ms or faster is GODSPEED: a cut-scene, and the whole minigame is yours. ---- */
+const QD = {
+  shout: ['ULTRA MEGA SUNSET SLASH!!!', 'THOUSAND-YEAR NOODLE CUT!!', 'FORBIDDEN TECHNIQUE: VERY FAST ARM!!', 'SECRET STYLE: BLINK AND YOU MISSED IT!!', 'DRAGON SPIRIT MAXIMUM OVERDRIVE!!', 'FINAL FORM: SLIGHTLY FASTER ME!!'],
+  fall: ['Impossible… my power level…', 'I was holding back… 2%…', 'Tell my goldfish… I loved him…', 'This is just… my first form…', 'How?! I even did the dramatic pose!'],
+  early: ['BAKA!! I didn’t even say go!', 'You twitched first. Disgraceful.', 'NANI?! Have you no honor?!', 'A leaf fell and you PANICKED?!'],
+  stare: ['…', 'Hmph.', 'Do not blink.', 'I have trained 10,000 years for this.', 'Your stance… is adequate.', 'Is that a bird? No. Focus.'],
+  ronin: ['Too slow! I’ve trained since the opening theme!', 'Come back after your training arc.', 'You fought well. For a background character.', 'Hmph. Not even worth a flashback.']
+};
+const QD_GS = 100, QD_SLOW = 1500;
+// A flat samurai silhouette. White wears cream with an ink outline, Black wears ink with a gold outline (like the pieces).
+const SAM_SVG = (cls) => `<svg class="sam ${cls}" viewBox="0 0 80 100" aria-hidden="true"><g class="body" fill="currentColor">
+  <circle cx="32" cy="18" r="9"/><path d="M22 18 L15 6 L25 10 L26 -2 L33 8 L40 -1 L40 10 L50 6 L43 17 Z"/><path class="eye" d="M35 17 L43 14.5 L42 18.5 Z"/>
+  <path class="sweat" d="M24 9 q-4 6 0 8 q4 -2 0 -8z" fill="#8fd3ff"/><path d="M20 28 Q32 24 44 28 L50 62 L58 98 L6 98 L14 62 Z"/>
+  <path class="obi" d="M15 56 L49 56 L50 62 L14 62 Z"/><rect class="blade" x="44" y="50" width="34" height="3" rx="1.5"/></g></svg>`;
+// A dusk duel scene; `left` is the colour standing on the left, facing right.
+function qdScene(left){
+  const el = document.createElement('div'); el.className = 'qd-scene';
+  el.innerHTML = `<div class="qd-sun"></div><div class="qd-ground"></div><div class="qd-tone"></div><div class="qd-speed"></div><div class="qd-leaf"></div>
+    ${SAM_SVG('l c' + left)}${SAM_SVG('r c' + OTHER(left))}<div class="qd-slash"></div><div class="qd-flash"></div><div class="qd-bub l"></div><div class="qd-bub r"></div>`;
+  return el;
+}
+const qdMs = v => v == null ? '—' : v < 0 ? 'EARLY' : v >= 9999 ? 'NO DRAW' : `${Math.round(v)} ms`;
+// Who takes the duel from both reaction times: -1 = drew early, 9999 = never drew. The same rule on both screens online.
+const qdJudge = (w, b) => w < 0 && b < 0 ? null : w < 0 ? 'b' : b < 0 ? 'w' : w >= 9999 && b >= 9999 ? null : w < b ? 'w' : b < w ? 'b' : null;
+async function quickDraw(){
+  const F = mgFrame('qd', 'Quick-draw', '居合'), id = F.id, me = mgMe(), seat = F.seat;
+  let rnd = seededRandom(id * 7919 + 101);
+  A.music.duck(240000);
+  // one scene facing each player face to face; otherwise one scene with you (or whoever's turn it is) on the left
+  const scenes = [];
+  if (seat === 'face') for (const c of ['w', 'b']){ const s = qdScene(c); F.P[c].area.appendChild(s); scenes.push(s); }
+  else { const s = qdScene(me || 'w'); F.mid.appendChild(s); scenes.push(s); }
+  if (seat === 'face') F.mid.innerHTML = '<div class="mgx-div"><span>FIRST TO 2</span><span>FIRST TO 2</span></div>';
+  const pads = {};
+  for (const c of ['w', 'b']) if (humanHere(c)){ const p = document.createElement('div'); p.className = 'qd-pad p' + c; F.P[c].area.appendChild(p); pads[c] = p; }
+  const pad = (c, t, cls = '') => { if (pads[c]){ pads[c].textContent = t; pads[c].className = `qd-pad p${c} ${cls}`; } };
+  const each = fn => scenes.forEach(fn);
+  const sam = (s, c) => s.querySelector('.sam.c' + c);
+  const pose = (c, cls, on = true) => each(s => sam(s, c).classList.toggle(cls, on));
+  const bubble = (c, text, shout) => each(s => {
+    const side = sam(s, c).classList.contains('l') ? 'l' : 'r', box = s.querySelector('.qd-bub.' + side); box.innerHTML = '';
+    if (!text) return; const d = document.createElement('div'); d.className = 'qd-say ' + side + (shout ? ' shout' : ''); d.textContent = text; box.appendChild(d);
+  });
+  const fx = (cls, ms) => each(s => { const el = s.querySelector('.' + cls); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); if (ms) F.after(ms, () => el.classList.remove('on')); });
+  const wins = {w: 0, b: 0};
+  const pips = () => ['w', 'b'].forEach(c => F.pts(c, '●'.repeat(wins[c]) + '○'.repeat(Math.max(0, 2 - wins[c]))));
+  pips();
+  for (const c of ['w', 'b']) pad(c, 'GET READY', 'idle');
+  if (mode === 'cpu') bubble(OTHER(me), 'Draw on 斬. Not before. Not after.');
+  const rules = c => ({
+    how: `Wait for <b>斬!!</b> and the flashing screen, then tap${seat === 'face' ? ' your half' : ''} as fast as you can. Watch for fakes: tap early and you get cut. ${passing() ? 'Three draws each; the best time wins.' : 'First to 2 duels.'} Draw in ${QD_GS} ms or less for <b>GODSPEED</b>, an instant win.`,
+    keys: seat === 'face' ? `Keyboard: ${c === 'w' ? 'A' : 'L'}` : 'Keyboard: Space'
+  });
+
+  // One duel. Resolves {win, t: {w, b}} or null if the link dropped.
+  const duel = k => new Promise(async res => {
+    // the same numbers on both screens, in the same order
+    const wait = 1700 + rnd() * 2600, leaf = rnd() < .75 ? 500 + rnd() * (wait - 900) : -1;
+    const flinch = k >= 1 && rnd() < .55 ? 400 + rnd() * (wait - 700) : -1, flincher = rnd() < .5 ? 'w' : 'b';
+    const psych = k >= 2 && rnd() < .6 ? 700 + rnd() * (wait - 1300) : -1, jit = rnd();
+    for (const c of ['w', 'b']){ pose(c, 'drawn', false); pose(c, 'fall', false); pose(c, 'flinch', false); bubble(c, ''); pad(c, 'WAIT FOR 斬…', 'wait'); }
+    if (passing()) F.big(`DRAW ${k + 1} / 3`, `${SIDE(passTurn).toUpperCase()}'S TURN`, {ms: 900});
+    else F.big(wins.w === 1 && wins.b === 1 ? 'FINAL DUEL' : `DUEL ${k + 1}`, wins.w === 1 && wins.b === 1 ? 'SUDDEN DEATH' : '', {ms: 900});
+    if (mode === 'cpu') bubble(OTHER(me), mgPick(QD.stare));
+    if (!await mgSync(id, 10 + k)) return res(null);
+    let phase = 'wait', t0 = 0, done = false;
+    const t = {w: null, b: null}, local = mode !== 'online';
+    const finish = win => {
+      if (done) return; done = true; phase = 'over'; F.input = null;
+      F.ov.classList.remove('signal'); F.big('');
+      if (win){
+        pose(win, 'drawn'); fx('qd-flash'); fx('qd-slash'); mgSfx.slash(); fx('qd-speed', 700);
+        if (!RM) each(s => s.animate([{transform: 'translate(-7px,4px)'}, {transform: 'translate(6px,-5px)'}, {transform: 'translate(-4px,3px)'}, {transform: 'none'}], {duration: 360}));
+        F.after(130, () => { pose(OTHER(win), 'fall'); mgSfx.thud(); });
+        const early = t[OTHER(win)] != null && t[OTHER(win)] < 0;
+        bubble(win, early ? mgPick(QD.early) : mgPick(QD.shout), !early);
+        F.after(1300, () => bubble(OTHER(win), mode === 'cpu' && win !== me ? '' : mgPick(QD.fall)));
+        if (mode === 'cpu' && win !== me) F.after(1300, () => bubble(win, mgPick(QD.ronin)));
+        pad(win, early ? 'THEY FLINCHED!' : 'CRITICAL HIT!!', 'won'); pad(OTHER(win), early ? 'TOO EARLY!!' : 'CUT DOWN…', 'lost');
+        F.big(early ? 'TOO EARLY!!' : 'CRITICAL HIT!!', passing() ? qdMs(t[passTurn]) : `${mgName('w')} ${qdMs(t.w)} · ${mgName('b')} ${qdMs(t.b)}`, {color: early ? 'var(--gold)' : 'var(--blood)', ms: 1500});
+      } else {
+        mgSfx.whiff(); for (const c of ['w', 'b']) pad(c, 'NOBODY DREW…', 'lost');
+        F.big('NOBODY DREW…', t.w < 0 && t.b < 0 ? 'BOTH OF YOU FLINCHED' : 'THE WIND WINS THIS ONE', {color: 'var(--muted)', ms: 1500});
+      }
+      res({win, t});
+    };
+    // a tap: before the signal it's early, after it's your draw time (from the frame the signal was drawn)
+    F.input = (c, ts) => {
+      if (done || t[c] != null || !humanHere(c) && mode !== 'cpu') return;
+      if (phase === 'wait'){
+        t[c] = -1; mgSfx.whiff(); pad(c, 'TOO EARLY!!', 'lost');
+        if (local) finish(OTHER(c)); else report();
+        return;
+      }
+      if (phase !== 'go') return;
+      t[c] = Math.max(0, ts - t0); pad(c, qdMs(t[c]), 'drew');
+      if (!local){ report(); return; }
+      // the first draw starts a short window for the other one, then the faster measured time wins
+      settle();
+    };
+    // online: my result goes over, theirs comes back, both screens judge the same pair
+    let reported = false;
+    const report = async () => {
+      if (reported) return; reported = true; phase = 'sent';
+      const mine = t[me], them = OTHER(me);
+      pad(me, mine < 0 ? 'TOO EARLY!!' : `${qdMs(mine)} · …`, mine < 0 ? 'lost' : 'drew');
+      const got = await mgSwap(id, 100 + k, 'qd', {v: mine}, 9000);
+      if (done) return;
+      if (!got){ done = true; F.ov.classList.remove('signal'); return res(null); }
+      t[them] = got.v; finish(qdJudge(t.w, t.b));
+    };
+    let settling = false;
+    const settle = () => { if (settling) return; settling = true; F.after(240, () => { for (const c of ['w', 'b']) if (t[c] == null) t[c] = 9999; finish(qdJudge(t.w, t.b)); }); };
+    // fake-outs
+    if (leaf >= 0) F.after(leaf, () => fx('qd-leaf', 2300));
+    if (flinch >= 0) F.after(flinch, () => { if (phase !== 'wait') return; pose(flincher, 'flinch'); bubble(flincher, 'NANI?!', true); F.after(280, () => pose(flincher, 'flinch', false)); });
+    if (psych >= 0) F.after(psych, () => { if (phase !== 'wait') return; F.big('斬…?', 'PSYCH!!', {cls: 'psych', ms: 650}); mgSfx.tick(); });
+    // the signal: unmissable, but no faster than three flashes a second
+    F.after(wait, () => requestAnimationFrame(ts => {
+      if (phase !== 'wait' || F.closed) return;
+      phase = 'go'; t0 = ts;
+      F.ov.classList.add('signal'); F.big('斬!!', 'TAP NOW!!', {cls: 'go'}); mgSfx.signal(); buzz(120);
+      for (const c of ['w', 'b']) if (t[c] == null) pad(c, 'DRAW!!', 'go');
+      if (mode === 'cpu'){
+        const cpu = OTHER(me), ms = Math.max(190, [440, 345, 275][level] + (jit - .5) * 90 - k * 14);
+        F.after(ms, () => { if (!done && t[cpu] == null){ t[cpu] = ms; settle(); } });
+      }
+      F.after(QD_SLOW, () => {
+        if (done || phase !== 'go') return;
+        for (const c of ['w', 'b']) if (t[c] == null && (local || c === me)) t[c] = 9999;
+        if (local) finish(qdJudge(t.w, t.b)); else report();
+      });
+    }));
+  });
+
+  const gsWin = async (c, ms) => {
+    await F.wait(700); await godspeedFilm(F, c, ms);
+    F.big('GODSPEED VICTORY!!', 'THE WHOLE MINIGAME, IN ONE DRAW', {color: 'var(--gold)'}); mgSfx.gong(); await F.wait(1600);
+  };
+  // Pass the phone: White takes three draws, then Black gets the very same three. The best single draw wins.
+  if (passing()){
+    const best = {w: null, b: null};
+    const show = () => ['w', 'b'].forEach(c => F.pts(c, best[c] == null ? '—' : `best ${qdMs(best[c])}`));
+    for (const c of ['w', 'b']){
+      mgTurn(F, c); rnd = seededRandom(id * 7919 + 101);
+      scenes.length = 0; F.mid.innerHTML = ''; const sc = qdScene(c); F.mid.appendChild(sc); scenes.push(sc);
+      for (const x of ['w', 'b']) if (pads[x]){ pads[x].remove(); delete pads[x]; }
+      pads[c] = document.createElement('div'); F.P[c].area.appendChild(pads[c]); pad(c, 'GET READY', 'idle'); show();
+      if (!await mgGate(F, rules)) return mgEnd(F, null, 'CALLED OFF');
+      for (let k = 0; k < 3 && !isOver(); k++){
+        const r = await duel(k), v = r.t[c];
+        if (v >= 0 && v < 9999 && (best[c] == null || v < best[c])) best[c] = v;
+        show();
+        if (r.win === c && v >= 0 && v <= QD_GS){ await gsWin(c, Math.round(v)); return mgEnd(F, c); }
+        await F.wait(1700);
+      }
+    }
+    const winner = best.w == null && best.b == null ? null : best.b == null ? 'w' : best.w == null ? 'b' : best.w < best.b ? 'w' : best.b < best.w ? 'b' : null;
+    F.big(winner ? `${SIDE(winner).toUpperCase()} WAS FASTER` : 'DEAD EVEN', `White ${qdMs(best.w ?? 9999)} · Black ${qdMs(best.b ?? 9999)}`, {color: 'var(--gold)'});
+    await F.wait(2000);
+    return mgEnd(F, winner);
   }
-  const top = arena.querySelector('.top'), bot = arena.querySelector('.bot'), pop = arena.querySelector('#mgPop');
-  const enable = on => ov.querySelectorAll('.mg-btn').forEach(b => { b.disabled = !on; });
-  const say = (t, color) => { pop.textContent = t; pop.style.textShadow = `4px 4px 0 ${color || 'var(--blood)'}`; pop.animate([{transform: 'translate(-50%,-50%) scale(2)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .2}, {opacity: 1, offset: .8}, {opacity: 0}], {duration: 1100, fill: 'forwards'}); };
-  return {
-    enable, msg: t => { ov.querySelector('#mgMsg').textContent = t; },
-    slap: () => { A.sfx.whoosh(); return top.animate([{transform: 'translate(-50%,0)'}, {transform: 'translate(-50%,46%)'}], {duration: SLAP_MS, easing: 'cubic-bezier(.6,0,1,1)', fill: 'forwards'}); },
-    fake: () => { A.sfx.select(); top.animate([{transform: 'translate(-50%,0)'}, {transform: 'translate(-50%,14%)'}, {transform: 'translate(-50%,0)'}], {duration: 260}); },
-    pull: () => { bot.animate([{transform: 'translate(-50%,0)'}, {transform: 'translate(-50%,70%) rotate(4deg)'}], {duration: 140, fill: 'forwards'}); },
-    hit: () => { A.sfx.slap(); A.sfx.impact(.5); shake(.6, 300); bot.querySelectorAll('.hand').forEach(h => h.setAttribute('fill', '#ff4d6a')); say('バチン!! RED HANDS', '#ff2e4d'); },
-    result: (pt, why) => {
-      if (why === 'dodge'){ A.sfx.boing(); say('DODGED!', '#3fe0ff'); }
-      else if (why === 'flinch'){ A.sfx.laugh(); say('FLINCH!', '#ffc83d'); }
-      else if (why === 'early'){ A.sfx.laugh(); say('TOO EARLY!', '#ffc83d'); }
-      else if (why === 'slow'){ say('TOO SLOW', '#a99fc7'); }
+  if (!await mgGate(F, rules)) return mgEnd(F, null, 'CALLED OFF');
+  let winner = null, godspeed = false;
+  for (let k = 0; k < 5 && wins.w < 2 && wins.b < 2 && !isOver(); k++){
+    const r = await duel(k);
+    if (!r) return mgEnd(F, null, 'CALLED OFF');
+    if (r.win){
+      wins[r.win]++; pips();
+      if (r.t[r.win] >= 0 && r.t[r.win] <= QD_GS){ godspeed = true; winner = r.win; await gsWin(r.win, Math.round(r.t[r.win])); break; }
+    }
+    await F.wait(1900);
+  }
+  if (!godspeed) winner = wins.w > wins.b ? 'w' : wins.b > wins.w ? 'b' : null;
+  return mgEnd(F, winner);
+}
+
+/* ---- GODSPEED: an original ~7 s anime finisher in six shots, drawn live. Tap to skip.
+   Three panels (eye, thumb on the guard, the rival's sweat) → blackout strobe → frozen wide shot and the line →
+   NANI?! close-up → the delayed cut, 決 burning in → GODSPEED!! Face to face, each half gets its own copy facing its player. ---- */
+const GS_DUR = 6800;
+const GS_PAL = {
+  w: {body: '#fffaf0', line: '#000', obi: '#ff2e4d', hair: '#0c0a17', sheath: '#0c0a17', blade: '#f4f8ff', skin: '#fffaf0', brow: '#0c0a17'},
+  b: {body: '#1b1328', line: '#ffc83d', obi: '#ffc83d', hair: '#0c0a17', sheath: '#5a0d1c', blade: '#f4f8ff', skin: '#1b1328', brow: '#ffc83d'}
+};
+function godspeedFilm(F, win, ms){
+  const HERO = GS_PAL[win], RON = GS_PAL[OTHER(win)], INK = {body: '#000', line: '#000', obi: '#000', hair: '#000', sheath: '#000', blade: '#000'};
+  const hosts = F.seat === 'face' ? [F.P.w.el, F.P.b.el] : [F.ov];
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const flashes = Array.from({length: 16}, () => ({x: rand(40, 360), f: Math.random() < .5 ? 1 : -1, a: rand(-.9, .9), y: rand(60, 240), k: Math.random() < .35}));
+  const petals = Array.from({length: 30}, () => ({x: rand(0, 460), d: rand(0, 1400), v: rand(50, 100), w: rand(0, 6), s: rand(4, 8)}));
+  const pts = [[118, 128], [126, 150], [110, 170], [128, 190], [114, 212]];
+  const played = {}, once = (k, f) => { if (!played[k]){ played[k] = 1; try { f(); } catch(e){} } };
+  const ez = x => x < 0 ? 0 : x > 1 ? 1 : x, eo = x => 1 - Math.pow(1 - ez(x), 3), seg = (t, a, b) => ez((t - a) / (b - a));
+  const DISP = s => `${s}px "Dela Gothic One","Arial Black",Impact,sans-serif`;
+  const cvs = hosts.map(h => { const cv = document.createElement('canvas'); cv.className = 'gs-cv'; h.appendChild(cv); return {cv, c: cv.getContext('2d')}; });
+  const fit = () => cvs.forEach(o => { const r = o.cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); o.cv.width = Math.max(1, Math.round(r.width * d)); o.cv.height = Math.max(1, Math.round(r.height * d)); o.s = Math.min(o.cv.width / 400, o.cv.height / 300); o.ox = (o.cv.width - 400 * o.s) / 2; o.oy = (o.cv.height - 300 * o.s) / 2; });
+  fit();
+  let skip = false, t0 = 0;
+  const onTap = e => { e.stopPropagation(); e.preventDefault(); skip = true; };
+  hosts.forEach(h => h.addEventListener('pointerdown', onTap, true));
+  const onKey = e => { if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape'){ e.preventDefault(); skip = true; } };
+  document.addEventListener('keydown', onKey, true);
+  const savedInput = F.input; F.input = null;
+  return new Promise(res => {
+    const draw = (c, t) => {
+      const txt = (s, x, y, size, fill, stroke, rot, align) => { c.save(); c.translate(x, y); c.rotate(rot || 0); c.font = DISP(size); c.textAlign = align || 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; if (stroke){ c.lineWidth = Math.max(3, size * .16); c.strokeStyle = stroke; c.strokeText(s, 0, 0); } c.fillStyle = fill; c.fillText(s, 0, 0); c.restore(); };
+      const limb = (x1, y1, x2, y2, w, col, line) => { c.lineCap = 'round'; c.strokeStyle = line; c.lineWidth = w + 4; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); };
+      // a flat Samurai-Jack-ish swordsman, origin at the feet, facing right when face = 1
+      const sam = (x, gy, s, P, o = {}) => {
+        c.save(); c.translate(x, gy); c.scale((o.face || 1) * s, s); c.rotate(o.lean || 0); c.lineJoin = 'round';
+        const tw = Math.sin((o.t || 0) / 120) * 4;
+        c.beginPath(); c.moveTo(-9, -106); c.quadraticCurveTo(-24, -104 + tw, -34, -98 - tw); c.moveTo(-9, -103); c.quadraticCurveTo(-22, -96 - tw, -30, -90 + tw); c.strokeStyle = P.obi; c.lineWidth = 3; c.stroke();
+        c.fillStyle = P.body; c.strokeStyle = P.line; c.lineWidth = 3; c.beginPath();
+        if (o.stride){ c.moveTo(-14, -55); c.lineTo(14, -55); c.lineTo(44, 0); c.lineTo(20, 0); c.lineTo(0, -24); c.lineTo(-16, 0); c.lineTo(-40, 0); }
+        else { c.moveTo(-14, -55); c.lineTo(14, -55); c.lineTo(28, 0); c.lineTo(6, 0); c.lineTo(0, -18); c.lineTo(-6, 0); c.lineTo(-28, 0); }
+        c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(-13, -55); c.lineTo(13, -55); c.lineTo(18, -93); c.lineTo(-18, -93); c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(-9, -93); c.lineTo(1, -72); c.lineTo(10, -93); c.stroke();
+        c.fillStyle = P.obi; c.fillRect(-14, -62, 28, 7); c.strokeRect(-14, -62, 28, 7);
+        if (o.kanji){ c.save(); c.globalAlpha = o.kanji; c.shadowColor = '#ff2e4d'; c.shadowBlur = 18; c.scale(o.face || 1, 1); c.font = DISP(24); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ff2e4d'; c.fillText('決', 0, -76); c.shadowBlur = 0; c.lineWidth = 1; c.strokeStyle = '#000'; c.strokeText('決', 0, -76); c.restore(); }
+        if (!o.noSheath) limb(-2, -60, -46, -46, 6, P.sheath, P.line);
+        c.fillStyle = P.body; c.strokeStyle = P.line; c.lineWidth = 3; c.beginPath(); c.arc(2, -104, 11, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = P.hair; c.beginPath(); c.moveTo(-10, -104); c.lineTo(-17, -118); c.lineTo(-6, -113); c.lineTo(-4, -126); c.lineTo(3, -115); c.lineTo(11, -125); c.lineTo(10, -113); c.lineTo(18, -114); c.lineTo(12, -104); c.quadraticCurveTo(2, -110, -10, -104); c.fill(); c.stroke();
+        if (o.pose === 'raise'){ limb(6, -88, 20, -118, 6, P.body, P.line); limb(20, -118, -26, -160, 3, P.blade, '#000'); limb(20, -118, 30, -110, 5, '#222', P.line); }
+        else if (o.pose === 'blade'){
+          const L = (o.blade || 0) * 70, dx = .94, dy = -.34, ex = -2 + dx * L, ey = -60 + dy * L;
+          if (L > 1) limb(-2, -60, ex, ey, 3, P.blade, '#000');
+          limb(ex, ey, ex + dx * 16, ey + dy * 16, 5, '#1b1328', P.line); c.fillStyle = '#ffc83d'; c.fillRect(ex - 2, ey - 5, 4, 10);
+          limb(6, -88, ex + dx * 8, ey + dy * 8, 6, P.body, P.line);
+        } else { limb(-2, -60, 14, -66, 5, '#1b1328', P.line); c.fillStyle = '#ffc83d'; c.fillRect(-4, -65, 4, 10); limb(6, -88, 12, -66, 6, P.body, P.line); }
+        c.restore();
+      };
+      const wideBg = (tt, red) => {
+        if (red){ c.fillStyle = '#ff2e4d'; c.fillRect(-20, -20, 440, 340); c.save(); c.translate(200, 150); c.rotate(tt / 2400); c.fillStyle = '#c8102e'; for (let i = 0; i < 20; i++){ c.rotate(Math.PI / 10); c.beginPath(); c.moveTo(0, 0); c.lineTo(420, -40); c.lineTo(420, 40); c.closePath(); c.fill(); } c.restore(); }
+        else {
+          for (const [col, y] of [['#17122b', 0], ['#2a1238', 90], ['#3a0716', 135], ['#a8173a', 175], ['#ff2e4d', 205]]){ c.fillStyle = col; c.fillRect(-20, y, 440, 340); }
+          c.fillStyle = 'rgba(255,208,216,.9)'; c.beginPath(); c.arc(200, 170, 74, 0, 7); c.fill();
+          c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = 1; for (let i = 0; i < 7; i++){ const y = 60 + i * 24, x = ((tt / 3 + i * 90) % 520) - 60; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 60, y); c.stroke(); }
+        }
+        c.fillStyle = '#000'; c.fillRect(-20, 236, 440, 90);
+      };
+      const bars = h => { c.fillStyle = '#000'; c.fillRect(-20, -20, 440, h + 20); c.fillRect(-20, 300 - h, 440, h + 20); };
+      const subtitle = (jp, en, a) => { c.save(); c.globalAlpha = a; txt(jp, 200, 272, 14, '#fff', '#000'); c.font = '700 10px "Zen Kaku Gothic New",sans-serif'; c.textAlign = 'center'; c.fillStyle = '#a99fc7'; c.fillText(en, 200, 290); c.restore(); };
+      let sx = 0, sy = 0;
+      const shakeAt = (a, b, amp) => { if (!RM && t > a && t < b){ const k = 1 - (t - a) / (b - a); sx += rand(-amp, amp) * k; sy += rand(-amp, amp) * k; } };
+      shakeAt(1400, 2300, 6); shakeAt(3900, 4200, 10); shakeAt(5150, 5600, 14);
+      c.save(); c.translate(sx, sy);
+      c.fillStyle = '#000'; c.fillRect(-20, -20, 440, 340);
+      if (t < 1400){
+        // SHOT 1: three split panels slide in
+        [{x: 6, from: -1, at: 250}, {x: 138, from: 1, at: 520}, {x: 270, from: -1, at: 790}].forEach((p, i) => {
+          const k = eo(seg(t, p.at, p.at + 260)); if (k <= 0) return; const off = (1 - k) * 320 * p.from;
+          c.save(); c.beginPath(); c.rect(p.x, 30 + off, 124, 240); c.clip(); c.translate(0, off); const cx = p.x + 62;
+          if (i === 0){
+            c.fillStyle = '#ff2e4d'; c.fillRect(p.x, 30, 124, 240);
+            c.strokeStyle = 'rgba(0,0,0,.25)'; for (let y = 40; y < 270; y += 8){ c.beginPath(); c.moveTo(p.x, y); c.lineTo(p.x + 124, y); c.stroke(); }
+            c.fillStyle = HERO.brow; c.strokeStyle = '#000'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx - 52, 118); c.lineTo(cx + 48, 128); c.lineTo(cx + 50, 138); c.lineTo(cx - 50, 126); c.fill(); c.stroke();
+            c.fillStyle = '#fffaf0'; c.strokeStyle = '#000'; c.lineWidth = 4; c.beginPath(); c.moveTo(cx - 48, 156); c.quadraticCurveTo(cx, 128, cx + 46, 152); c.quadraticCurveTo(cx, 176, cx - 48, 156); c.fill(); c.stroke();
+            c.fillStyle = '#000'; c.beginPath(); c.arc(cx + 8, 153, 11, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.arc(cx + 12, 149, 3, 0, 7); c.fill();
+            const g = seg(t, 1080, 1300); if (g > 0 && g < 1){ c.save(); c.globalAlpha = 1 - g; c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); c.moveTo(cx - 60 + g * 120, 140); c.lineTo(cx - 40 + g * 120, 166); c.stroke(); c.restore(); }
+            txt('…', cx, 230, 26, '#fff', '#000');
+          } else if (i === 1){
+            c.fillStyle = '#1d1735'; c.fillRect(p.x, 30, 124, 240);
+            limb(p.x - 10, 170, cx - 8, 150, 16, HERO.sheath, HERO.line);
+            const peek = eo(seg(t, 950, 1150)) * 12; if (peek > 0) limb(cx - 6, 149, cx - 6 + peek, 147, 8, '#f4f8ff', '#000');
+            c.fillStyle = '#ffc83d'; c.strokeStyle = '#000'; c.lineWidth = 3; c.beginPath(); c.ellipse(cx - 2 + peek, 146, 8, 24, -.35, 0, 7); c.fill(); c.stroke();
+            limb(cx + 6 + peek, 143, p.x + 140, 112, 14, '#1b1328', '#000');
+            c.fillStyle = '#ffc83d'; for (let d = 0; d < 4; d++){ const u = cx + 18 + peek + d * 16, v = 139 - d * 5.6; c.beginPath(); c.moveTo(u, v - 5); c.lineTo(u + 6, v); c.lineTo(u, v + 5); c.lineTo(u - 6, v); c.fill(); }
+            c.fillStyle = HERO.skin; c.strokeStyle = HERO.line; c.lineWidth = 3; c.beginPath(); c.ellipse(cx + 34 + peek, 152, 22, 15, -.3, 0, 7); c.fill(); c.stroke();
+            if (t > 1150 && t < 1320){ c.save(); c.translate(cx + 2 + peek, 146); c.rotate(t / 40); c.fillStyle = '#fff'; for (let r = 0; r < 4; r++){ c.rotate(Math.PI / 2); c.beginPath(); c.moveTo(0, 0); c.lineTo(3, -3); c.lineTo(0, -20); c.lineTo(-3, -3); c.fill(); } c.restore(); }
+            txt('カチッ', cx, 232, 16, '#ffc83d', '#000', -.1);
+          } else {
+            c.fillStyle = '#ffc83d'; c.fillRect(p.x, 30, 124, 240);
+            c.save(); c.translate(cx, 150); c.strokeStyle = 'rgba(0,0,0,.35)'; for (let r = 0; r < 40; r++){ c.rotate(Math.PI / 20); c.beginPath(); c.moveTo(40, 0); c.lineTo(160, 0); c.stroke(); } c.restore();
+            c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 4; c.beginPath(); c.arc(cx, 150, 34, 0, 7); c.fill(); c.stroke();
+            c.fillStyle = '#000'; c.beginPath(); c.arc(cx + rand(-2, 2), 150 + rand(-2, 2), 3.5, 0, 7); c.fill();
+            c.fillStyle = RON.brow; c.strokeStyle = '#000'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx - 40, 106); c.lineTo(cx + 36, 96); c.lineTo(cx + 38, 104); c.lineTo(cx - 38, 112); c.fill(); c.stroke();
+            const sw = seg(t, 950, 1400); c.fillStyle = '#8fd3ff'; c.strokeStyle = '#000'; c.lineWidth = 2; const dy = 104 + sw * 60; c.beginPath(); c.moveTo(cx + 44, dy - 12); c.quadraticCurveTo(cx + 36, dy + 2, cx + 44, dy + 4); c.quadraticCurveTo(cx + 52, dy + 2, cx + 44, dy - 12); c.fill(); c.stroke();
+            txt('ゴゴゴ', cx, 236, 16, '#3a2f63', '#fff', .1);
+          }
+          c.restore();
+        });
+      } else if (t < 2300){
+        // SHOT 2: blackout with strobing hit-flashes (silhouettes only)
+        const i = Math.floor((t - 1400) / 56), white = i % 2 === 1, f = flashes[i % flashes.length];
+        c.fillStyle = white ? '#fff' : '#000'; c.fillRect(-20, -20, 440, 340);
+        if (white){ sam(200, 250, 1.15, INK, {stride: true, pose: 'raise', face: 1}); sam(f.x, 250, 1.15, INK, {pose: 'blade', blade: 1, face: f.f, lean: f.a * .3}); }
+        else {
+          c.save(); c.translate(200, 150); c.rotate(f.a); c.strokeStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 14; c.lineWidth = 5; c.beginPath(); c.moveTo(-230, 0); c.lineTo(230, 0); c.stroke(); c.restore();
+          if (f.k) txt('斬', f.x, f.y, 40, '#ff2e4d', '#fff', f.a * .4);
+          c.fillStyle = '#ffc83d'; for (let k = 0; k < 8; k++){ c.beginPath(); c.arc(200 + rand(-60, 60), 150 + rand(-50, 50), rand(1, 3), 0, 7); c.fill(); }
+        }
+        once('s2_' + i, () => { if (white && SY.ok()){ SY.nz(SY.t() + .01, .09, .6, {type: 'lowpass', f0: 700}); SY.osc('square', rand(90, 140), SY.t() + .01, .08, .3); } });
+      } else if (t < 3900){
+        // SHOT 3: frozen wide shot, the slow sheathe, the line
+        wideBg(t, false);
+        sam(120, 236, 1.12, RON, {stride: true, pose: 'raise', face: 1, t: 0});
+        sam(300, 236, 1.12, HERO, {pose: 'blade', blade: 1 - eo(seg(t, 2900, 3700)), face: 1, t});
+        for (const p of petals){ const tt = (t - 2300 - p.d) / 1000; if (tt < 0) continue; c.save(); c.translate(p.x - tt * 50 + Math.sin(tt * 2 + p.w) * 12, -10 + tt * p.v); c.rotate(tt * 3 + p.w); c.fillStyle = '#ffb7c9'; c.beginPath(); c.ellipse(0, 0, p.s, p.s * .55, 0, 0, 7); c.fill(); c.restore(); }
+        bars(44);
+        if (t > 2450 && t < 3700) subtitle('お前はもう…', '“You are already…”', Math.min(1, (t - 2450) / 250));
+        if (t > 3720) subtitle('…チェックメイトだ。', '“…in checkmate.”', Math.min(1, (t - 3720) / 150));
+        if (t > 3700 && t < 3900) txt('チン', 300, 96, 22, '#fff', '#000', -.08);
+      } else if (t < 4500){
+        // SHOT 4: NANI?! close-up on the rival
+        const z = 1 + .25 * (1 - eo(seg(t, 3900, 4050)));
+        c.fillStyle = '#ffc83d'; c.fillRect(-20, -20, 440, 340);
+        c.save(); c.translate(200, 170); c.strokeStyle = '#000'; c.lineWidth = 2; for (let r = 0; r < 60; r++){ c.rotate(Math.PI / 30); c.beginPath(); c.moveTo(130 + rand(0, 20), 0); c.lineTo(320, 0); c.stroke(); } c.restore();
+        c.save(); c.translate(200, 200); c.scale(z, z); c.translate(rand(-2, 2), rand(-2, 2));
+        c.fillStyle = RON.skin; c.strokeStyle = RON.line === '#000' ? '#000' : RON.line; c.lineWidth = 5; c.beginPath(); c.arc(0, 0, 112, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = '#0c0a17'; c.beginPath(); c.moveTo(-110, -30); c.lineTo(-120, -110); c.lineTo(-60, -80); c.lineTo(-40, -140); c.lineTo(0, -90); c.lineTo(50, -142); c.lineTo(60, -84); c.lineTo(122, -104); c.lineTo(108, -26); c.quadraticCurveTo(0, -80, -110, -30); c.fill();
+        for (const ex of [-44, 44]){
+          c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 4; c.beginPath(); c.ellipse(ex, 0, 30, 36, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = '#000'; c.beginPath(); c.arc(ex + rand(-2, 2), 2 + rand(-2, 2), 3, 0, 7); c.fill();
+          c.strokeStyle = RON.brow; c.lineWidth = 6; c.beginPath(); c.moveTo(ex - 28, -58); c.lineTo(ex + 24, -66); c.stroke();
+        }
+        c.fillStyle = '#3a0716'; c.strokeStyle = '#000'; c.lineWidth = 4; c.beginPath(); c.ellipse(0, 62, 22, 26, 0, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = '#8fd3ff'; c.strokeStyle = '#000'; c.lineWidth = 2; for (const [dx, dy] of [[-92, -40], [96, -24], [86, 30]]){ c.beginPath(); c.moveTo(dx, dy - 14); c.quadraticCurveTo(dx - 9, dy + 4, dx, dy + 6); c.quadraticCurveTo(dx + 9, dy + 4, dx, dy - 14); c.fill(); c.stroke(); }
+        c.restore();
+        txt('NANI?!', 200 + rand(-3, 3), 52 + rand(-3, 3), 48, '#ff2e4d', '#000', -.06);
+        txt('なにィ!?', 330, 120, 18, '#fff', '#000', .15);
+      } else {
+        // SHOT 5: pressure points, the delayed three-piece split, 決 burning onto the winner's back
+        const red = t > 5150; wideBg(t, red);
+        if (red){ c.fillStyle = 'rgba(255,255,255,.08)'; c.font = DISP(230); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('決', 200, 150); }
+        const L1 = [{x: 30, y: 178}, {x: 230, y: 132}], L2 = [{x: 30, y: 200}, {x: 230, y: 228}];
+        const ly = (L, x) => L[0].y + (L[1].y - L[0].y) * (x - L[0].x) / (L[1].x - L[0].x);
+        const sp = eo(seg(t, 5150, 5800));
+        const drawR = () => sam(120, 236, 1.12, red ? INK : RON, {stride: true, pose: 'raise', face: 1});
+        if (sp <= 0) drawR();
+        else {
+          const a1 = Math.atan2(L1[1].y - L1[0].y, L1[1].x - L1[0].x);
+          c.save(); c.beginPath(); c.moveTo(-20, -20); c.lineTo(420, -20); c.lineTo(420, ly(L1, 420)); c.lineTo(-20, ly(L1, -20)); c.closePath(); c.clip();
+          c.translate(Math.cos(a1) * 60 * sp, Math.sin(a1) * 60 * sp + 90 * sp * sp); c.translate(120, 150); c.rotate(.5 * sp); c.translate(-120, -150); drawR(); c.restore();
+          c.save(); c.beginPath(); c.moveTo(-20, ly(L1, -20)); c.lineTo(420, ly(L1, 420)); c.lineTo(420, ly(L2, 420)); c.lineTo(-20, ly(L2, -20)); c.closePath(); c.clip();
+          c.translate(-34 * sp, 30 * sp * sp); c.translate(120, 190); c.rotate(-.3 * sp); c.translate(-120, -190); drawR(); c.restore();
+          c.save(); c.beginPath(); c.moveTo(-20, ly(L2, -20)); c.lineTo(420, ly(L2, 420)); c.lineTo(420, 320); c.lineTo(-20, 320); c.closePath(); c.clip(); drawR(); c.restore();
+        }
+        pts.forEach((p, i) => {
+          const k = seg(t, 4550 + i * 90, 4650 + i * 90); if (k <= 0 || t > 5200) return;
+          once('pp' + i, () => { if (SY.ok()) SY.osc('triangle', 500 + i * 120, SY.t() + .01, .12, .18); });
+          const g = c.createRadialGradient(p[0], p[1], 0, p[0], p[1], 16); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.4, 'rgba(255,200,61,.9)'); g.addColorStop(1, 'rgba(255,46,77,0)');
+          c.fillStyle = g; c.beginPath(); c.arc(p[0], p[1], 16 * (1 + .3 * Math.sin(t / 40)), 0, 7); c.fill();
+        });
+        if (t > 5000 && t < 5400){
+          const k = seg(t, 5000, 5150), fade = 1 - seg(t, 5250, 5400); c.save(); c.globalAlpha = fade; c.strokeStyle = '#fff'; c.shadowColor = '#ffc83d'; c.shadowBlur = 16; c.lineWidth = 4;
+          for (const L of [L1, L2]){ const ex = L[0].x + (L[1].x - L[0].x) * k; c.beginPath(); c.moveTo(L[0].x, L[0].y); c.lineTo(ex, ly(L, ex)); c.stroke(); } c.restore();
+        }
+        if (t > 5150 && t < 5500){ c.save(); c.globalAlpha = 1 - seg(t, 5150, 5500); c.fillStyle = '#fff'; c.fillRect(-20, -20, 440, 340); c.restore(); }
+        sam(300, 236, 1.12, red ? {body: '#000', line: '#000', obi: '#ff2e4d', hair: '#000', sheath: '#000', blade: '#000'} : HERO, {face: 1, t, kanji: eo(seg(t, 5350, 5700))});
+        if (red){ c.save(); c.globalAlpha = eo(seg(t, 5350, 5700)); c.shadowColor = '#ff2e4d'; c.shadowBlur = 30; txt('決', 300, 152, 30, '#ff2e4d', '#000'); c.restore(); }
+        bars(44);
+        if (t > 5900){
+          const k = eo(seg(t, 5900, 6120)); txt('GODSPEED!!', 200, 74, (1.7 - .7 * k) * 34, '#ffc83d', '#000', -.06);
+          c.save(); c.font = '700 13px ui-monospace,Consolas,monospace'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#000'; c.fillStyle = '#fff';
+          const m = `${mgName(win)} · ${ms} ms · 神速`; c.strokeText(m, 200, 106); c.fillText(m, 200, 106); c.restore();
+        }
+      }
+      if (t < 250) bars(150 * (1 - eo(t / 250)));
+      c.restore();
+      if (t > GS_DUR - 300){ c.fillStyle = `rgba(0,0,0,${seg(t, GS_DUR - 300, GS_DUR)})`; c.fillRect(-20, -20, 440, 340); }
+      if (t < 6000 && !skip){ c.font = '700 9px "Zen Kaku Gothic New",sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(255,255,255,.5)'; c.fillText('tap to skip', 394, 12); }
+    };
+    const cues = t => {
+      if (!SY.ok()) return;
+      const n = SY.t() + .01;
+      if (t > 0) once('wind', () => SY.nz(n, 1.4, .25, {f0: 500}));
+      if (t > 1150) once('ting', () => { SY.osc('sine', 3200, n, .5, .12); SY.osc('sine', 4800, n, .35, .06); });
+      if (t > 1400) once('black', () => SY.osc('sawtooth', 60, n, .9, .3, {lp: 900}));
+      if (t > 2300) once('wind2', () => SY.nz(n, 1.6, .2, {f0: 350}));
+      if (t > 3700) once('click', () => mgSfx.chin());
+      if (t > 3900) once('nani', () => { SY.osc('sawtooth', 220, n, .5, .2); SY.osc('sawtooth', 233, n, .5, .2); SY.osc('square', 330, n, .5, .12); });
+      if (t > 5150) once('boom', () => { SY.nz(n, 1, .9, {type: 'lowpass', f0: 300}); SY.osc('sine', 48, n, 1.1, .6); buzz(200); });
+      if (t > 5900) once('gong', () => mgSfx.gong());
+    };
+    const frame = now => {
+      if (!t0) t0 = now;
+      let t = now - t0; if (skip) t = Math.max(t, GS_DUR - 300), t0 = Math.min(t0, now - t);
+      if (t >= GS_DUR || F.closed){
+        cvs.forEach(o => o.cv.remove()); hosts.forEach(h => h.removeEventListener('pointerdown', onTap, true)); document.removeEventListener('keydown', onKey, true);
+        F.input = savedInput; return res();
+      }
+      for (const o of cvs){ o.c.setTransform(1, 0, 0, 1, 0, 0); o.c.fillStyle = '#000'; o.c.fillRect(0, 0, o.cv.width, o.cv.height); o.c.setTransform(o.s, 0, 0, o.s, o.ox, o.oy); o.c.save(); o.c.beginPath(); o.c.rect(0, 0, 400, 300); o.c.clip(); draw(o.c, t); o.c.restore(); }
+      if (!skip) cues(t);
+      F.raf = requestAnimationFrame(frame);
+    };
+    F.raf = requestAnimationFrame(frame);
+  });
+}
+/* ---- 斬 Blade Timing: both blades sweep at the same time; stop yours in the gold. Five cuts, most points wins
+   (perfect +3, clean +1). Each cut is faster with a smaller zone. A tie goes to one sudden-death cut. ---- */
+const BL = {
+  perfect: ['The straw hasn’t realised it’s been cut yet.', 'SO CLEAN THE STRAW APOLOGISED.', 'That cut had its own theme song.', 'Somewhere, a sensei sheds a single tear.'],
+  clean: ['A respectable cut. Sensei nods once.', 'It counts. Barely.', 'The straw is mildly inconvenienced.'],
+  miss: ['You cut… the air. The air is fine.', 'The straw is laughing at you.', 'A crow watches. A crow judges.', 'Even the straw feels bad for you.'],
+  ronin: {3: 'Witness MY perfection!!', 1: 'Hmph. Adequate.', 0: 'I… meant to miss that.'}
+};
+const BL_POST = c => `<svg class="post c${c}" viewBox="0 0 40 120" aria-hidden="true"><rect x="17" y="100" width="6" height="20" fill="#2a1d14"/>
+  <g class="bottom"><rect x="8" y="58" width="24" height="44" rx="3" fill="#c9a86a" stroke="#000" stroke-width="1.5"/><rect x="8" y="70" width="24" height="3" fill="#7a5a2c"/><rect x="8" y="88" width="24" height="3" fill="#7a5a2c"/></g>
+  <g class="pt"><rect x="8" y="10" width="24" height="48" rx="3" fill="#d6b778" stroke="#000" stroke-width="1.5"/><rect x="8" y="22" width="24" height="3" fill="#7a5a2c"/><rect x="8" y="40" width="24" height="3" fill="#7a5a2c"/></g>
+  <path class="nickmark" d="M8 57 L22 53 L8 55 Z" fill="#3a2410"/></svg>`;
+const BL_SLOW = 5000;
+const blScore = (pos, z) => { const d = Math.abs(pos * 100 - z.center); return d <= z.perf / 2 ? 3 : d <= z.good / 2 ? 1 : 0; };
+const blLabel = s => s === 3 ? 'PERFECT +3' : s === 1 ? 'CLEAN +1' : 'MISS';
+async function bladeTiming(){
+  const F = mgFrame('bl', 'Blade Timing', '斬'), id = F.id, me = mgMe(), seat = F.seat;
+  let rnd = seededRandom(id * 7919 + 202);
+  A.music.duck(240000);
+  // straw posts: one scene per player face to face (just their own post), one shared scene otherwise
+  const scenes = [];
+  const scene = (host, cols) => {
+    const s = document.createElement('div'); s.className = 'qd-scene bl-scene';
+    s.innerHTML = `<div class="qd-sun"></div><div class="qd-ground"></div><div class="qd-tone"></div><div class="qd-speed"></div>
+      ${cols.map((c, i) => `<div class="bl-spot ${cols.length === 1 ? 'mid' : i ? 'r' : 'l'}" data-c="${c}">${BL_POST(c)}<div class="bl-name ${c === 'w' ? 'tw' : 'tb'}"></div><div class="bl-stamp"></div></div>`).join('')}
+      <div class="qd-slash"></div>`;
+    s.querySelectorAll('.bl-name').forEach(n => { n.textContent = mgName(n.closest('.bl-spot').dataset.c); });
+    host.appendChild(s); scenes.push(s);
+  };
+  if (seat === 'face') for (const c of ['w', 'b']) scene(F.P[c].area, [c]);
+  else scene(F.mid, me ? [me, OTHER(me)] : ['w', 'b']);
+  if (seat === 'face') F.mid.innerHTML = '<div class="mgx-div"><span id="blDivA">5 CUTS · MOST POINTS</span><span id="blDivB">5 CUTS · MOST POINTS</span></div>';
+  // one meter per player; vs CPU or online the opponent's is smaller
+  const M = {};
+  for (const c of ['w', 'b']){
+    const el = document.createElement('div'); el.className = `bl-meter m${c}` + (mode !== 'pvp' && c !== me ? ' small' : '');
+    el.innerHTML = '<div class="ticks"></div><div class="zone"><div class="perf"></div></div><div class="mark"></div><div class="hint"></div>';
+    F.P[c].area.appendChild(el);
+    M[c] = {el, zone: el.querySelector('.zone'), perf: el.querySelector('.perf'), mark: el.querySelector('.mark'), hint: el.querySelector('.hint')};
+  }
+  const spots = c => scenes.flatMap(s => [...s.querySelectorAll(`.bl-spot[data-c="${c}"]`)]);
+  const tot = {w: 0, b: 0}, showPts = () => ['w', 'b'].forEach(c => F.pts(c, `${tot[c]} pts`));
+  showPts();
+  const rules = c => ({
+    how: `A marker sweeps across ${seat === 'face' ? 'your' : 'the'} bar. Tap${seat === 'face' ? ' your half' : ''} to stop it: <b>gold = perfect +3</b>, pale = clean +1. ${passing() ? 'Five cuts each, in the very same spots, each one faster.' : 'Both blades swing at the same time. Five cuts, each one faster.'} Most points wins.`,
+    keys: seat === 'face' ? `Keyboard: ${c === 'w' ? 'A' : 'L'}` : 'Keyboard: Space'
+  });
+
+  // One cut. Resolves {w, b} points, or null if the link dropped.
+  const cut = (i, z) => new Promise(async res => {
+    // the same numbers on both screens, in the same order
+    const ph = {w: rnd() * 2, b: rnd() * 2}, cr = rnd(), cs = rnd() < .5 ? -1 : 1, co = rnd(), cd = rnd();
+    for (const c of ['w', 'b']){
+      M[c].zone.style.left = (z.center - z.good / 2) + '%'; M[c].zone.style.width = z.good + '%';
+      M[c].perf.style.left = ((z.good - z.perf) / 2 / z.good * 100) + '%'; M[c].perf.style.width = (z.perf / z.good * 100) + '%';
+      M[c].mark.classList.remove('stop'); M[c].el.classList.remove('s3', 's1', 's0'); M[c].hint.textContent = humanHere(c) ? 'TAP TO CUT!' : '';
+      spots(c).forEach(sp => { sp.querySelector('.post').classList.remove('cut', 'nick', 'none'); sp.querySelector('.bl-stamp').className = 'bl-stamp'; });
+    }
+    if (!await mgSync(id, 20 + i)) return res(null);
+    const pts = {w: null, b: null}, pos = {w: 0, b: 0}, local = mode !== 'online';
+    if (passing()) pts[OTHER(passTurn)] = 0;   // the player waiting their turn doesn't swing
+    let start = 0, done = false;
+    const at = (c, now) => { const p = (ph[c] + (now - start) / 1000 * z.speed) % 2; return p < 1 ? p : 2 - p; };
+    // a blade lands: the post reacts straight away, the scores add up once both are in
+    const land = (c, p, force) => {
+      if (pts[c] != null) return; pos[c] = p; pts[c] = force ?? blScore(p, z);
+      M[c].mark.style.left = (p * 100) + '%'; M[c].mark.classList.add('stop'); M[c].el.classList.add('s' + pts[c]); M[c].hint.textContent = blLabel(pts[c]);
+      spots(c).forEach(sp => { sp.querySelector('.post').classList.add(pts[c] === 3 ? 'cut' : pts[c] === 1 ? 'nick' : 'none'); const st = sp.querySelector('.bl-stamp'); st.textContent = blLabel(pts[c]); st.className = 'bl-stamp on s' + pts[c]; });
+      if (pts[c]){ mgSfx.slash(); scenes.forEach(s => { const sl = s.querySelector('.qd-slash'); sl.classList.remove('on'); void sl.offsetWidth; sl.classList.add('on'); }); } else mgSfx.whiff();
+      if (pts[c] === 3){ buzz(40); scenes.forEach(s => { const sp = s.querySelector('.qd-speed'); sp.classList.add('on'); F.after(600, () => sp.classList.remove('on')); }); }
+      if (mode === 'cpu' && c !== me) F.say(c, BL.ronin[pts[c]]);
+      else if (humanHere(c)) F.say(c, mgPick(pts[c] === 3 ? BL.perfect : pts[c] === 1 ? BL.clean : BL.miss));
+      if (pts.w != null && pts.b != null) finish();
+    };
+    const finish = () => { if (done) return; done = true; F.input = null; cancelAnimationFrame(F.raf); res({w: pts.w, b: pts.b}); };
+    // CPU (Ronin): picks where it means to stop, then stops when its marker passes there
+    let cpuTarget = null, cpuMin = 0, cpuPrev = null;
+    if (mode === 'cpu'){
+      const [pp, pc] = [[.15, .45], [.3, .42], [.45, .4]][level], half = z.good / 2, ph2 = z.perf / 2;
+      const tgt = cr < pp ? z.center + cs * co * ph2 * .8 : cr < pp + pc ? z.center + cs * (ph2 + .4 + co * Math.max(0, half - ph2 - .8)) : z.center + cs * (half + 1.5 + co * 10);
+      cpuTarget = Math.min(99, Math.max(1, tgt)) / 100; cpuMin = 500 + cd * 1300;
+    }
+    F.input = (c, ts) => {
+      if (done || pts[c] != null || !humanHere(c) || !start) return;
+      const p = at(c, ts); land(c, p);
+      if (!local && c === me) swap();
+    };
+    // online: my cut goes over, theirs comes back (their marker keeps sweeping on my screen until it does)
+    let swapped = false;
+    const swap = async () => {
+      if (swapped) return; swapped = true;
+      const them = OTHER(me), got = await mgSwap(id, 200 + i, 'cut', {v: pts[me], x: pos[me]}, 12000);
+      if (done) return;
+      if (!got){ done = true; cancelAnimationFrame(F.raf); return res(null); }
+      land(them, Math.min(1, Math.max(0, got.x ?? 0)));
+    };
+    const loop = now => {
+      if (done || F.closed) return;
+      if (!start) start = now;
+      for (const c of ['w', 'b']){
+        if (pts[c] != null) continue;
+        const p = at(c, now); M[c].mark.style.left = (p * 100) + '%';
+        if (c === OTHER(me) && cpuTarget != null && now - start >= cpuMin){
+          if (cpuPrev != null && (cpuPrev - cpuTarget) * (p - cpuTarget) <= 0) land(c, cpuTarget);
+          cpuPrev = p;
+        }
+        // too slow: the blade drops where it is and counts as a miss
+        if (now - start > BL_SLOW && (local || c === me)){ land(c, p, 0); M[c].hint.textContent = 'TOO SLOW'; if (!local) swap(); }
+      }
+      if (!done) F.raf = requestAnimationFrame(loop);
+    };
+    F.raf = requestAnimationFrame(loop);
+  });
+
+  // each cut is faster, with a smaller zone; the sudden-death cut is the hardest
+  const zoneFor = i => {
+    const z = i === 5 ? {speed: 2.3, good: 12, perf: 4} : {speed: Math.min(2.2, .75 + .3 * i), good: Math.max(11, 26 - 3.5 * i), perf: Math.max(3.4, 7.5 - .9 * i)};
+    z.center = z.good / 2 + 5 + rnd() * (100 - z.good - 10); return z;
+  };
+  // Pass the phone: White takes five cuts, then Black takes the very same five
+  if (passing()){
+    for (const c of ['w', 'b']){
+      mgTurn(F, c); rnd = seededRandom(id * 7919 + 202);
+      scenes.length = 0; F.mid.innerHTML = ''; scene(F.mid, [c]);
+      for (const x of ['w', 'b']) M[x].el.hidden = x !== c;
+      if (!await mgGate(F, rules)) return mgEnd(F, null, 'CALLED OFF');
+      for (let i = 0; i < 5 && !isOver(); i++){
+        const z = zoneFor(i);
+        F.big(`CUT ${i + 1} / 5`, `${SIDE(c).toUpperCase()}'S TURN`, {ms: 1000}); await F.wait(1100);
+        const r = await cut(i, z);
+        tot[c] += r[c]; showPts();
+        F.big(blLabel(r[c]), `${SIDE(c)}: ${tot[c]} pts`, {ms: 1100, color: r[c] === 3 ? 'var(--gold)' : r[c] ? '#fff' : 'var(--muted)'});
+        await F.wait(1400); F.say(c, '');
+      }
+    }
+    const winner = tot.w > tot.b ? 'w' : tot.b > tot.w ? 'b' : null;
+    F.big(winner ? `${SIDE(winner).toUpperCase()} CUT CLEANER` : 'DEAD EVEN', `White ${tot.w} · Black ${tot.b}`, {color: 'var(--gold)'}); await F.wait(2000);
+    return mgEnd(F, winner, 'DEAD EVEN');
+  }
+  if (!await mgGate(F, rules)) return mgEnd(F, null, 'CALLED OFF');
+  let i = 0;
+  for (; i < 6 && !isOver(); i++){
+    const sudden = i === 5;
+    if (sudden && tot.w !== tot.b) break;
+    const z = zoneFor(i);
+    F.big(sudden ? 'SUDDEN DEATH' : `CUT ${i + 1} / 5`, sudden ? 'ONE CUT DECIDES IT' : i === 4 ? 'LAST CUT' : '', {ms: 1000, color: sudden ? 'var(--blood)' : 'var(--gold)'});
+    await F.wait(1100);
+    const r = await cut(i, z);
+    if (!r) return mgEnd(F, null, 'CALLED OFF');
+    tot.w += r.w; tot.b += r.b; showPts();
+    const lead = r.w > r.b ? 'w' : r.b > r.w ? 'b' : null;
+    F.big(lead ? `${mgWho(lead)} WIN${lead === mgMe() ? '' : 'S'} THE CUT` : r.w === 3 ? 'DOUBLE PERFECT?!' : 'EVEN CUT', `${mgName('w')} ${tot.w} · ${mgName('b')} ${tot.b}`, {ms: 1300, color: lead ? 'var(--gold)' : 'var(--volt)'});
+    await F.wait(1600);
+    for (const c of ['w', 'b']) F.say(c, '');
+  }
+  const winner = tot.w > tot.b ? 'w' : tot.b > tot.w ? 'b' : null;
+  return mgEnd(F, winner, 'DEAD EVEN');
+}
+/* ---- 苦無 Kunai Storm: race to land your kunai in a spinning target, through a counter-rotating ring of iron blocks.
+   Hit a block or a kunai that's already stuck and you lose the stage. An onigiri on the rim saves you a kunai.
+   Best of 3 stages, each faster. You throw from your own edge of the screen. Passing the phone, it's a race against the clock. ---- */
+const KS = {
+  start: ['Ready, rookie? My kunai are FASTER.', 'Race you! Loser buys ramen!', 'I have thrown 10,000 kunai. Today, 10,008.'],
+  cpuClang: ['My hand slipped!! (It didn’t. It totally did.)', 'The block MOVED!! Blocks aren’t allowed to move!!', 'CLANG?! That was… a warm-up throw!'],
+  clang: ['CLANG!! Physics: 1, you: 0.', 'You hit the BLOCK?! It’s grey! It’s HUGE!', 'Did you throw with your eyes closed?!'],
+  cpuWin: ['I WIN THE RACE!! Ramen’s on you!', 'Too slow! Done before the opening theme ended!', 'Speed is a ninja’s best friend.'],
+  cpuLose: ['IMPOSSIBLE!! You were FASTER?!', 'NOOO!! My ramen money!!', 'This is just my first form!!'],
+  win: ['NINJA SPEED!!', 'BULLSEYE BARRAGE!!', 'TOO FAST TO SEE!!'],
+  hurry: ['Hurry up!!', 'Tick tock, rookie!', 'I’m winning~!']
+};
+const KS_D0 = 205, KS_RAD = 66, KS_RING = 100, KS_RTH = 14, KS_SPD = 2400, KS_HIT = .2, KS_DT = 1 / 120;
+const ksAngN = a => { a %= Math.PI * 2; return a < 0 ? a + Math.PI * 2 : a; };
+const ksAngD = (a, b) => { const d = Math.abs(ksAngN(a) - ksAngN(b)); return Math.min(d, Math.PI * 2 - d); };
+// where each thrower stands, as a screen angle from the target (canvas y points down)
+const KS_THETA = {bot: Math.PI / 2, top: -Math.PI / 2, left: Math.PI, right: 0};
+const KS_INK = {w: ['#fbf8f2', '#c9c6c0', '#111'], b: ['#1b1328', '#3a2f63', '#ffc83d']};
+function ksKunai(x, px, py, th, sc, c, alpha = 1){
+  const [main, shade, edge] = KS_INK[c];
+  x.save(); x.translate(px, py); x.rotate(th); x.scale(sc, sc); x.globalAlpha = alpha;
+  x.fillStyle = main; x.strokeStyle = edge; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(0, 0); x.lineTo(7, 22); x.lineTo(0, 30); x.lineTo(-7, 22); x.closePath(); x.fill(); x.stroke();
+  x.fillStyle = shade; x.beginPath(); x.moveTo(0, 2); x.lineTo(7, 22); x.lineTo(0, 30); x.closePath(); x.fill();
+  x.fillStyle = main; x.fillRect(-3, 30, 6, 28); x.strokeRect(-3, 30, 6, 28);
+  x.fillStyle = shade; for (let i = 0; i < 4; i++) x.fillRect(-3, 33 + i * 7, 6, 2.5);
+  x.strokeStyle = edge; x.lineWidth = 4.5; x.beginPath(); x.arc(0, 64, 5, 0, 7); x.stroke();
+  x.strokeStyle = main; x.lineWidth = 2.5; x.beginPath(); x.arc(0, 64, 5, 0, 7); x.stroke();
+  x.restore();
+}
+async function kunaiStorm(){
+  const F = mgFrame('ks', 'Kunai Storm', '苦無'), id = F.id, me = mgMe();
+  let rnd = seededRandom(id * 7919 + 303);
+  A.music.duck(240000);
+  F.body.classList.add('overlay');
+  const cv = document.createElement('canvas'); cv.className = 'ks-cv'; F.mid.appendChild(cv);
+  const x = cv.getContext('2d');
+  let scale = 1, W = 0, H = 0;
+  const fit = () => { const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = Math.max(1, Math.round(W * d)); cv.height = Math.max(1, Math.round(H * d));
+    // fill the screen along the throwing line (top to bottom); across it only the ring and the spare kunai need room
+    scale = Math.min(H / 2 / 238, W / 2 / 152) * d; };
+  const ro = new ResizeObserver(fit); ro.observe(cv); F.offs.push(() => ro.disconnect()); fit();
+  const TH = {w: KS_THETA[mgPos('w')], b: KS_THETA[mgPos('b')]};
+  const wins = {w: 0, b: 0}, clear = {w: 0, b: 0}, time = {w: 0, b: 0};   // (clear / time: passing the phone, it's against the clock)
+  let K = null, stage = 0;
+  const hud = () => ['w', 'b'].forEach(c => F.pts(c, passing()
+    ? (K && c === passTurn && K.live ? `⏱ ${K.t.toFixed(1)} s · ${K.left[c]} left` : `${clear[c]}/3${clear[c] ? ` · ${time[c].toFixed(2)} s` : ''}`)
+    : `${'●'.repeat(wins[c])}${'○'.repeat(Math.max(0, 2 - wins[c]))}${K ? ` · ${K.left[c]} left` : ''}`));
+  // a fresh stage; every random number comes from the shared seed, so both online screens build the same one
+  const setup = s => {
+    const n = [5, 6, 7][s], nb = [2, 3, 4][s], hw = s === 2 ? .3 : .26, off = rnd() * 6.28;
+    const flips = (from, to) => { const a = []; let t = 0; while (t < 120){ t += from + rnd() * (to - from); a.push(t); } return a; };
+    K = {
+      t: 0, rot: rnd() * 6.28, vel: 0, rRot: 0, rVel: 0, dirW: 1, dirR: -1, wBase: [1.7, 2.3, 2.9][s], rBase: [1.1, 1.5, 1.95][s],
+      surge: s >= 1, flipsR: s >= 1 ? flips(1, 2.2) : [], flipsW: s >= 2 ? flips(1.3, 2.6) : [], fr: 0, fw: 0,
+      blocks: Array.from({length: nb}, (_, i) => ({a: off + i * (Math.PI * 2 / nb), w: hw})), oni: [{a: rnd() * 6.28, got: false}],
+      stuck: [], fly: {w: [], b: []}, left: {w: n, b: n}, cool: {w: 0, b: 0}, bounce: [], parts: [], shakeT: 0, live: false, frozen: {w: false, b: false},
+      cpuNext: 1.1, cpuMode: null
+    };
+  };
+  const ringHit = th => { const l = ksAngN(th - K.rRot); return K.blocks.some(b => ksAngD(l, b.a) < b.w + .06); };
+  const wheelHit = th => { const l = ksAngN(th - K.rot); return K.stuck.some(k => ksAngD(l, k.a) < KS_HIT); };
+  // the CPU waits for a gap it can make, unless it's feeling sloppy
+  const safeFor = th => {
+    const tr = (KS_D0 - (KS_RING + 7)) / KS_SPD, tw = (KS_D0 - (KS_RAD - 12)) / KS_SPD;
+    const lr = ksAngN(th - (K.rRot + K.rVel * tr)), lw = ksAngN(th - (K.rot + K.vel * tw));
+    return !K.blocks.some(b => ksAngD(lr, b.a) < b.w + .12) && !K.stuck.some(k => ksAngD(lw, k.a) < KS_HIT + .08);
+  };
+  // fixed time steps keep the target spinning identically on both screens online
+  const step = () => {
+    const dt = KS_DT; K.t += dt; K.shakeT = Math.max(0, K.shakeT - dt);
+    while (K.flipsR[K.fr] != null && K.t >= K.flipsR[K.fr]){ K.dirR *= -1; K.fr++; }
+    while (K.flipsW[K.fw] != null && K.t >= K.flipsW[K.fw]){ K.dirW *= -1; K.fw++; }
+    let wT = K.wBase * K.dirW; if (K.surge) wT *= 1 + .6 * Math.sin(K.t * 2.1);
+    K.vel += (wT - K.vel) * Math.min(1, dt * 4); K.rVel += (K.rBase * K.dirR - K.rVel) * Math.min(1, dt * 4);
+    K.rot += K.vel * dt; K.rRot += K.rVel * dt;
+    for (const c of ['w', 'b']) K.cool[c] = Math.max(0, K.cool[c] - dt);
+  };
+  const burst = (px, py, n) => { for (let i = 0; i < n; i++){ const a = Math.random() * 6.28, v = 120 + Math.random() * 360; K.parts.push({x: px, y: py, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: Math.random() * 6, vr: (Math.random() - .5) * 24, c: mgPick(['#d8a066', '#b07a45', '#9a6334', '#f3ece4', '#ff2e4d', '#6b7386']), s: 6 + Math.random() * 8, life: 1.2}); } };
+  let stageRes = null;   // resolves the stage's promise with its winner
+  const endStage = (win, why) => {
+    if (!K.live) return; K.live = false; F.input = null;
+    const lose = win ? OTHER(win) : null;
+    if (why === 'clang'){
+      F.say(lose, mode === 'cpu' && lose !== me ? mgPick(KS.cpuClang) : mgPick(KS.clang));
+      F.big('CLANG!!', passing() ? `HIT ${K.clangOn === 'block' ? 'A BLOCK' : 'A KUNAI'} · STAGE FAILED` : `${mgName(lose)} HIT ${K.clangOn === 'block' ? 'A BLOCK' : 'A KUNAI'}`, {color: 'var(--gold)', ms: 1500});
+    } else if (win){
+      burst(0, 0, 34); K.shakeT = .2; mgSfx.thud();
+      for (const k of K.stuck){ const w = k.a + K.rot, d = KS_RAD - 12; K.bounce.push({x: Math.cos(w) * d, y: Math.sin(w) * d, vx: Math.cos(w) * 420, vy: Math.sin(w) * 420, r: w - Math.PI / 2, vr: (Math.random() - .5) * 20, c: k.c, life: 1.4}); }
+      K.stuck = [];
+      F.say(win, mode === 'cpu' ? (win === me ? mgPick(KS.win) : mgPick(KS.cpuWin)) : mgPick(KS.win));
+      if (mode === 'cpu' && win === me) F.say(OTHER(me), mgPick(KS.cpuLose));
+      if (passing()) F.big('CLEARED!!', `${K.t.toFixed(2)} SECONDS`, {color: 'var(--blood)', ms: 1500});
+      else F.big(`${mgWho(win)} WIN${win === mgMe() ? '' : 'S'} THE RACE!!`, `STAGE ${stage + 1}`, {color: 'var(--blood)', ms: 1500});
+    } else F.big('CALLED OFF', '', {color: 'var(--muted)', ms: 1500});
+    if (stageRes){ const r = stageRes; stageRes = null; r(win); }
+  };
+  // online: the first finish (or clang) by elapsed time decides; whoever hears about the other's first stops and says so
+  let settling = false;
+  const settle = async v => {
+    if (mode !== 'online' || settling) return; settling = true;
+    K.frozen[me] = true; F.input = null;
+    const mine = {v, x: K.t}, got = await mgSwap(id, 300 + stage, 'ks', mine, 10000);
+    if (!got) return endStage(null);
+    const ev = [];
+    if (mine.v >= 0) ev.push({c: me, v: mine.v, x: mine.x});
+    if (got.v >= 0) ev.push({c: OTHER(me), v: got.v, x: got.x});
+    ev.sort((a, b) => a.x - b.x || b.v - a.v);
+    const e = ev[0]; if (!e) return endStage(null);
+    if (e.c !== me && e.v === 0) K.clangOn = 'block';
+    endStage(e.v === 1 ? e.c : OTHER(e.c), e.v === 1 ? 'done' : 'clang');
+  };
+  const clang = (c, f, on) => {
+    K.fly[c].splice(K.fly[c].indexOf(f), 1);
+    K.bounce.push({x: Math.cos(TH[c]) * f.d, y: Math.sin(TH[c]) * f.d, vx: Math.cos(TH[c]) * 420 + (Math.random() - .5) * 400, vy: Math.sin(TH[c]) * 420 + (Math.random() - .5) * 400, r: TH[c] - Math.PI / 2, vr: (Math.random() - .5) * 26, c, life: 1.2});
+    A.sfx.clang(); K.shakeT = .15; buzz(60); K.clangOn = on;
+    if (mode === 'online'){ if (c === me) settle(0); return; }
+    endStage(OTHER(c), 'clang');
+  };
+  const stick = (c, a, remote) => {
+    K.stuck.push({a, c}); K.shakeT = .08; mgSfx.thunk(c === 'w');
+    let oni = false;
+    for (const o of K.oni) if (!remote && !o.got && ksAngD(a, o.a) < .28){ o.got = true; oni = true; K.left[c] = Math.max(0, K.left[c] - 1); const w = o.a + K.rot; K.parts.push({x: Math.cos(w) * (KS_RAD + 10), y: Math.sin(w) * (KS_RAD + 10), vx: Math.cos(w) * 160, vy: Math.sin(w) * 160, r: 0, vr: 8, rice: true, life: 1.6}); F.say(c, 'ONIGIRI!! ONE KUNAI SAVED'); mgSfx.tick(true); }
+    if (mode === 'online' && c === me) mgSend({id, k: stage, t: 'stk', v: a + (oni ? 10 : 0)});   // +10 marks an onigiri (angles are under 2π)
+    hud();
+    if (!remote && K.left[c] === 0 && !K.fly[c].length){ if (mode === 'online') settle(1); else endStage(c, 'done'); }
+  };
+  const fly = dt => {
+    for (const c of ['w', 'b']) for (const f of K.fly[c].slice()){
+      f.d -= KS_SPD * dt;
+      if (f.ghost){ if (f.d <= KS_RAD - 12) K.fly[c].splice(K.fly[c].indexOf(f), 1); continue; }
+      if (!f.ring && f.d <= KS_RING + 7){ f.ring = true; if (ringHit(TH[c])){ clang(c, f, 'block'); if (!K.live) return; continue; } }
+      if (f.d <= KS_RAD - 12){
+        if (wheelHit(TH[c])){ clang(c, f, 'kunai'); if (!K.live) return; continue; }
+        K.fly[c].splice(K.fly[c].indexOf(f), 1); stick(c, ksAngN(TH[c] - K.rot), false); if (!K.live) return;
+      }
     }
   };
-}
-// CPU reflexes by level (ms) and how easily it falls for a fake
-const CPU_RH = () => ({react: [450, 345, 285][level], flinch: [.4, .2, .08][level]});
-// Same screen and vs CPU: this screen referees the attempt.
-function rhAttemptLocal(ov, att){
-  const def = OTHER(att), ui = rhSetup(ov, att);
-  return new Promise(async res => {
-    ui.msg('READY…'); await sleep(900);
-    let slapT = 0, fakeT = 0, done = false, idle = 0;
-    const finish = (pt, why) => { if (done) return; done = true; clearTimeout(idle); rhInput = null; ui.enable(false); if (why === 'hit') ui.hit(); else ui.result(pt, why); res({pt, why}); };
-    const cpuDef = !humanHere(def) && mode === 'cpu', cpuAtt = !humanHere(att) && mode === 'cpu';
-    rhInput = (c, a) => {
-      if (done) return;
-      if (c === att){
-        if (a === 'main' && !slapT){
-          slapT = performance.now(); ui.slap(); setTimeout(() => finish(att, 'hit'), SLAP_MS);
-          if (cpuDef){ const r = CPU_RH().react + (Math.random() * 100 - 40); setTimeout(() => rhInput && rhInput(def, 'main'), r); }
+  const throwK = c => {
+    if (!K.live || K.frozen[c] || K.left[c] <= 0 || K.cool[c] > 0) return;
+    K.fly[c].push({d: KS_D0, ring: false}); K.left[c]--; K.cool[c] = .13; mgSfx.throw(); hud();
+    if (mode === 'online' && c === me) mgSend({id, k: stage, t: 'thr'});
+  };
+  // the friend's throws arrive as messages: their kunai fly in for show, then stick where they landed on their screen
+  if (mode === 'online'){
+    const them = OTHER(me);
+    F.offs.push(mgOn(m => {
+      if (m.id !== id || !K) return;
+      if (m.t === 'thr' && m.k === stage && K.live){ K.fly[them].push({d: KS_D0, ring: true, ghost: true}); K.left[them] = Math.max(0, K.left[them] - 1); mgSfx.throw(); hud(); }
+      if (m.t === 'stk' && m.k === stage && K.live){ K.fly[them].shift(); const oni = m.v >= 10, a = oni ? m.v - 10 : m.v; if (oni) K.oni.forEach(o => { if (ksAngD(a, o.a) < .28 && !o.got){ o.got = true; K.left[them] = Math.max(0, K.left[them] - 1); } }); stick(them, a, true); }
+      if (m.t === 'ks' && m.k === 300 + stage && K.live && !settling) settle(-1);
+    }));
+  }
+  // drawing
+  const draw = () => {
+    const d = Math.min(2, devicePixelRatio || 1);
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height);
+    // night arena with a blood-red sun behind the target (round, so it reads the same from every side)
+    const cxp = cv.width / 2, cyp = cv.height / 2, R = Math.max(cv.width, cv.height) * .75;
+    const g = x.createRadialGradient(cxp, cyp, 0, cxp, cyp, R); g.addColorStop(0, '#ff2e4d'); g.addColorStop(.16, '#a8173a'); g.addColorStop(.3, '#3a0716'); g.addColorStop(.55, '#17122b'); g.addColorStop(1, '#0c0a17');
+    x.fillStyle = g; x.fillRect(0, 0, cv.width, cv.height);
+    x.fillStyle = 'rgba(0,0,0,.22)'; for (let yy = 0; yy < cv.height; yy += 7 * d) for (let xx = (yy / (7 * d)) % 2 * 3.5 * d; xx < cv.width; xx += 7 * d){ x.beginPath(); x.arc(xx, yy, .9 * d, 0, 7); x.fill(); }
+    const sh = K.shakeT > 0 && !RM ? 8 * K.shakeT / .15 : 0;
+    x.setTransform(scale, 0, 0, scale, cxp + (Math.random() - .5) * sh * scale, cyp + (Math.random() - .5) * sh * scale);
+    // throw lanes
+    for (const c of ['w', 'b']){ x.save(); x.rotate(TH[c]); x.strokeStyle = c === 'w' ? 'rgba(255,250,240,.12)' : 'rgba(255,200,61,.14)'; x.lineWidth = 16; x.beginPath(); x.moveTo(KS_RING + 16, 0); x.lineTo(KS_D0 + 10, 0); x.stroke(); x.restore(); }
+    x.strokeStyle = 'rgba(255,255,255,.14)'; x.lineWidth = 2; x.setLineDash([4, 8]); x.beginPath(); x.arc(0, 0, KS_RING, 0, 7); x.stroke(); x.setLineDash([]);
+    // onigiri and stuck kunai ride the wheel
+    for (const o of K.oni) if (!o.got){ const w = o.a + K.rot; onigiri(Math.cos(w) * (KS_RAD + 10), Math.sin(w) * (KS_RAD + 10), w + Math.PI / 2); }
+    for (const k of K.stuck){ const w = k.a + K.rot; ksKunai(x, Math.cos(w) * (KS_RAD - 12), Math.sin(w) * (KS_RAD - 12), w - Math.PI / 2, .72, k.c); }
+    // the target: wood, a red three-tomoe crest
+    x.save(); x.rotate(K.rot);
+    const wg = x.createRadialGradient(-18, -18, 8, 0, 0, KS_RAD); wg.addColorStop(0, '#e0aa6e'); wg.addColorStop(1, '#9a6334');
+    x.fillStyle = wg; x.strokeStyle = '#000'; x.lineWidth = 4; x.beginPath(); x.arc(0, 0, KS_RAD, 0, 7); x.fill(); x.stroke();
+    x.strokeStyle = 'rgba(90,50,20,.5)'; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, KS_RAD - 10, 0, 7); x.stroke();
+    x.fillStyle = '#2a1a10'; for (let i = 0; i < 12; i++){ const a = i * Math.PI / 6; x.beginPath(); x.arc(Math.cos(a) * (KS_RAD - 5), Math.sin(a) * (KS_RAD - 5), 2.2, 0, 7); x.fill(); }
+    x.fillStyle = '#f3ece4'; x.beginPath(); x.arc(0, 0, 42, 0, 7); x.fill(); x.strokeStyle = '#000'; x.lineWidth = 3; x.stroke();
+    x.fillStyle = '#c8102e';
+    for (let i = 0; i < 3; i++){ x.save(); x.rotate(i * Math.PI * 2 / 3); x.beginPath(); x.arc(0, -16, 13, 0, Math.PI * 2); x.fill(); x.beginPath(); x.moveTo(13, -16); x.quadraticCurveTo(14, 10, -14, 22); x.quadraticCurveTo(2, 4, -13, -16); x.fill(); x.restore(); }
+    x.restore();
+    // the iron ring
+    x.save(); x.rotate(K.rRot);
+    for (const b of K.blocks){
+      x.beginPath(); x.arc(0, 0, KS_RING + KS_RTH / 2, b.a - b.w, b.a + b.w); x.arc(0, 0, KS_RING - KS_RTH / 2, b.a + b.w, b.a - b.w, true); x.closePath();
+      x.fillStyle = '#6b7386'; x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2.5; x.stroke();
+      x.fillStyle = '#2a2f3a'; for (const f of [-.6, 0, .6]){ const a = b.a + f * b.w; x.beginPath(); x.arc(Math.cos(a) * KS_RING, Math.sin(a) * KS_RING, 2, 0, 7); x.fill(); }
+    }
+    x.restore();
+    // kunai in flight, the next one in each hand, and how many are left (laid out across each thrower's edge)
+    for (const c of ['w', 'b']){
+      for (const f of K.fly[c]) ksKunai(x, Math.cos(TH[c]) * f.d, Math.sin(TH[c]) * f.d, TH[c] - Math.PI / 2, .9, c);
+      if (K.left[c] > 0 && !K.fly[c].some(f => f.d > KS_D0 - 60)) ksKunai(x, Math.cos(TH[c]) * KS_D0, Math.sin(TH[c]) * KS_D0, TH[c] - Math.PI / 2, .9, c, K.frozen[c] ? .35 : 1);
+      x.save(); x.rotate(TH[c] - Math.PI / 2);
+      const n = Math.max(0, K.left[c] - 1);
+      for (let i = 0; i < n; i++) ksKunai(x, -60 - i * 13, KS_D0 + 6, 0, .3, c);
+      x.restore();
+    }
+    for (const b of K.bounce) ksKunai(x, b.x, b.y, b.r, .9, b.c, Math.min(1, b.life));
+    for (const p of K.parts){
+      if (p.rice){ x.save(); x.globalAlpha = Math.min(1, p.life); onigiri(p.x, p.y, p.r); x.restore(); continue; }
+      x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.globalAlpha = Math.min(1, p.life); x.fillStyle = p.c; x.strokeStyle = '#000'; x.lineWidth = 2; x.beginPath(); x.moveTo(-p.s, -p.s * .6); x.lineTo(p.s, -p.s * .3); x.lineTo(p.s * .4, p.s * .8); x.closePath(); x.fill(); x.stroke(); x.restore();
+    }
+  };
+  const onigiri = (px, py, th) => {
+    x.save(); x.translate(px, py); x.rotate(th);
+    x.fillStyle = '#fbfaf5'; x.strokeStyle = '#000'; x.lineWidth = 2.5;
+    x.beginPath(); x.moveTo(0, -12); x.quadraticCurveTo(12, 7, 10, 10); x.quadraticCurveTo(0, 13, -10, 10); x.quadraticCurveTo(-12, 7, 0, -12); x.fill(); x.stroke();
+    x.fillStyle = '#1d2b22'; x.fillRect(-6, 3, 12, 8); x.restore();
+  };
+  // the main loop: fixed steps for the spin, real time for flying debris
+  let last = 0, acc = 0, live = true;
+  const loop = now => {
+    if (F.closed || !live) return;
+    const dt = last ? Math.min(.05, (now - last) / 1000) : 0; last = now;
+    if (K){
+      if (K.live){
+        acc += dt;
+        while (acc >= KS_DT && K.live){ acc -= KS_DT; step(); fly(KS_DT); }
+        if (passing() && K.live && (hud.t = (hud.t || 0) + dt) > .1){ hud.t = 0; hud(); }   // the stopwatch
+        // CPU: throws when it sees a gap (or doesn't look, now and then)
+        if (K.live && mode === 'cpu'){
+          const cpu = OTHER(me); K.cpuNext -= dt;
+          if (K.cpuNext <= 0 && K.left[cpu] > 0){
+            if (K.cpuMode == null) K.cpuMode = Math.random() < [.2, .11, .05][level] ? 'yolo' : 'careful';
+            if (K.cpuMode === 'yolo' || safeFor(TH[cpu])){ K.cpuMode = null; throwK(cpu); K.cpuNext = [.95, .72, .52][level] * (1 - stage * .1) * (.8 + Math.random() * .5); if (Math.random() < .08) F.say(cpu, mgPick(KS.hurry)); }
+            else K.cpuNext = .03;
+          }
         }
-        if (a === 'fake' && !fakeT && !slapT){
-          fakeT = performance.now(); ui.fake();
-          if (cpuDef && Math.random() < CPU_RH().flinch) setTimeout(() => rhInput && rhInput(def, 'main'), 180 + Math.random() * 120);
-        }
-      } else if (c === def && a === 'main'){
-        const now = performance.now(); ui.pull();
-        if (slapT) finish(now - slapT < SLAP_MS ? null : att, now - slapT < SLAP_MS ? 'dodge' : 'hit');
-        else finish(att, fakeT && now - fakeT < FLINCH_MS ? 'flinch' : 'early');
-      }
+      } else { K.rot += K.vel * dt * .5; K.rRot += K.rVel * dt * .5; K.shakeT = Math.max(0, K.shakeT - dt); }
+      for (const b of K.bounce){ b.x += b.vx * dt; b.y += b.vy * dt; b.r += b.vr * dt; b.vx *= .985; b.vy *= .985; b.life -= dt; }
+      K.bounce = K.bounce.filter(b => b.life > 0);
+      for (const p of K.parts){ p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; p.vx *= .97; p.vy *= .97; p.life -= dt; }
+      K.parts = K.parts.filter(p => p.life > 0);
+      draw();
+    }
+    F.raf = requestAnimationFrame(loop);
+  };
+  setup(0); hud(); F.raf = requestAnimationFrame(loop);
+  if (mode === 'cpu') F.say(OTHER(me), mgPick(KS.start));
+  const rules = c => {
+    const edge = {bot: 'bottom', top: 'top'}[mgPos(c)];
+    return {
+      how: passing()
+        ? `Tap to throw ${c === 'w' ? 'white' : 'black'} kunai through the gaps in the iron ring. Land them all as fast as you can. Hit a block or a stuck kunai and the stage is lost. An onigiri saves you a kunai. Three stages each, the very same ones: most cleared wins, then the fastest total time.`
+        : `Tap${F.seat === 'face' ? ' your half' : ''} to throw ${c === 'w' ? 'white' : 'black'} kunai from the ${edge}, through the gaps in the iron ring. Land all of yours first to win the stage. Hit a block or a stuck kunai and you lose it. An onigiri saves you a kunai. Best of 3.`,
+      keys: F.seat === 'face' ? `Keyboard: ${c === 'w' ? 'A' : 'L'}` : 'Keyboard: Space'
     };
-    ui.msg('GO!'); ui.enable(true); A.sfx.beep();
-    if (cpuAtt){   // the CPU waits, maybe fakes, then slaps
-      const wait = 500 + Math.random() * 2000;
-      if (Math.random() < .35) setTimeout(() => rhInput && rhInput(att, 'fake'), wait * .5);
-      setTimeout(() => rhInput && rhInput(att, 'main'), wait + 300);
+  };
+  const STAGE_TAG = ['THROW THROUGH THE GAPS', 'THE RING FIGHTS BACK', 'EVERYTHING SPINS. BOTH WAYS.'];
+  // Pass the phone: White runs the three stages against the clock, then Black runs the very same three
+  if (passing()){
+    const solo = () => { const o = OTHER(passTurn); K.left[o] = 0; K.frozen[o] = true; };
+    for (const c of ['w', 'b']){
+      mgTurn(F, c); rnd = seededRandom(id * 7919 + 303); TH.w = KS_THETA[mgPos('w')]; TH.b = KS_THETA[mgPos('b')];
+      setup(0); solo(); hud();
+      if (!await mgGate(F, rules)){ live = false; return mgEnd(F, null, 'CALLED OFF'); }
+      for (stage = 0; stage < 3 && !isOver(); stage++){
+        if (stage){ setup(stage); solo(); }
+        acc = 0; hud();
+        F.big(stage === 2 ? 'FINAL STAGE' : `STAGE ${stage + 1}`, `${SIDE(c).toUpperCase()}'S TURN · ${STAGE_TAG[stage]}`, {ms: 1300, color: stage === 2 ? 'var(--blood)' : 'var(--gold)'});
+        await F.wait(1400);
+        const win = await new Promise(res => { stageRes = res; K.live = true; F.input = x => throwK(x); });
+        if (win === c){ clear[c]++; time[c] += K.t; }
+        hud(); await F.wait(1900); F.say(c, '');
+      }
     }
-    idle = setTimeout(() => { if (!slapT) finish(null, 'slow'); }, LIVE_MS);
-  });
+    live = false;
+    const winner = clear.w !== clear.b ? (clear.w > clear.b ? 'w' : 'b') : !clear.w ? null : time.w < time.b ? 'w' : time.b < time.w ? 'b' : null;
+    F.big(winner ? `${SIDE(winner).toUpperCase()} THROWS BEST` : 'DEAD EVEN', `White ${clear.w}/3 · ${time.w.toFixed(2)} s — Black ${clear.b}/3 · ${time.b.toFixed(2)} s`, {color: 'var(--gold)'});
+    await F.wait(2200);
+    return mgEnd(F, winner);
+  }
+  if (!await mgGate(F, rules)){ live = false; return mgEnd(F, null, 'CALLED OFF'); }
+  for (stage = 0; stage < 3 && wins.w < 2 && wins.b < 2 && !isOver(); stage++){
+    if (stage) setup(stage);
+    settling = false; acc = 0; hud();
+    F.big(stage === 2 ? 'FINAL STAGE' : `STAGE ${stage + 1}`, STAGE_TAG[stage], {ms: 1300, color: stage === 2 ? 'var(--blood)' : 'var(--gold)'});
+    await F.wait(1400);
+    if (!await mgSync(id, 30 + stage)){ live = false; return mgEnd(F, null, 'CALLED OFF'); }
+    const win = await new Promise(res => {
+      stageRes = res; K.live = true;
+      F.input = c => throwK(c);
+    });
+    if (win === null && mode === 'online' && !K.live && settling){ live = false; return mgEnd(F, null, 'CALLED OFF'); }
+    if (win) wins[win]++;
+    hud();
+    await F.wait(1900);
+    for (const c of ['w', 'b']) F.say(c, '');
+  }
+  live = false;
+  const winner = wins.w > wins.b ? 'w' : wins.b > wins.w ? 'b' : null;
+  return mgEnd(F, winner);
 }
-// Online: the dodger's screen referees (it sees the slap the moment it arrives, so lag can't steal a dodge).
-function rhAttemptOnline(ov, att, k){
-  const def = OTHER(att), ui = rhSetup(ov, att), id = game.history().length, me = net.my;
-  return new Promise(async res => {
-    let done = false, slapT = 0, fakeT = 0, idle = 0, bail = 0;
-    const end = r => { if (done) return; done = true; clearTimeout(idle); clearTimeout(bail); rhInput = null; mgListener = null; ui.enable(false); res(r); };
-    bail = setTimeout(() => end(null), 15000);   // the friend vanished
-    ui.msg('READY…'); await sleep(900);
-    if (me === def){
-      const finish = (pt, why) => { if (done) return; if (why === 'hit') ui.hit(); else ui.result(pt, why); mgSend({id, k, t: 'res', pt, why}); end({pt, why}); };
-      const onAtt = a => {
-        if (a === 'slap' && !slapT){ slapT = performance.now(); ui.slap(); setTimeout(() => finish(att, 'hit'), SLAP_MS); }
-        if (a === 'fake' && !fakeT && !slapT){ fakeT = performance.now(); ui.fake(); }
-      };
-      mgListener = m => { if (m.id === id && m.k === k && m.from === att) onAtt(m.t); };
-      rhInput = (c, a) => {
-        if (c !== def || a !== 'main' || done) return;
-        const now = performance.now(); ui.pull();
-        if (slapT) finish(now - slapT < SLAP_MS ? null : att, now - slapT < SLAP_MS ? 'dodge' : 'hit');
-        else finish(att, fakeT && now - fakeT < FLINCH_MS ? 'flinch' : 'early');
-      };
-      ui.msg('GO!'); ui.enable(true); A.sfx.beep(); mgSend({id, k, t: 'ready'});
-      idle = setTimeout(() => { if (!slapT) finish(null, 'slow'); }, LIVE_MS + 800);
-    } else {
-      // the slapper waits for the dodger to be ready, then its presses travel to the dodger, who sends back the verdict
-      mgListener = m => {
-        if (m.id !== id || m.k !== k || m.from !== def) return;
-        if (m.t === 'ready' && !rhInput){
-          ui.msg('GO!'); ui.enable(true); A.sfx.beep();
-          rhInput = (c, a) => {
-            if (c !== att) return;
-            if (a === 'main' && !slapT){ slapT = 1; ui.slap(); mgSend({id, k, t: 'slap'}); }
-            if (a === 'fake' && !fakeT && !slapT){ fakeT = 1; ui.fake(); mgSend({id, k, t: 'fake'}); }
-          };
-        }
-        if (m.t === 'res'){ if (m.why === 'hit') ui.hit(); else { if (m.why === 'dodge' || m.why === 'flinch' || m.why === 'early') ui.pull(); ui.result(m.pt, m.why); } end({pt: m.pt || null, why: m.why}); }
-      };
-      if (net.data && net.data.mg) mgListener(net.data.mg);   // the dodger may already be ready
+/* ---- ☆ Magical Dance: the over-the-top magical-girl dance-off. HENSHIN!!, then a 30-second song; hit the arrows as
+   they reach the line. Same chart for both players; highest score wins. FEVER at a 20 combo.
+   The song is "Anime-esque Intro-Outro Theme" by CleytonKauffman (CC0, OpenGameArt), 190 BPM. The arrows come from
+   its own accents, and run on the audio clock, corrected for the speaker's delay. If the file can't load, a synthesised
+   J-pop loop plays the same chart instead. ---- */
+const DN = {
+  hit: ['Kyaa~! ♡', 'Moe moe KYUN~ ♡', 'So sparkly!!', 'Notice me, senpai!!', 'My honor is now ✨sparkly✨', 'Twirl twirl~ ☆'],
+  miss: ['Hawawa?!', 'Mou~! Focus!!', '(╥﹏╥) my frills…', 'Not my wand!!', 'I tripped on my bow!!'],
+  fever: ['FEVER TIME ♡♡♡', 'MAXIMUM KAWAII OVERDRIVE!!', 'RAINBOW MODE~!!'],
+  ronin: ['I lost the ramen bet… so now I dance. ♡', 'Tell ANYONE about this and you’re dead. ♡', 'Behold!! Magical Girl Ronin-chan!!']
+};
+const DN_SONG = 'audio/magical-dance.mp3', DN_OFF = .004, DN_LEN = 33.2;   // first beat 4 ms into the file; the tail fades by 33 s
+const DN_BPM = 190, DN_BEAT = 60 / DN_BPM, DN_LEAD = 4, DN_BEATS = 96, DN_TRAVEL = 1.2, DN_WIN = [.045, .09, .135];
+// The song's accents from beat 4 to 99 (measured from the file): 2 = a big hit, 1 = a medium one, 0 = quiet.
+// Bars 1–8 are loud, 9–16 calmer, bar 17 a break, 18–24 the big finish. DN_OFFB marks strong off-beats.
+const DN_ACC  = '210212022212120222021212222012002202120222021122220212022202121200002202120222021202220222122220';
+const DN_OFFB = '000000000100000000000000001100000000000000000010000000000000001100000010000000000000000000000011';
+// The song is fetched and decoded once, the first time Magical Dance comes round.
+let dnSong = null;
+const loadDanceSong = () => dnSong || (dnSong = SY.ok() ? fetch(DN_SONG).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+  .then(b => new Promise((res, rej) => SY.ctx().decodeAudioData(b, res, rej))).catch(() => { dnSong = null; return null; }) : Promise.resolve(null));
+// lane colours from the Kessen palette; `a` turns an up-pointing arrow to face ← ↓ ↑ →
+const DN_LANES = [{a: -Math.PI / 2, c: '#ff6fb5', k: '←'}, {a: Math.PI, c: '#3fe0ff', k: '↓'}, {a: 0, c: '#ffc83d', k: '↑'}, {a: Math.PI / 2, c: '#ff2e4d', k: '→'}];
+const DN_PAL = {
+  w: {dress: '#fffaf0', frill: '#ffd6ec', trim: '#ff6fb5', line: '#22183a', hair: '#0c0a17', bow: '#ff6fb5', star: '#ffc83d'},
+  b: {dress: '#2b2350', frill: '#3a2f63', trim: '#ffc83d', line: '#ffc83d', hair: '#0c0a17', bow: '#ff2e4d', star: '#ffc83d'}
+};
+const DN_KEYS = {solo: {arrowleft: 0, arrowdown: 1, arrowup: 2, arrowright: 3, a: 0, s: 1, w: 2, d: 3}, w: {a: 0, s: 1, w: 2, d: 3}, b: {arrowleft: 0, arrowdown: 1, arrowup: 2, arrowright: 3}};
+async function magicalDance(){
+  const F = mgFrame('dn', 'Magical Dance', '☆'), id = F.id, rnd = seededRandom(id * 7919 + 404), me = mgMe();
+  A.music.duck(240000, 0);
+  // the chart: the same for both players
+  const chart = [];
+  let lastL = -1, same = 0;
+  const lane = () => { let l; do { l = Math.floor(rnd() * 4); } while (l === lastL && same >= 1 && rnd() < .85); same = l === lastL ? same + 1 : 0; lastL = l; return l; };
+  for (let b = 0; b < DN_BEATS; b++){
+    const a = +DN_ACC[b], sec = b < 32 ? 0 : b < 64 ? 1 : b < 68 ? 2 : 3, bi = b % 4;   // loud / calm / break / finale
+    if (b === 94){ chart.push({b, l: 0}, {b, l: 3}); break; }   // the last big hit: a two-arrow finish
+    if (sec === 2) continue;
+    if (a === 2 || (a === 1 && rnd() < [.6, .4, 0, .8][sec]) || (sec === 3 && rnd() < .3)){
+      const l = lane(); chart.push({b, l});
+      if (bi === 0 && a === 2 && rnd() < [.15, .1, 0, .5][sec]){ let l2; do { l2 = Math.floor(rnd() * 4); } while (l2 === l); chart.push({b, l: l2}); }
     }
+    if (DN_OFFB[b] === '1' && sec !== 1) chart.push({b: b + .5, l: lane()});   // the song's own off-beat stabs
+  }
+  // clocks: the song's time is the audio clock minus the output delay, so what you see lines up with what you hear
+  const audio = SY.ok();
+  const clock = audio ? () => SY.t() - SY.lat() : () => performance.now() / 1000;
+  const evClock = ts => audio ? SY.t() - (performance.now() - ts) / 1000 - SY.lat() : ts / 1000;
+  let T0 = 0, henshin = 0, phase = 'idle';   // T0 = when beat 0 of the count-in plays
+  let song = null; const songP = loadDanceSong();   // starts loading now, ready by the time everyone taps READY
+  const beatT = b => T0 + (DN_LEAD + b) * DN_BEAT;
+  // players: whoever is dancing gets lanes and pads; vs CPU, online or waiting a turn, the other gets a small window at the top
+  const P = {}, scoreOf = {w: 0, b: 0};
+  let ro = null;
+  const build = () => { for (const c of ['w', 'b']){
+    const full = humanHere(c), host = F.P[c].area; host.innerHTML = '';
+    const wrap = document.createElement('div'); wrap.className = 'dn-wrap' + (full ? '' : ' dn-mini');
+    const cv = document.createElement('canvas'); cv.className = 'dn-cv'; wrap.appendChild(cv);
+    let pads = null;
+    if (full){
+      pads = document.createElement('div'); pads.className = 'dn-pads';
+      const wasd = F.seat === 'face' && c === 'w';   // face to face, White plays W A S D and Black the arrow keys
+      pads.innerHTML = DN_LANES.map((L, i) => `<button type="button" class="dn-pad" data-l="${i}" style="--pc:${L.c}" aria-label="${['Left', 'Down', 'Up', 'Right'][i]}">${L.k}${wasd ? `<kbd>${'ASWD'[i]}</kbd>` : ''}</button>`).join('');
+      pads.querySelectorAll('.dn-pad').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); press(c, +b.dataset.l, e.timeStamp); }));
+      wrap.appendChild(pads);
+    }
+    host.appendChild(wrap);
+    P[c] = {c, full, cv, x: cv.getContext('2d'), pads, notes: chart.map(n => ({b: n.b, l: n.l, done: false})), score: scoreOf[c], combo: 0, maxC: 0, fever: false,
+      judge: null, press: [-9, -9, -9, -9], pose: -1, poseT: -9, missT: -9, feverT: -9, parts: [], w: 0, h: 0};
+  }
+    if (ro) ro.disconnect(); ro = new ResizeObserver(fit); for (const c of ['w', 'b']) ro.observe(P[c].cv);
+  };
+  const fit = () => { for (const c of ['w', 'b']){ const p = P[c], r = p.cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); p.w = r.width; p.h = r.height; p.cv.width = Math.max(1, Math.round(r.width * d)); p.cv.height = Math.max(1, Math.round(r.height * d)); p.d = d; } };
+  F.offs.push(() => ro && ro.disconnect());
+  build();
+  const hud = () => ['w', 'b'].forEach(c => F.pts(c, `${P[c].score.toLocaleString()} pts`));
+  hud();
+  // judging a press against the nearest unplayed note in that lane
+  const judge = (p, l, at) => {
+    let best = null, bd = 1;
+    for (const n of p.notes){ if (n.l !== l || n.done) continue; const d = Math.abs(beatT(n.b) - at); if (d < bd){ bd = d; best = n; } }
+    if (!best || bd > DN_WIN[2]) return;
+    best.done = true; hit(p, l, bd < DN_WIN[0] ? 3 : bd < DN_WIN[1] ? 2 : 1, at);
+  };
+  const hit = (p, l, j, at) => {
+    p.combo++; p.maxC = Math.max(p.maxC, p.combo);
+    p.score += Math.round([0, 100, 200, 300][j] * (1 + Math.min(.5, Math.floor(p.combo / 10) * .1)) * (p.fever ? 1.5 : 1));
+    p.judge = {j, t: at}; p.pose = l; p.poseT = at;
+    for (let i = 0; i < (j === 3 ? 9 : 5); i++) p.parts.push({l, vx: (Math.random() - .5) * 280, vy: -40 - Math.random() * 160, t: at, life: .5 + Math.random() * .4, k: Math.random() < .5 ? 'h' : 's', c: mgPick(['#ff6fb5', '#fff', '#ffc83d', '#3fe0ff', '#ff2e4d'])});
+    if (p.full && audio) SY.osc('sine', 440 * 2 ** (([79, 74, 84, 88][l] + (j === 3 ? 12 : 0) - 69) / 12), SY.t() + .005, .18, .06);
+    if (!p.fever && p.combo >= 20){ p.fever = true; p.feverT = at; F.say(p.c, mgPick(DN.fever)); if (audio) SY.nz(SY.t() + .01, .5, .2, {type: 'highpass', f0: 2500}); }
+    else if (p.combo % 15 === 0) F.say(p.c, mgPick(DN.hit));
+    hud();
+  };
+  const miss = (p, n, at) => { n.done = true; p.combo = 0; p.fever = false; p.judge = {j: 0, t: at}; p.missT = at; if (Math.random() < .3) F.say(p.c, mgPick(DN.miss)); if (p.full && audio) SY.osc('sawtooth', 160, SY.t() + .005, .16, .05, {lp: 900}); hud(); };
+  const press = (c, l, ts) => {
+    const p = P[c]; if (!p || !p.full) return;
+    const at = evClock(ts); p.press[l] = clock();
+    const b = p.pads && p.pads.children[l]; if (b){ b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 90); }
+    if (phase === 'play') judge(p, l, at);
+  };
+  F.key = (k, ts) => {
+    if (phase !== 'play' && phase !== 'intro') return false;
+    k = k.toLowerCase();
+    if (F.seat === 'face'){ for (const c of ['w', 'b']) if (DN_KEYS[c][k] != null){ press(c, DN_KEYS[c][k], ts); return true; } return false; }
+    if (DN_KEYS.solo[k] != null && mgMe()){ press(mgMe(), DN_KEYS.solo[k], ts); return true; }
+    return false;
+  };
+  // the song: C–G–Am–F J-pop, scheduled a moment ahead on the audio clock
+  const CH = [[60, 64, 67, 72], [59, 62, 67, 71], [57, 60, 64, 69], [57, 60, 65, 69]], BASS = [36, 31, 33, 29];
+  const mtof = m => 440 * 2 ** ((m - 69) / 12);
+  let nextBeat = 0;
+  const sched = () => {
+    if (!audio || song) return;   // the real song is playing
+    // a sound scheduled at audio time τ is heard when clock() reads τ, so beats schedule straight at their song time
+    const now = SY.t();
+    while (nextBeat < DN_LEAD + DN_BEATS + 1){
+      const t = T0 + nextBeat * DN_BEAT;
+      if (t > now + .35) break;
+      if (t >= now - .05){
+        const sb = nextBeat - DN_LEAD, bar = Math.floor(Math.max(0, sb) / 4) % 4, bi = ((sb % 4) + 4) % 4, ch = CH[bar];
+        const fever = ['w', 'b'].some(c => P[c].full && P[c].fever);
+        if (sb < 0){ SY.osc('triangle', mtof(sb === -1 ? 96 : 84), t, .12, .14); }
+        else if (sb >= 96){ ch.forEach(m => SY.osc('triangle', mtof(m + 12), t, 1.4, .07)); SY.nz(t, 1.2, .2, {type: 'highpass', f0: 4000}); }
+        else {
+          if (bi === 0 || bi === 2 || fever) SY.osc('sine', 160, t, .2, .5, {to: 45, glide: .12});
+          if (bi === 1 || bi === 3) SY.nz(t, .12, .3, {f0: 1400});
+          SY.nz(t, .03, .1, {type: 'highpass', f0: 7000}); SY.nz(t + DN_BEAT / 2, .03, .07, {type: 'highpass', f0: 7000});
+          if (bi === 0 || bi === 2) SY.osc('square', mtof(BASS[bar] + 12), t, DN_BEAT * .9, .09, {lp: 1400});
+          for (let h = 0; h < 2; h++){ const m = ch[(sb * 2 + h + bar) % 4] + 12; SY.osc('triangle', mtof(m), t + h * DN_BEAT / 2, .22, .08); SY.osc('sine', mtof(m) * 2, t + h * DN_BEAT / 2, .12, .025); }
+          if (bi === 0 && sb % 16 === 0) SY.nz(t, 1.1, .12, {type: 'highpass', f0: 4500});
+        }
+      }
+      nextBeat++;
+    }
+  };
+  // drawing helpers
+  const arrow = (x, px, py, a, s) => { x.save(); x.translate(px, py); x.rotate(a); x.scale(s, s); x.beginPath(); x.moveTo(0, -19); x.lineTo(19, 1); x.lineTo(8, 1); x.lineTo(8, 17); x.lineTo(-8, 17); x.lineTo(-8, 1); x.lineTo(-19, 1); x.closePath(); x.restore(); };
+  const heart = (x, px, py, s, col) => { x.save(); x.translate(px, py); x.scale(s, s); x.beginPath(); x.moveTo(0, 4); x.bezierCurveTo(-10, -4, -6, -12, 0, -6); x.bezierCurveTo(6, -12, 10, -4, 0, 4); x.fillStyle = col; x.fill(); x.restore(); };
+  const star = (x, px, py, r, col, rot) => { x.save(); x.translate(px, py); x.rotate(rot || 0); x.beginPath(); for (let i = 0; i < 10; i++){ const rr = i % 2 ? r * .45 : r, a = i * Math.PI / 5 - Math.PI / 2; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fillStyle = col; x.fill(); x.restore(); };
+  // the magical girl: spiky samurai hair, a giant bow, star-pupil eyes, a frilly skirt and a wand. White in cream, Black in ink and gold.
+  const chibi = (x, p, cx, gy, s, now) => {
+    const pal = DN_PAL[p.c], song = now - T0, ph = phase === 'play' || phase === 'end' ? ((song / DN_BEAT) % 1 + 1) % 1 : (now * 2) % 1;
+    const since = now - p.poseT, pose = since < .35 ? p.pose : -1, sad = now - p.missT < .5;
+    let lean = 0, jump = 0, squat = 0;
+    if (pose === 0) lean = -.16; if (pose === 3) lean = .16; if (pose === 2) jump = 16 * (1 - since / .35); if (pose === 1) squat = 8;
+    x.save(); x.translate(cx, gy - Math.pow(1 - ph, 2) * 8 - jump + squat); x.scale(s, s); x.rotate(lean);
+    if (phase === 'intro'){ const k = Math.min(1, (now - henshin) / 2); x.translate(0, -90); x.rotate(k < .8 ? k * Math.PI * 6 : 0); x.translate(0, 90); const z = .6 + .4 * Math.min(1, k * 1.3); x.scale(z, z); }
+    const O = pal.line; x.lineJoin = 'round'; x.lineCap = 'round';
+    x.strokeStyle = O; x.lineWidth = 7; x.beginPath(); x.moveTo(-10, -40); x.lineTo(-14 - squat, 0); x.moveTo(10, -40); x.lineTo(14 + squat, 0); x.stroke();
+    x.strokeStyle = '#ffe9dc'; x.lineWidth = 4; x.beginPath(); x.moveTo(-10, -40); x.lineTo(-14 - squat, 0); x.moveTo(10, -40); x.lineTo(14 + squat, 0); x.stroke();
+    x.fillStyle = pal.trim; x.strokeStyle = O; x.lineWidth = 2.5; for (const sx of [-16 - squat, 16 + squat]){ x.beginPath(); x.ellipse(sx, 1, 9, 5, 0, 0, 7); x.fill(); x.stroke(); }
+    x.fillStyle = pal.dress; x.beginPath(); x.moveTo(-14, -78); x.lineTo(14, -78); x.lineTo(42, -36); x.lineTo(-42, -36); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = pal.frill; for (let i = 0; i < 7; i++){ x.beginPath(); x.arc(-36 + i * 12, -36, 6.5, 0, Math.PI); x.fill(); x.stroke(); }
+    for (let i = 0; i < 3; i++) star(x, -18 + i * 18, -56, 4, pal.star, now * 2);
+    x.fillStyle = pal.trim; x.strokeStyle = O; x.beginPath(); x.moveTo(-13, -80); x.lineTo(13, -80); x.lineTo(10, -108); x.lineTo(-10, -108); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = pal.dress; x.beginPath(); x.moveTo(0, -100); x.lineTo(-16, -108); x.lineTo(-14, -92); x.closePath(); x.moveTo(0, -100); x.lineTo(16, -108); x.lineTo(14, -92); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = pal.star; x.beginPath(); x.arc(0, -100, 4, 0, 7); x.fill(); x.stroke();
+    const arm = (sx, sy, ex, ey) => { x.strokeStyle = O; x.lineWidth = 7; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.stroke(); x.strokeStyle = '#ffe9dc'; x.lineWidth = 4; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.stroke(); };
+    let L = [-28, -86], R = [28, -118];
+    if (pose === 0){ L = [-40, -120]; R = [26, -84]; } else if (pose === 3){ L = [-26, -84]; R = [42, -122]; } else if (pose === 2){ L = [-24, -136]; R = [24, -136]; } else if (pose === 1){ L = [-22, -90]; R = [18, -140]; }
+    if (sad){ L = [-20, -72]; R = [20, -72]; }
+    arm(-11, -104, L[0], L[1]); arm(11, -104, R[0], R[1]);
+    x.strokeStyle = pal.star; x.lineWidth = 3; x.beginPath(); x.moveTo(R[0], R[1]); x.lineTo(R[0] + 10, R[1] - 26); x.stroke(); star(x, R[0] + 11, R[1] - 30, 10, pal.star, now * 3); heart(x, R[0] + 11, R[1] - 30, .5, '#ff6fb5');
+    const hy = -148;
+    x.fillStyle = pal.hair; x.beginPath(); x.moveTo(-40, hy + 6); x.lineTo(-48, hy - 34); x.lineTo(-24, hy - 26); x.lineTo(-18, hy - 54); x.lineTo(0, hy - 34); x.lineTo(16, hy - 56); x.lineTo(24, hy - 28); x.lineTo(48, hy - 36); x.lineTo(40, hy + 6); x.closePath(); x.fill();
+    if (p.c === 'b'){ x.strokeStyle = pal.line; x.lineWidth = 2; x.stroke(); }
+    x.fillStyle = '#ffe9dc'; x.strokeStyle = O === '#ffc83d' ? '#22183a' : O; x.lineWidth = 3; x.beginPath(); x.arc(0, hy, 36, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = pal.hair; x.beginPath(); x.moveTo(-37, hy - 4); x.quadraticCurveTo(-30, hy - 34, 0, hy - 36); x.quadraticCurveTo(30, hy - 34, 37, hy - 4); x.lineTo(26, hy - 16); x.lineTo(16, hy - 6); x.lineTo(6, hy - 20); x.lineTo(-6, hy - 8); x.lineTo(-16, hy - 20); x.lineTo(-26, hy - 8); x.closePath(); x.fill();
+    x.fillStyle = pal.bow; x.strokeStyle = '#22183a'; x.lineWidth = 3; x.beginPath(); x.moveTo(18, hy - 40); x.lineTo(-6, hy - 62); x.lineTo(-4, hy - 30); x.closePath(); x.moveTo(18, hy - 40); x.lineTo(44, hy - 64); x.lineTo(42, hy - 28); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(18, hy - 40, 6, 0, 7); x.fill(); x.stroke();
+    if (sad){
+      x.strokeStyle = '#22183a'; x.lineWidth = 3; for (const ex of [-14, 14]){ x.beginPath(); x.moveTo(ex - 7, hy - 2); x.lineTo(ex + 3 * Math.sign(ex), hy + 3); x.lineTo(ex - 7, hy + 8); x.stroke(); }
+      x.fillStyle = '#8fd3ff'; x.beginPath(); x.ellipse(-20, hy + 16, 3, 6, 0, 0, 7); x.fill();
+    } else for (const ex of [-14, 14]){
+      x.fillStyle = '#fff'; x.strokeStyle = '#22183a'; x.lineWidth = 2.5; x.beginPath(); x.ellipse(ex, hy + 3, 9, 12, 0, 0, 7); x.fill(); x.stroke();
+      const g = x.createLinearGradient(0, hy - 8, 0, hy + 14); g.addColorStop(0, p.c === 'w' ? '#3a1a6e' : '#5a0d1c'); g.addColorStop(1, p.c === 'w' ? '#c77dff' : '#ff6a82'); x.fillStyle = g; x.beginPath(); x.ellipse(ex, hy + 5, 7, 9.5, 0, 0, 7); x.fill();
+      x.fillStyle = '#fff'; x.beginPath(); x.arc(ex - 3, hy, 3.2, 0, 7); x.fill(); x.beginPath(); x.arc(ex + 3, hy + 9, 1.6, 0, 7); x.fill(); star(x, ex + 2, hy + 3, 2.4, '#fff', now * 4);
+    }
+    x.fillStyle = 'rgba(255,111,181,.55)'; x.beginPath(); x.ellipse(-24, hy + 16, 7, 4, 0, 0, 7); x.ellipse(24, hy + 16, 7, 4, 0, 0, 7); x.fill();
+    x.strokeStyle = '#22183a'; x.lineWidth = 2; x.beginPath(); x.moveTo(-6, hy + 19); x.quadraticCurveTo(-3, hy + 23, 0, hy + 19); x.quadraticCurveTo(3, hy + 23, 6, hy + 19); x.stroke();
+    x.restore();
+  };
+  // "MAGICAL GIRL WHITE ☆", "MAGICAL GIRL RONIN-CHAN ☆", or just "MAGICAL GIRL ☆" for a nameless you
+  const dnTitle = c => { const n = mode === 'cpu' && c !== me ? 'Ronin-chan' : mgName(c); return n === 'You' ? 'MAGICAL GIRL ☆' : `MAGICAL GIRL ${n.toUpperCase()} ☆`; };
+  const label = (x, s, px, py, size, fill, align = 'center', stroke = '#000') => { x.font = `${size}px "Dela Gothic One","Arial Black",sans-serif`; x.textAlign = align; x.textBaseline = 'middle'; x.lineJoin = 'round'; x.lineWidth = Math.max(3, size * .22); x.strokeStyle = stroke; x.strokeText(s, px, py); x.fillStyle = fill; x.fillText(s, px, py); };
+  const drawP = (p, now) => {
+    const x = p.x, w = p.w, h = p.h; if (!w || !h) return;
+    x.setTransform(p.d, 0, 0, p.d, 0, 0); x.clearRect(0, 0, w, h);
+    // the stage: Kessen night, two idol spotlights, halftone, and FEVER's spinning sunburst
+    const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#17122b'); g.addColorStop(1, '#0c0a17'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    if (p.fever || phase === 'intro'){
+      x.save(); x.translate(w * .3, h * .62); x.rotate(now * .7); const cols = ['rgba(255,46,77,.26)', 'rgba(255,200,61,.24)', 'rgba(63,224,255,.22)', 'rgba(255,111,181,.26)'];
+      for (let i = 0; i < 16; i++){ x.rotate(Math.PI / 8); x.fillStyle = cols[i % 4]; x.beginPath(); x.moveTo(0, 0); x.lineTo(900, -70); x.lineTo(900, 70); x.closePath(); x.fill(); } x.restore();
+    }
+    for (const [sx, col] of [[w * .18, 'rgba(255,111,181,.16)'], [w * .55, 'rgba(255,200,61,.12)']]){ const sw = Math.sin(now * .9 + sx) * w * .08; x.fillStyle = col; x.beginPath(); x.moveTo(sx - 6, 0); x.lineTo(sx + 6, 0); x.lineTo(sx + sw + w * .22, h); x.lineTo(sx + sw - w * .22, h); x.closePath(); x.fill(); }
+    x.fillStyle = 'rgba(255,255,255,.05)'; for (let yy = 8; yy < h; yy += 22) for (let xx = (yy / 22 % 2) * 11 + 4; xx < w; xx += 22){ x.beginPath(); x.arc(xx, yy, 1.6, 0, 7); x.fill(); }
+    for (let i = 0; i < 7; i++){ const yy = h - ((now * 26 + i * 61) % (h + 40)) + 20, xx = (i * 53 + Math.sin(now + i) * 10) % Math.max(60, w * .35) + 6; if (i % 2) heart(x, xx, yy, 1, 'rgba(255,111,181,.45)'); else star(x, xx, yy, 6, 'rgba(255,200,61,.5)', now + i); }
+    // layout: the dancer performs in a band at the top; the four lanes run the full width below,
+    // lined up with the four pads underneath
+    const laneW = (w - 12) / 4, lx0 = 6;
+    const top = p.full ? Math.min(180, Math.max(100, h * .36)) : 0, recY = h - 30;
+    const dS = p.full ? Math.min(.85, (top - 6) / 190) : Math.min(.5, (h - 10) / 230);
+    const dX = p.full ? Math.max(48 * dS + 10, w * .26) : Math.max(48 * dS + 8, w * .18);
+    const dY = p.full ? top - 4 : h - 6;
+    x.fillStyle = 'rgba(255,255,255,.1)'; x.beginPath(); x.ellipse(dX, dY + 2, 64 * dS, 10 * dS, 0, 0, 7); x.fill();
+    chibi(x, p, dX, dY, dS, now);
+    if (p.full){
+      label(x, dnTitle(p.c), Math.min(w - 8, dX + 64 * dS + 8), top * .3, Math.min(12, w * .03), '#ff6fb5', 'left');
+      label(x, p.score.toLocaleString(), w - 10, top * .62, Math.min(26, w * .06), '#ffc83d', 'right');
+      if (p.fever) label(x, 'FEVER ×1.5', w - 10, top * .62 + Math.min(22, w * .05), Math.min(12, w * .03), `hsl(${(now * 200) % 360},90%,65%)`, 'right');
+    }
+    if (!p.full){
+      // the opponent's window: their dancer, score, combo and last call
+      label(x, dnTitle(p.c), w * .62, h * .16, Math.min(10, h * .1), '#ff6fb5');
+      label(x, `${p.score.toLocaleString()}`, w * .62, h * .44, Math.min(28, h * .26), '#ffc83d');
+      if (p.combo >= 4) label(x, `${p.combo} COMBO`, w * .52, h * .78, Math.min(12, h * .12), p.fever ? '#ff6fb5' : '#fff');
+      if (p.judge && now - p.judge.t < .6) label(x, ['MISS', 'GOOD~', 'GREAT ♡', 'PERFECT ☆'][p.judge.j], w * .82, h * .78, Math.min(12, h * .12), ['#a99fc7', '#3fe0ff', '#ff6fb5', '#ffc83d'][p.judge.j]);
+      return;
+    }
+    // lanes, receptors and notes (each note takes the same time to fall on every screen size)
+    x.fillStyle = 'rgba(12,10,23,.55)'; x.strokeStyle = 'rgba(255,255,255,.12)'; x.lineWidth = 1;
+    x.fillRect(lx0 - 4, top, laneW * 4 + 8, h - top); x.strokeRect(lx0 - 4, top, laneW * 4 + 8, h - top);
+    const LX = l => lx0 + laneW * (l + .5), sc = laneW / 52;
+    for (let l = 0; l < 4; l++){
+      const lit = now - p.press[l] < .1;
+      arrow(x, LX(l), recY, DN_LANES[l].a, sc * 1.05); x.lineWidth = 3.5; x.strokeStyle = lit ? DN_LANES[l].c : 'rgba(255,255,255,.35)'; x.fillStyle = lit ? '#fff' : 'rgba(255,255,255,.08)'; x.fill(); x.stroke();
+      if (lit){ x.save(); x.globalAlpha = .45; x.fillStyle = DN_LANES[l].c; x.beginPath(); x.arc(LX(l), recY, laneW * .48, 0, 7); x.fill(); x.restore(); }
+    }
+    const span = recY - top - 10, yOf = t => recY - (t - now) / DN_TRAVEL * span;
+    const byT = {};
+    for (const n of p.notes){ if (n.done) continue; const t = beatT(n.b); if (t - now > DN_TRAVEL + .05) continue; (byT[n.b] = byT[n.b] || []).push(n); }
+    for (const b in byT){ const a = byT[b]; if (a.length < 2) continue; const y = yOf(beatT(+b)); x.strokeStyle = 'rgba(255,255,255,.85)'; x.lineWidth = 5; x.beginPath(); x.moveTo(LX(Math.min(...a.map(n => n.l))), y); x.lineTo(LX(Math.max(...a.map(n => n.l))), y); x.stroke(); }
+    for (const n of p.notes){
+      if (n.done) continue; const t = beatT(n.b); if (t - now > DN_TRAVEL + .05) continue;
+      const y = yOf(t); if (y < top - 20) continue;
+      arrow(x, LX(n.l), y, DN_LANES[n.l].a, sc); x.fillStyle = DN_LANES[n.l].c; x.lineWidth = 3; x.strokeStyle = '#000'; x.fill(); x.stroke(); heart(x, LX(n.l), y + 1, .5 * sc, '#fff');
+    }
+    for (const q of p.parts){ const k = (now - q.t) / q.life; if (k > 1 || k < 0) continue; x.save(); x.globalAlpha = 1 - k; const dt = now - q.t, px = LX(q.l) + q.vx * dt, py = recY + q.vy * dt + 120 * dt * dt; if (q.k === 'h') heart(x, px, py, 1.1, q.c); else star(x, px, py, 7, q.c, now * 5); x.restore(); }
+    p.parts = p.parts.filter(q => now - q.t < q.life);
+    const mid = lx0 + laneW * 2;
+    if (p.judge && now - p.judge.t < .6){
+      const k = (now - p.judge.t) / .6, J = [['MISS (╥﹏╥)', '#a99fc7'], ['GOOD~', '#3fe0ff'], ['GREAT ♡', '#ff6fb5'], ['PERFECT ☆', '#ffc83d']][p.judge.j];
+      x.save(); x.globalAlpha = 1 - Math.max(0, k - .6) / .4; label(x, J[0], mid, recY - span * .42 - 10 * k, Math.min(22, laneW * .42), J[1]);
+      if (p.judge.j === 3) label(x, 'KAWAII!!', mid, recY - span * .42 + 18, Math.min(11, laneW * .2), '#ff6fb5');
+      x.restore();
+    }
+    if (p.combo >= 4){ label(x, String(p.combo), mid, recY - span * .62, Math.min(34, laneW * .62), p.fever ? `hsl(${(now * 200) % 360},90%,62%)` : '#fff'); label(x, p.fever ? 'FEVER ♡ COMBO' : 'COMBO ♡', mid, recY - span * .62 + 22, Math.min(11, laneW * .2), '#ff6fb5'); }
+    // count-in, henshin and the finish, painted onto the stage
+    if (phase === 'intro'){
+      const k = now - henshin;
+      for (let i = 0; i < 10; i++) star(x, w / 2 + Math.cos(i + k * 3) * (60 + k * 60), h / 2 + Math.sin(i * 1.3 + k * 3) * (40 + k * 40), 8, i % 2 ? '#ffc83d' : '#fff', k * 4);
+      if (now < T0) label(x, '✨ HENSHIN!! ✨', w / 2, h * .42, Math.min(30, w * .08), `hsl(${(k * 300) % 360},90%,62%)`);
+      if (k < .25){ x.fillStyle = `rgba(255,255,255,${1 - k / .25})`; x.fillRect(0, 0, w, h); }
+    }
+    if (now >= T0 && now < beatT(0)){ const n = Math.floor((now - T0) / DN_BEAT) + 1; label(x, n < 4 ? `${n}` : 'GO~♡', w / 2, h * .42, Math.min(44, w * .12), n < 4 ? '#fff' : '#ff6fb5'); }
+  };
+  // HENSHIN!!, then the song from the count-in to the last arrow
+  const perform = async () => {
+    song = await songP;
+    // HENSHIN!! sparkle arpeggio, then the count-in
+    phase = 'intro'; henshin = clock(); T0 = henshin + 2.2 + DN_OFF; nextBeat = 0;
+    if (song){
+      const src = SY.ctx().createBufferSource(), g = SY.ctx().createGain(); g.gain.value = .75;
+      src.buffer = song; src.connect(g); g.connect(SY.bus()); src.start(T0 - DN_OFF);   // heard when clock() reaches T0 - DN_OFF
+      F.offs.push(() => { try { src.stop(); } catch(e){} });
+    }
+    if (audio){ const t = SY.t() + .02; [72, 76, 79, 84].forEach((m, i) => SY.osc('triangle', 440 * 2 ** ((m - 69) / 12), t + i * .12, i === 3 ? .8 : .3, .14)); for (let i = 0; i < 14; i++) SY.osc('sine', 440 * 2 ** ((84 + [0, 4, 7, 12][i % 4] - 69) / 12), t + .6 + i * .08, .2, .05); SY.nz(t + 1.8, .6, .25, {type: 'highpass', f0: 3000}); }
+    const endT = song ? T0 - DN_OFF + DN_LEN : beatT(94) + 1.4;
+    let sentAt = 0;
+    await new Promise(res => {
+      const loop = () => {
+        if (F.closed) return res();
+        const now = clock();
+        if (phase === 'intro' && now >= T0) phase = 'play';
+        sched();
+        for (const c of ['w', 'b']){
+          const p = P[c];
+          // misses (people), or the CPU's dance (Ronin-chan hits most notes, by level)
+          for (const n of p.notes){
+            if (n.done) continue; const t = beatT(n.b);
+            if (mode === 'cpu' && c !== me){ if (now >= t){ const r = Math.random(), o = [[.35, .65, .8], [.55, .83, .93], [.74, .92, .98]][level]; if (r < o[0]) hit(p, n.l, 3, t), n.done = true; else if (r < o[1]) hit(p, n.l, 2, t), n.done = true; else if (r < o[2]) hit(p, n.l, 1, t), n.done = true; else miss(p, n, t); } }
+            else if (p.full && now - t > DN_WIN[2]) miss(p, n, now);
+          }
+        }
+        // online: my score goes over a few times a second so the friend can watch it climb
+        if (mode === 'online' && phase === 'play' && now - sentAt > .4){ sentAt = now; mgSend({id, k: 1, t: 'dsc', v: P[me].score, x: P[me].combo * 10 + (P[me].fever ? 1 : 0)}); }
+        for (const c of ['w', 'b']) drawP(P[c], now);
+        if (now >= endT) return res();
+        F.raf = requestAnimationFrame(loop);
+      };
+      F.raf = requestAnimationFrame(loop);
+    });
+  };
+  // play
+  const rules = c => ({
+    how: `HENSHIN!! Then a 30-second anime opening at 190 BPM. Hit the arrow${F.seat === 'face' ? ' on your side' : ''} as each one reaches the line: <b>PERFECT, GREAT, GOOD</b>. ${passing() ? 'Then pass the phone: the other dancer gets the very same arrows.' : 'Same arrows for both of you.'} A 20 combo starts <b>FEVER</b> (×1.5). Highest score wins. Sound on ♡`,
+    keys: (F.seat === 'face' ? (c === 'w' ? 'Keyboard: W A S D' : 'Keyboard: arrow keys') : 'Keyboard: arrow keys or W A S D') + '<br>♪ “Anime-esque Intro-Outro Theme” by CleytonKauffman (CC0)'
   });
+  // Pass the phone: White dances the song, then Black dances the very same chart with White's score to beat
+  if (passing()){
+    for (const c of ['w', 'b']){
+      mgTurn(F, c); build(); hud();
+      if (!await mgGate(F, rules, {count: false})) return mgEnd(F, null, 'CALLED OFF');
+      fit(); await perform(); scoreOf[c] = P[c].score; phase = 'end';
+      F.big('FINISH ☆', `${SIDE(c)}: ${P[c].score.toLocaleString()} pts`, {color: '#ff6fb5'}); await F.wait(2200); F.big('');
+    }
+    const winner = scoreOf.w > scoreOf.b ? 'w' : scoreOf.b > scoreOf.w ? 'b' : null;
+    F.big(winner ? `${SIDE(winner).toUpperCase()} IS THE IDOL ☆` : 'A PERFECT TIE ♡', `White ${scoreOf.w.toLocaleString()} · Black ${scoreOf.b.toLocaleString()}`, {color: '#ff6fb5'});
+    await F.wait(2200);
+    return mgEnd(F, winner, 'A PERFECT TIE ♡');
+  }
+  if (!await mgGate(F, rules, {count: false})) return mgEnd(F, null, 'CALLED OFF');
+  fit();
+  if (mode === 'cpu') F.say(OTHER(me), mgPick(DN.ronin));
+  // online: the friend's score, combo and FEVER arrive a few times a second
+  if (mode === 'online'){
+    const p = P[OTHER(me)];
+    F.offs.push(mgOn(m => {
+      if (m.id !== id || m.t !== 'dsc' || m.v == null) return;
+      if (m.v > p.score) p.judge = {j: 3, t: clock()};
+      p.score = m.v; const cx = m.x || 0, combo = Math.floor(cx / 10);
+      if (combo < p.combo) p.missT = clock();
+      p.combo = combo; p.fever = cx % 10 === 1; hud();
+    }));
+  }
+  await perform();
+  phase = 'end'; F.key = null;
+  F.big('FINISH ☆', `${mgName('w')} ${P.w.score.toLocaleString()} · ${mgName('b')} ${P.b.score.toLocaleString()}`, {color: '#ff6fb5'});
+  if (mode === 'online'){
+    const them = OTHER(me), got = await mgSwap(id, 400, 'dend', {v: P[me].score}, 15000);
+    if (!got) return mgEnd(F, null, 'CALLED OFF');
+    P[them].score = got.v; hud();
+    F.big('FINISH ☆', `${mgName('w')} ${P.w.score.toLocaleString()} · ${mgName('b')} ${P.b.score.toLocaleString()}`, {color: '#ff6fb5'});
+  }
+  await F.wait(1800);
+  const winner = P.w.score > P.b.score ? 'w' : P.b.score > P.w.score ? 'b' : null;
+  return mgEnd(F, winner, 'A PERFECT TIE ♡');
 }
 /* ---- The minigame rotation: every break plays the next game in this list ---- */
 const MINIGAMES = [
-  {name: 'Red Hands', jp: '赤い手', play: () => redHands()},
-  {name: 'Memory Flash', jp: '記憶', play: () => scoreDuel(MEMORY_FLASH)},
-  {name: 'Mate in One', jp: '詰め', play: () => scoreDuel(MATE_IN_ONE)}
+  {name: 'Quick-draw', jp: '居合', play: () => quickDraw()},
+  {name: 'Blade Timing', jp: '斬', play: () => bladeTiming()},
+  {name: 'Kunai Storm', jp: '苦無', play: () => kunaiStorm()},
+  {name: 'Magical Dance', jp: '☆', play: () => magicalDance()}
 ];
 const minigameAt = n => MINIGAMES[Math.max(0, Math.floor(n / MG_EVERY) - 1) % MINIGAMES.length];   // the one played at ply n
 const upcomingMinigame = () => MINIGAMES[Math.floor(game.history().length / MG_EVERY) % MINIGAMES.length];
 async function playMinigame(){
-  const g = minigameAt(game.history().length);
+  const n = game.history().length, g = minigameAt(n);
+  mgBox = mgBox.filter(m => m.id === n); mgAns = {};   // old rounds' messages are no use now
   A.sfx.fight(); flash('#fff', 300, .5);
   await bigText(`${g.name.toUpperCase()}!`, g.jp, {hold: 900, size: .6, color: 'var(--gold)', sub: 'MINIGAME · THE WINNER GETS A POWER-UP'});
+  if (mode === 'pvp' && !seatAsked) await mgSeatPick();
   return g.play();
 }
 // Small seeded random numbers, so both online players get the very same challenge.
 const seededRandom = s => () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-// A score duel: both players take an equal challenge and the higher score wins (a tie has no winner).
-// Same screen: White plays, then Black gets a fresh challenge. vs CPU: the CPU's score comes from its level.
-// Online: both play at once on their own screens, then swap scores.
-async function scoreDuel(spec){
-  const id = game.history().length, base = id * 7919 + 101, score = {w: null, b: null};
-  A.music.duck(90000);
-  const ov = document.createElement('div'); ov.className = 'mg'; ov.id = 'mg';
-  ov.innerHTML = `<div class="mg-title">${spec.jp} ${spec.title.toUpperCase()}<small>MINIGAME · WINNER GETS A POWER-UP</small></div>
-    <div class="mg-score"><span class="gw">${GLYPH.k}${VS}</span><span id="mgSW">–</span><span class="mg-msg" id="mgMsg">GET READY</span><span id="mgSB">–</span><span class="gb">${GLYPH.k}${VS}</span></div>
-    <div class="mg-roles" id="mgRoles"></div><div class="mg-arena mg-center" id="mgArena"></div>`;
-  stageEl.appendChild(ov);
-  const msg = t => { ov.querySelector('#mgMsg').textContent = t; }, roles = t => { ov.querySelector('#mgRoles').textContent = t; }, arena = ov.querySelector('#mgArena');
-  const show = c => { ov.querySelector(c === 'w' ? '#mgSW' : '#mgSB').textContent = score[c] == null ? '–' : spec.fmt(score[c]); };
-  // beat: the score to beat when it's already known, so a run can stop once it's won
-  const playOne = async (c, seedOff, beat = null) => {
-    roles(`${SIDE(c)}: ${spec.how}`); msg(`${SIDE(c).toUpperCase()}, GET READY`); arena.innerHTML = ''; await sleep(1700);
-    score[c] = await spec.run(arena, seededRandom(base + seedOff), msg, beat); show(c); await sleep(900);
-  };
-  try {
-    if (mode === 'pvp'){ await playOne('w', 0); await playOne('b', 17, score.w); }
-    else if (mode === 'cpu'){
-      const me = playerColor, cpu = OTHER(me), cpuScore = spec.cpu();   // decided up front, revealed after
-      await playOne(me, 0, cpuScore);
-      roles(''); arena.innerHTML = ''; msg('THE CPU TRIES…'); await sleep(1500);
-      score[cpu] = cpuScore; show(cpu);
-    } else {
-      // the scores travel as minigame messages; each side keeps re-sending its own until it has the other's
-      const me = net.my, them = OTHER(me);
-      mgListener = m => { if (m.t === 'score' && m.id === id && m.from === them && m.v != null) score[them] = m.v; };
-      if (net.data && net.data.mg) mgListener(net.data.mg);
-      await playOne(me, 0);
-      roles(''); msg('WAITING FOR YOUR FRIEND…');
-      const t0 = Date.now(); let extra = 0;
-      while (Date.now() - t0 < 150000){ mgSend({id, k: 0, t: 'score', v: score[me]}); if (score[them] != null && ++extra > 2) break; await sleep(1500); }
-      show(them);
-    }
-  } finally { mgListener = null; }
-  const {w, b} = score, maxed = spec.max != null && w === spec.max && b === spec.max;   // both reached the top: both win
-  const winner = w == null || b == null ? null : maxed ? 'both' : w > b ? 'w' : b > w ? 'b' : null;
-  msg(maxed ? 'BOTH MAXED OUT!' : winner ? `${SIDE(winner).toUpperCase()} WINS` : w == null || b == null ? 'CALLED OFF' : 'A TIE');
-  A.sfx[winner ? 'heroic' : 'draw']();
-  await sleep(1600); ov.remove();
-  return winner;
-}
-// 記憶 Memory Flash: squares light up in order; tap them back. Each round adds one, up to 10. Score = the longest sequence repeated.
-// A run stops as soon as it beats a known score; if both players reach 10, both win.
-const MEMORY_FLASH = {
-  title: 'Memory Flash', jp: '記憶', how: 'squares light up in order. Tap them back in the same order. Each round adds one, up to 10.',
-  max: 10, fmt: v => String(v),
-  cpu: () => Math.min(10, Math.max(0, [4, 6, 8][level] + Math.floor(Math.random() * 3) - 1)),
-  run: (arena, rnd, msg, beat) => new Promise(async res => {
-    arena.innerHTML = `<div class="mem">${Array.from({length: 16}, (_, i) => `<button type="button" class="mem-t ${((i >> 2) + i) % 2 ? 'l' : 'd'}" data-i="${i}" disabled aria-label="Square ${i + 1}"></button>`).join('')}</div>`;
-    const tiles = [...arena.querySelectorAll('.mem-t')], seq = [];
-    let best = 0;
-    for (let len = 3; len <= 10; len++){
-      while (seq.length < len) seq.push(Math.floor(rnd() * 16));
-      tiles.forEach(t => { t.disabled = true; }); msg(`WATCH · ${len}`); await sleep(600);
-      const on = Math.max(260, 520 - len * 25);
-      for (const i of seq){ tiles[i].classList.add('lit'); A.sfx.beep(); await sleep(on); tiles[i].classList.remove('lit'); await sleep(140); }
-      tiles.forEach(t => { t.disabled = false; }); msg(`YOUR TURN · ${len}`);
-      const ok = await new Promise(done => {
-        let k = 0, timer = 0;
-        const finish = r => { clearTimeout(timer); arena.onpointerdown = null; done(r); };
-        const arm = () => { clearTimeout(timer); timer = setTimeout(() => finish(false), 5000); };   // 5 s per tap
-        arena.onpointerdown = e => {
-          const t = e.target.closest('.mem-t'); if (!t || t.disabled) return; e.preventDefault();
-          const i = +t.dataset.i, right = i === seq[k];
-          t.classList.add(right ? 'hit' : 'miss'); setTimeout(() => t.classList.remove('hit', 'miss'), 220);
-          if (!right){ A.sfx.draw(); finish(false); return; }
-          A.sfx.select(); if (++k === seq.length) finish(true); else arm();
-        };
-        arm();
-      });
-      if (!ok){ msg('MISS!'); break; }
-      best = len; A.sfx.twinkle();
-      if (best === 10){ msg('MAXED OUT!'); break; }
-      if (beat != null && best > beat){ msg('BEATEN!'); break; }
-      msg('NICE!'); await sleep(500);
-    }
-    tiles.forEach(t => { t.disabled = true; });
-    await sleep(600); res(best);
-  })
-};
-// 詰め Mate in One: one try to find the checkmate; the fastest correct answer wins. Every puzzle was checked to have a mate.
-const MATE1 = [
-  '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', 'r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1',
-  '6rk/6pp/8/6N1/8/8/8/6K1 w - - 0 1', 'rnbqkbnr/ppppp2p/5p2/6p1/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1',
-  '6k1/5ppp/8/8/8/8/8/4Q1K1 w - - 0 1', 'rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2',
-  '7k/6pp/8/8/8/8/1Q6/1K4R1 w - - 0 1', '3k4/8/3K4/8/8/8/8/R7 w - - 0 1', '2r3k1/5ppp/8/8/8/8/5PPP/2R3K1 w - - 0 1',
-  'r5k1/8/8/8/8/8/5PPP/6K1 b - - 0 1', '4k3/8/4K3/8/8/8/8/7R w - - 0 1'
-];
-const M1_MS = 30000;
-const MATE_IN_ONE = {
-  title: 'Mate in One', jp: '詰め', how: 'find the checkmate in one move. One try, 30 seconds. Fastest wins.',
-  fmt: v => v ? `${((M1_MS - v) / 1000).toFixed(1)}s` : 'miss',
-  cpu: () => Math.random() < [.55, .8, .95][level] ? Math.max(1, Math.round(M1_MS - [14000, 8000, 4500][level] * (.7 + Math.random() * .6))) : 0,
-  run: (arena, rnd, msg) => new Promise(res => {
-    const g = new Chess(MATE1[Math.floor(rnd() * MATE1.length)]), side = g.turn(), flip = side === 'b';
-    arena.innerHTML = `<div class="m1"><div class="m1-cap">${side === 'w' ? 'White' : 'Black'} to move · checkmate in one</div><div class="m1-board"></div><div class="m1-time"></div></div>`;
-    const board = arena.querySelector('.m1-board'), clockEl = arena.querySelector('.m1-time'), t0 = performance.now();
-    let sel = null, done = false;
-    const end = v => { if (done) return; done = true; clearInterval(tick); board.onpointerdown = null; setTimeout(() => res(v), 900); };
-    const draw = () => {
-      const targets = sel ? g.moves({square: sel, verbose: true}).map(m => m.to) : [];
-      board.innerHTML = '';
-      for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){
-        const sq = 'abcdefgh'[flip ? 7 - f : f] + (flip ? r + 1 : 8 - r), p = g.get(sq), b = document.createElement('button');
-        b.type = 'button'; b.className = `m1-sq ${(r + f) % 2 ? 'd' : 'l'}${sq === sel ? ' sel' : ''}${targets.includes(sq) ? ' dot' : ''}`; b.dataset.sq = sq;
-        if (p){ const s = document.createElement('span'); s.className = p.color === 'w' ? 'gw' : 'gb'; s.textContent = GLYPH[p.type] + VS; b.appendChild(s); }
-        board.appendChild(b);
-      }
-    };
-    board.onpointerdown = e => {
-      const b = e.target.closest('.m1-sq'); if (!b || done) return; e.preventDefault();
-      const sq = b.dataset.sq, p = g.get(sq);
-      if (sel && g.moves({square: sel, verbose: true}).some(m => m.to === sq)){
-        const mv = g.move({from: sel, to: sq, promotion: 'q'}); sel = null; draw();
-        if (g.in_checkmate()){ A.sfx.impact(.8); msg(`CHECKMATE! ${mv.san}`); end(Math.max(1, Math.round(M1_MS - (performance.now() - t0)))); }
-        else { A.sfx.draw(); msg(`${mv.san} is not mate`); end(0); }
-        return;
-      }
-      sel = p && p.color === side ? sq : null; if (sel) A.sfx.select(); draw();
-    };
-    const tick = setInterval(() => {
-      const left = Math.max(0, M1_MS - (performance.now() - t0)); clockEl.textContent = `${(left / 1000).toFixed(1)}s`;
-      if (!left){ msg('TIME UP'); end(0); }
-    }, 100);
-    draw(); msg('FIND THE MATE!');
-  })
-};
 // The on-board HUD: the next minigame and your power-ups, usable straight from the board.
 function drawHud(){
-  const hud = $('#mgHud'), on = mgEnabled() && started && !isOver();
+  const hud = $('#mgHud'), on = mgEnabled() && started && !isOver() && (mode !== 'online' || !!(net.data && net.data.w && net.data.b));
   hud.hidden = !on; if (!on) return;
   const plies = MG_EVERY - (game.history().length % MG_EVERY), moves = Math.ceil(plies / 2);
   const rows = mode === 'pvp' ? [game.turn()] : mode === 'cpu' ? [playerColor] : net.my ? [net.my] : [];
@@ -4134,6 +5549,7 @@ function wireConn(conn){
     lastHeard = Date.now();
     if (m && m.t === 'hello' && net.myId === 'host' && net.ref){ p2pSend(); return; }
     if (m && m.t === 'full'){ note('That game already has two players.', true); leaveGame(); return; }
+    if (m && m.t === 'mg'){ mgRecv(m.m); return; }
     if (!m || m.t !== 'state' || !m.d || typeof m.d !== 'object') return;
     const d = m.d;
     if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return;
@@ -4145,8 +5561,7 @@ function wireConn(conn){
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
     const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, elo: num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1200} : null;
-    const MG_T = ['ready', 'slap', 'fake', 'res', 'score'], POW = Object.keys(POWERS);
-    const mg = d.mg === false ? false : d.mg && typeof d.mg === 'object' && MG_T.includes(d.mg.t) && num(d.mg.id) && num(d.mg.k) ? {t: d.mg.t, id: d.mg.id, k: d.mg.k, s: num(d.mg.s) ? d.mg.s : 0, from: wb(d.mg.from), pt: wb(d.mg.pt), why: ['hit', 'dodge', 'flinch', 'early', 'slow'].includes(d.mg.why) ? d.mg.why : null, v: num(d.mg.v) ? Math.min(d.mg.v, 1e6) : null} : null;
+    const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
     const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
     const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
     if (net.ref) net.ref.receive({fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
@@ -4271,7 +5686,6 @@ function onRemote(snap){
   if (!snap.exists) return;
   const d = snap.data(), prev = net.data;
   net.data = d;
-  if (d.mg && d.mg.from !== net.my && (!prev || !prev.mg || prev.mg.s !== d.mg.s) && mgListener) mgListener(d.mg);
   if (d.pow && JSON.stringify(d.pow) !== JSON.stringify(powers)){
     const them = net.my ? OTHER(net.my) : null, before = them ? powers[them].slice() : [];
     powers = {w: (d.pow.w || []).slice(0, 3), b: (d.pow.b || []).slice(0, 3)};
@@ -4284,7 +5698,7 @@ function onRemote(snap){
   const my = d.w === net.myId ? 'w' : d.b === net.myId ? 'b' : null;
   if (my !== net.my){ net.my = my; orientation = my || 'w'; setCamSide(orientation); }
   const seated = !!(d.w && d.b);
-  $('#codeBox').hidden = seated || /^QMATC/.test(net.code || '');   // once both players are in (or it's a random match), the code isn't needed
+  $('#codeBox').hidden = seated || isQM(net.code);   // once both players are in (or it's a random match), the code isn't needed
   if ((!prev || !prev.w || !prev.b) && seated){
     // Make the arrival impossible to miss on both screens.
     const side = net.my === 'w' ? 'WHITE' : net.my === 'b' ? 'BLACK' : '';
@@ -4342,7 +5756,13 @@ function rematchOnline({sides = 'swap', tc = null, mg} = {}){
 $('#createBtn').onclick = () => { A.init(); createGame(); };
 /* ---- Random opponent: join someone already waiting in a matchmaking room, or open one and wait ---- */
 const clientToken = Math.random().toString(36).slice(2, 12);
-const QM_SLOTS = 6, qmCode = i => 'QMATC' + i;
+// (function declarations, so the panel can use them before this point in the script runs)
+// Quick match only pairs players who picked the same game mode and time control: each pairing has its own rooms,
+// coded Q + K(essen)/C(lassic) + the time control's place in the list + M + slot, e.g. QK04M2.
+const QM_SLOTS = 6, qmCode = i => `Q${minigamesOn ? 'K' : 'C'}${String(Math.max(0, $('#tcSel').selectedIndex)).padStart(2, '0')}M${i}`;
+function isQM(code){ return /^Q[KC]\d\dM\d$/.test(code || ''); }
+function qmWhat(){ const o = $('#tcSel').selectedOptions[0]; return `${minigamesOn ? 'Kessen' : 'Classic'} · ${o ? o.textContent : 'No clock'}`; }
+function drawQmNote(){ const n = $('#qmNote'); if (n) n.textContent = `Pairs you with someone who also picked ${qmWhat()}.`; }
 let qmBusy = false;
 async function tryJoinQM(peer, code){
   const conn = peer.connect(PEER_PREFIX + code, {reliable: true});
@@ -4366,12 +5786,12 @@ async function quickMatch(){
   if (!net.ready || net.kind !== 'p2p'){ note('Random opponents work on the GitHub Pages version of the game.', true); return; }
   qmBusy = true; $('#qmBtn').disabled = true;
   try {
-    note('Looking for a random opponent…');
+    note(`Looking for a ${qmWhat()} opponent…`);
     dropPeer();
     let peer;
     try { peer = await new Promise((res, rej) => { const p = new Peer(); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); }); }
     catch(e){ note('Could not reach the matchmaking server. Try again in a moment.', true); return; }
-    for (let i = 0; i < QM_SLOTS; i++){ if (await tryJoinQM(peer, qmCode(i))){ note('Opponent found!'); return; } }
+    for (let i = 0; i < QM_SLOTS; i++){ if (await tryJoinQM(peer, qmCode(i))){ note(`Opponent found! ${qmWhat()}.`); return; } }
     try { peer.destroy(); } catch(e){}
     // nobody waiting: open the first free room on a random side and wait there
     playerColor = Math.random() < .5 ? 'w' : 'b'; seg('sideSeg', 'side', playerColor);
@@ -4380,6 +5800,7 @@ async function quickMatch(){
   } finally { qmBusy = false; $('#qmBtn').disabled = false; }
 }
 $('#qmBtn').onclick = () => { A.init(); quickMatch(); };
+$('#tcSel').addEventListener('change', drawQmNote);
 $('#joinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); joinGame($('#joinCode').value); });
 $('#leaveBtn').onclick = leaveGame;
 $('#copyCode').onclick = () => {
@@ -4394,7 +5815,7 @@ document.addEventListener('pointerdown', () => { A.init(); if (started) A.music.
 /* ================= CONTROLS ================= */
 function seg(id, attr, val){ document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val)))); }
 function newGame(){
-  mgPlayedAt = 0;
+  mgPlayedAt = 0; seatAsked = false;
   if (mode === 'online'){ if (net.code){ if (net.my) showEnd('Rematch?', 'Same rules with sides swapped, or change them first.', '再戦'); } else { game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true); } return; }
   game.reset(); lastMove = null; selected = null; legal = []; busy = false;
   clockReset(parseTc($('#tcSel').value));
