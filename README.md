@@ -72,6 +72,10 @@ To set it all up, fill in the `CHARITIES` and `COFFEE` settings at the top of th
 
 Online games connect the two browsers directly over WebRTC, using [PeerJS](https://peerjs.com/) and its free public matchmaking server. There's no game server and no account. If the host closes their tab, the game ends. Some strict networks, like some office or school Wi-Fi, block direct connections. If you can't connect, try a phone hotspot.
 
+**Privacy.** Online games are a direct connection between the two browsers, so each player's browser learns the other's IP address, as with any peer-to-peer game or call. Quick match pairs you with strangers, so bear that in mind. The other player also sees your fighter name, crest, Power Level, WeLo and a random device id (used for Friends). Nothing else about you is sent, and there is no account.
+
+**Fair play.** The host's tab checks every change from the friend: one legal move at a time with their own pieces on their own turn, takebacks and time heists only with the power-up, no taking the host's seat, resigning for the host or adding time to a clock. The friend's browser only checks that the host never moves the friend's pieces, since the host's copy is the real one. Minigame wins and clocks are reported by the players' own browsers, which no two-browser game can fully verify, so Power Level and WeLo are for fun.
+
 The bars next to the move counter show your connection to your friend, from the round trip time of a ping sent every few seconds: 4 bars under 150 ms, 3 under 300 ms, 2 under 600 ms, 1 above that, and *Offline* when nothing has arrived for 12 seconds.
 
 The host's tab holds the real copy of the game. The friend's moves and other changes go to the host as numbered patches, and the host applies each one once, in order, and confirms it. Until then the friend's screen shows them on top of the host's last state. Both sides re-send every few seconds, so nothing sent during a hiccup is lost.
@@ -81,8 +85,11 @@ The host's tab holds the real copy of the game. The friend's moves and other cha
 - [three.js](https://threejs.org/) r128 (MIT): 3D rendering
 - [chess.js](https://github.com/jhlywa/chess.js) 0.10.3 (BSD-2-Clause): move rules
 - [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT): online play
-- [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 by Kazuhiko Arase (MIT), from cdnjs: draws the invite QR code.
+- [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 by Kazuhiko Arase (MIT): draws the invite QR code.
 - [Stockfish](https://github.com/official-stockfish/Stockfish) (GPLv3), through the [stockfish.js](https://github.com/nmrugg/stockfish.js) 10.0.2 browser build on cdnjs: powers the Rude Fishy eval bar. It's loaded from the CDN at runtime and isn't part of this repository; its source code is at the links above.
+
+three.js, chess.js, PeerJS and qrcode-generator load from [jsDelivr](https://www.jsdelivr.com/)'s copy of their npm packages, each with a Subresource Integrity hash: the browser refuses a file that differs by even one byte from the published release. Stockfish can't be pinned the same way. It runs in a Web Worker, which can't see the page, your saved data or the game connection, so a tampered copy could only give bad analysis.
+
 - Fonts from Google Fonts (SIL Open Font License): Dela Gothic One, Zen Kaku Gothic New, Noto Sans Symbols 2
 - Magical Dance songs, both CC0 (public domain) from OpenGameArt, in `audio/`: ["Anime-esque Intro-Outro Theme"](https://opengameart.org/content/anime-esque-intro-outro-theme) by CleytonKauffman, and ["kawaii 8bit"](https://opengameart.org/content/kawaii-8bit) by haruta (cut and sped up 1.3×). Each round plays one of them.
 - The en passant voice clip plays through YouTube's official embed: "How to Pronounce En Passant" by Julien Miquel. It's credited on screen and never downloaded.
