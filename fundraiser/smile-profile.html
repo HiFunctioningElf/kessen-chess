@@ -31,19 +31,25 @@ body{background:var(--ink)}
   <div class="jp">決戦</div>
   <svg class="king" viewBox="0 0 400 400" aria-hidden="true">
     <g stroke="#000" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
-      <!-- crown -->
-      <path d="M92 150 L72 52 L140 104 L200 30 L260 104 L328 52 L308 150 Z" fill="#ffc83d"/>
-      <circle cx="72" cy="52" r="14" fill="#ff2e4d"/><circle cx="200" cy="30" r="16" fill="#3fe0ff"/><circle cx="328" cy="52" r="14" fill="#ff2e4d"/>
       <!-- face -->
       <circle cx="200" cy="250" r="128" fill="#f4eee2"/>
-      <path d="M86 156 L314 156" stroke-width="14"/>
       <!-- happy closed eyes -->
-      <path d="M138 228 Q156 206 174 228" fill="none" stroke-width="13"/>
-      <path d="M226 228 Q244 206 262 228" fill="none" stroke-width="13"/>
+      <path d="M138 238 Q156 216 174 238" fill="none" stroke-width="13"/>
+      <path d="M226 238 Q244 216 262 238" fill="none" stroke-width="13"/>
       <!-- big grin -->
-      <path d="M140 272 Q200 352 260 272 Z" fill="#ff2e4d"/>
+      <path d="M140 280 Q200 356 260 280 Z" fill="#ff2e4d"/>
+      <!-- a small nose, and a subtle cleft lip: a soft line from the upper lip up to one nostril -->
+      <path d="M186 258 Q200 268 214 258" fill="none" stroke-width="8"/>
+      <path d="M181 280 Q181 270 188 263" fill="none" stroke-width="6"/>
+      <!-- crown, resting on the head: its band follows the curve of the head, tilted a touch for swagger -->
+      <g transform="rotate(-8 200 150)">
+        <path d="M118 166 L104 66 L156 112 L200 46 L244 112 L296 66 L282 166 Q200 146 118 166 Z" fill="#ffc83d"/>
+        <path d="M116 150 Q200 128 284 150 L282 168 Q200 148 118 168 Z" fill="#e0a92a" stroke-width="10"/>
+        <circle cx="104" cy="66" r="13" fill="#ff2e4d"/><circle cx="200" cy="46" r="15" fill="#3fe0ff"/><circle cx="296" cy="66" r="13" fill="#ff2e4d"/>
+        <circle cx="200" cy="146" r="9" fill="#ff2e4d" stroke-width="7"/>
+      </g>
     </g>
-    <ellipse cx="128" cy="270" rx="22" ry="13" fill="#ff7a90" opacity=".9"/><ellipse cx="272" cy="270" rx="22" ry="13" fill="#ff7a90" opacity=".9"/>
+    <ellipse cx="128" cy="280" rx="22" ry="13" fill="#ff7a90" opacity=".9"/><ellipse cx="272" cy="280" rx="22" ry="13" fill="#ff7a90" opacity=".9"/><ellipse cx="272" cy="270" rx="22" ry="13" fill="#ff7a90" opacity=".9"/>
   </svg>
   <div class="tag">SMILES!!</div>
   <i class="spark" style="right:150px;top:170px"></i>
