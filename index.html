@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029183357">
+<meta name="kessen-build" content="20261029212126">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
-<meta charset="utf-8">
 <title>Kessen Chess</title>
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +42,7 @@ body{
 .logo{display:flex;align-items:center;gap:10px 14px}
 .topnav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .topnav .chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;margin:0}
-.logo-jp{font-family:var(--display);font-size:34px;color:var(--blood);-webkit-text-stroke:1px #000;text-shadow:3px 3px 0 #000;transform:rotate(-4deg);display:inline-block}
+.logo-jp{font-family:var(--display);font-size:34px;color:#ff6fb5;-webkit-text-stroke:1px #000;text-shadow:3px 3px 0 #000;transform:rotate(-4deg);display:inline-block}
 .logo-en{font-family:var(--display);font-size:18px;letter-spacing:.12em;text-transform:uppercase}
 .toggles{display:flex;gap:6px;flex-wrap:wrap}
 button,input{font:inherit;color:inherit}
@@ -74,6 +76,15 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .panel{display:flex;flex-direction:column;gap:14px;width:100%;max-width:520px;min-width:0}
 .card{background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0}
 .status{display:flex;gap:12px;align-items:center;border-left:6px solid var(--blood)}
+.sig{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;--on:#3ddc84}
+.sig[hidden]{display:none}
+.sig-bars{display:flex;align-items:flex-end;gap:2px;height:16px}
+.sig-bars i{width:4px;background:var(--line)}
+.sig-bars i:nth-child(1){height:25%}.sig-bars i:nth-child(2){height:50%}.sig-bars i:nth-child(3){height:75%}.sig-bars i:nth-child(4){height:100%}
+.sig[data-bars="2"]{--on:var(--gold)}.sig[data-bars="1"],.sig[data-bars="0"]{--on:var(--blood)}
+.sig[data-bars="1"] i:nth-child(-n+1),.sig[data-bars="2"] i:nth-child(-n+2),.sig[data-bars="3"] i:nth-child(-n+3),.sig[data-bars="4"] i{background:var(--on)}
+.sig-ms{font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sig[data-bars="0"] .sig-ms{color:var(--blood)}
 .turn-chip{width:38px;height:38px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:30px;background:var(--night);border:2px solid var(--gold);line-height:1}
 .turn-chip > span{display:block;transform:translateY(.15em)}
 .eyebrow,.label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -259,6 +270,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .m-title{font-family:var(--display);font-size:clamp(22px,6vw,32px);line-height:1.15;text-wrap:balance}
 .m-sub{color:var(--muted);line-height:1.6}
 .m-actions{display:flex;gap:10px;flex-wrap:wrap}
+.m-name{display:flex;flex-direction:column;gap:8px;text-align:left}
+.m-name[hidden]{display:none}
+.m-name input{background:var(--ink);border:2px solid var(--line);padding:10px 12px;font-size:16px;font-weight:700}
 .m-actions .btn{font-size:18px;padding:14px}
 .rules{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
 #promo,#prof{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(8,5,18,.55)}
@@ -313,15 +327,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .ep-vhs .cap{position:absolute;left:50%;bottom:calc(11vh + 44px);transform:translateX(-50%);max-width:92vw;text-align:center;font-family:var(--display);font-weight:400;font-size:clamp(20px,4.6vw,46px);line-height:1.1;-webkit-text-stroke:1.5px #000;paint-order:stroke fill;text-shadow:4px 4px 0 #0055a4}
 @keyframes epBlink{50%{opacity:0}}
 @keyframes epRoll{to{background-position:0 14px}}
-.eptv{position:fixed;right:max(16px,3vw);top:calc(11vh + 14px);z-index:65;width:min(280px,calc(100vw - 32px));background:#111;border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 #000;
   transform:translateY(calc(-100% - 11vh - 60px)) rotate(3deg);transition:transform .35s cubic-bezier(.2,1.3,.4,1);pointer-events:none}
-.eptv.on{transform:translateY(0) rotate(-2deg)}
-.eptv-screen{position:relative;aspect-ratio:16/9;background:#000;border-bottom:3px solid #000}
-.eptv-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.eptv-meta{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff;color:#0f0f0f;font:400 12px/1.35 var(--body)}
-.eptv-meta b{font-weight:700;font-size:14px}
-.eptv-meta span{color:#606060}
-.eptv-meta a{color:#065fd4;pointer-events:auto;text-decoration:none;font-weight:700}
 .dsplit{position:absolute;inset:0}
 .dsplit .half{position:absolute;inset:0;display:flex;align-items:center;gap:3vw;padding-inline:7vw}
 .dsplit .l{clip-path:polygon(0 0,58% 0,42% 100%,0 100%);background:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 3px,transparent 3px 26px),linear-gradient(135deg,#2a0610,#ff2e4d);justify-content:flex-start}
@@ -526,11 +532,48 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mghud .pow{background:rgba(12,10,23,.92);font-size:13px;padding:5px 10px;box-shadow:0 0 12px rgba(255,200,61,.3)}
 /* ---- Donations panel, Penny Dropper and the coffee jar ---- */
 .donate-chip{color:#ffb3d6;border-color:#ff8ac4}
+/* fundraising goal banner, under the header */
+.goalbar{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin:6px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));
+  padding:10px 14px;background:linear-gradient(90deg,rgba(255,46,77,.16),rgba(255,200,61,.12));border:2px solid var(--gold);box-shadow:4px 4px 0 #000;cursor:pointer}
+.goalbar:hover{border-color:#fff}
+.goalbar[hidden]{display:none}
+.g-head{display:flex;flex-direction:column;gap:2px;min-width:0}
+.g-head b{font-family:var(--display);font-weight:400;font-size:15px;letter-spacing:.04em;color:var(--gold)}
+.g-head span{font-size:13px;font-weight:700}
+.g-rows{display:flex;gap:8px 18px;flex-wrap:wrap;flex:1 1 320px}
+.g-row{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"name amt" "bar bar";gap:4px 10px;flex:1 1 200px;min-width:0;font-size:12px}
+.g-name{grid-area:name;white-space:nowrap}
+.g-amt{grid-area:amt;justify-self:end;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.g-bar{grid-area:bar;height:8px;background:var(--ink);border:1px solid var(--line);overflow:hidden}
+.g-bar i{display:block;height:100%;background:var(--gold)}
+.g-row.met .g-bar i{background:#3ddc84}
+.g-cta{font-family:var(--display);font-size:13px;color:var(--ink);background:var(--gold);border:0;padding:8px 14px;box-shadow:3px 3px 0 #000;white-space:nowrap;cursor:pointer}
+.g-cta:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
 .donate-chip .amt{color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
-#donate,#hist{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
+#donate,#hist,#board,#clipSheet{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
   padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.clip-btn{position:absolute;right:10px;top:10px;z-index:3;background:rgba(12,10,23,.8);border:2px solid var(--gold);color:var(--gold);font:400 13px var(--display);padding:6px 10px;box-shadow:2px 2px 0 #000;cursor:pointer}
+.clip-btn[hidden]{display:none}
+.clip-btn:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+.clip-btn.rec::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blood);margin-right:6px;vertical-align:1px;animation:clipdot 1.2s steps(2) infinite}
+@keyframes clipdot{50%{opacity:.2}}
+.clipcard video{width:100%;max-height:60vh;background:#000;border:2px solid var(--line)}
+.clipcard .m-actions a.btn{color:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.lb-note{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.lb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.lb-row{display:grid;grid-template-columns:2.4em 1.6em minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;background:var(--ink);border:1px solid var(--line);font-size:14px}
+.lb-row.me{border-color:var(--volt);box-shadow:0 0 0 1px var(--volt)}
+.lb-row .rk{font-family:var(--display);color:var(--muted);text-align:right}
+.lb-row:nth-child(1) .rk{color:var(--gold)}.lb-row:nth-child(2) .rk{color:#d9dce6}.lb-row:nth-child(3) .rk{color:#e3a36b}
+.lb-row .cr{font-family:var(--chess);font-size:20px;color:var(--c,var(--gold));text-align:center}
+.lb-row .nm{min-width:0;display:flex;flex-direction:column}
+.lb-row .nm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-row .nm > span{font-size:11px;color:var(--muted)}
+.lb-row .wl{font-family:var(--display);color:var(--gold);font-variant-numeric:tabular-nums;text-align:right}
+.lb-row .you{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--ink);background:var(--volt);padding:1px 6px;margin-left:6px;vertical-align:middle}
+.lb-me{font-size:13px;color:var(--text);border-top:1px dashed var(--line);padding-top:10px}
 .dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .dhead h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,5vw,34px);line-height:1.1;text-wrap:balance}
 .dhead h2 small{display:block;font-size:.5em;color:var(--blood);letter-spacing:.3em;margin-bottom:4px}
@@ -643,7 +686,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 
 <div id="app">
   <header class="top">
-    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><nav class="topnav" aria-label="Pages"><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Match history</button><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></nav></div>
+    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><nav class="topnav" aria-label="Pages"><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Match history</button><button class="chip" id="boardBtn" type="button" aria-haspopup="dialog" hidden>🏆 Leaderboard</button><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></nav></div>
     <div class="toggles">
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
@@ -651,8 +694,13 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
+  <section class="goalbar" id="goalBar" aria-labelledby="goalTitle">
+    <div class="g-head"><b id="goalTitle">🎯 Fundraising goals</b><span id="goalPitch"></span></div>
+    <div class="g-rows" id="goalRows"></div>
+    <button class="g-cta" id="goalBtn" type="button" aria-haspopup="dialog">Donate</button>
+  </section>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Save the last few seconds as a video to share">🎬 Clip</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
@@ -663,6 +711,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <section class="card status" aria-live="polite">
         <div class="turn-chip" id="turnChip"></div>
         <div><div class="eyebrow">Move <span id="moveNo">1</span></div><div class="status-text" id="statusText">White to move</div></div>
+        <div class="sig" id="sig" role="img" hidden><span class="sig-bars"><i></i><i></i><i></i><i></i></span><span class="sig-ms"></span></div>
       </section>
       <section class="card ctrl">
         <div class="field"><span class="label">Opponent</span>
@@ -723,8 +772,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 
 <canvas id="particles"></canvas>
 <div id="fx"><div id="dim"></div><div id="vignette"></div><div id="scope"><div class="ring"></div><div class="dot"></div><div class="lock">LOCK ON</div></div><div class="lb" id="lbTop"></div><div class="lb" id="lbBot"></div><div class="hazard" id="hzTop"><span>WARNING</span></div><div class="hazard" id="hzBot"><span>WARNING</span></div><div id="flash"></div></div>
-<div id="prof" hidden><div class="pcard profcard">
-  <div class="label">Your fighter</div>
+<div id="prof" hidden role="dialog" aria-modal="true" aria-labelledby="pTitle"><div class="pcard profcard">
+  <div class="label" id="pTitle">Your fighter</div>
   <input id="pName" maxlength="16" placeholder="Nameless Challenger" aria-label="Fighter name" autocomplete="off" aria-describedby="pCheck">
   <div class="pcheck" id="pCheck" aria-live="polite"></div>
   <div class="label">Crest</div><div class="opts" id="pCrests"></div>
@@ -732,6 +781,18 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   <div class="m-actions"><button class="btn primary" id="pSave" type="button">Save</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
 </div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
+<div id="clipSheet" hidden role="dialog" aria-modal="true" aria-labelledby="clipTitle"><div class="dcard clipcard">
+  <div class="dhead"><h2 id="clipTitle"><small>名場面</small>Your clip</h2><button class="chip" id="clipClose" type="button">Close</button></div>
+  <video id="clipVideo" controls playsinline loop></video>
+  <div class="m-actions"><button class="btn primary" id="clipShare" type="button">Share</button><a class="btn" id="clipSave" download>Save video</a><button class="btn" id="clipCopy" type="button">Copy caption</button></div>
+  <p class="lb-note" id="clipNote">Saved on this device only. Nothing is uploaded until you share it.</p>
+</div></div>
+<div id="board" hidden role="dialog" aria-modal="true" aria-labelledby="boardTitle"><div class="dcard">
+  <div class="dhead"><h2 id="boardTitle"><small>番付</small>Leaderboard</h2><button class="chip" id="boardClose" type="button">Close</button></div>
+  <p class="lb-note" id="boardNote"></p>
+  <ol class="lb-list" id="boardList"></ol>
+  <div class="lb-me" id="boardMe" hidden></div>
+</div></div>
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="histTitle"><div class="dcard">
   <div class="dhead"><h2 id="histTitle"><small>棋譜</small>Match history</h2><button class="chip" id="histClose" type="button">Close</button></div>
   <div id="histBody"></div>
@@ -767,14 +828,18 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <div class="scouter" id="mScouter" hidden></div>
     <div class="fairplay" id="mFair" hidden></div>
     <div class="m-sub" id="mSub">A 3D board, a cut-in for every capture, an alarm for every check, and a shattering king at checkmate. Play the CPU, a friend on this screen, or a friend online. The battle music and sound effects are synthesized live in your browser.</div>
+    <div class="m-name" id="mName" hidden><label class="label" for="mNameIn">Choose your fighter name</label>
+      <input id="mNameIn" maxlength="16" placeholder="Nameless Challenger" autocomplete="nickname" aria-describedby="mNameCheck">
+      <div class="pcheck" id="mNameCheck" aria-live="polite">Saved on this device with your WeLo and match history. You can change it any time.</div></div>
     <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button><button class="btn" id="mMatch">Find an online match</button></div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- Each library is pinned to one exact file: the browser refuses it if a single byte differs (integrity). -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js" integrity="sha384-2D/YG6ZVRMpAIE2PL+zjrxBjvzCSytPKkNUB1Ut84ncxjOuTSrkoO66SGAKjsec3" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <script>
 (() => {
 const $ = s => document.querySelector(s);
@@ -802,7 +867,7 @@ const stageEl = $('#stage'), appEl = $('#app'), fxEl = $('#fx');
 
 /* ================= AUDIO (all synthesized, original) ================= */
 const A = (() => {
-  let ctx, master, musicBus, sfxBus, noiseBuf, verbIn, outroBus = null;
+  let ctx, master, musicBus, sfxBus, noiseBuf, verbIn, outroBus = null, outNode = null, recDest = null;
   let musicOn = true, sfxOn = true, playing = false, timer = null, step = 0, nextT = 0, intensity = 0;
   const MUSIC_VOL = 0.42;
   const mtof = m => 440 * 2 ** ((m - 69) / 12);
@@ -810,7 +875,7 @@ const A = (() => {
     if (ctx) { ctx.resume(); return; }
     try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return; }
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
-    master = ctx.createGain(); master.gain.value = .85; master.connect(comp); comp.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = .85; master.connect(comp); comp.connect(ctx.destination); outNode = comp;
     const len = ctx.sampleRate * 2.6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let c = 0; c < 2; c++){ const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.6); }
     const verb = ctx.createConvolver(); verb.buffer = ir; const vg = ctx.createGain(); vg.gain.value = .32;
@@ -1017,7 +1082,9 @@ const A = (() => {
   // raw voices on the effects bus, for the minigames' own sounds and the Magical Dance song
   const syn = {ok: () => !!(ok() && sfxBus), t: () => ctx.currentTime, lat: () => (ctx.outputLatency || ctx.baseLatency || 0),
     osc: (type, f, t, dur, vol, o) => osc(type, f, t, dur, vol, sfxBus, o), nz: (t, dur, vol, o) => nz(t, dur, vol, sfxBus, o),
-    ctx: () => ctx, bus: () => sfxBus};
+    ctx: () => ctx, bus: () => sfxBus,
+    // everything the speakers get, as a stream a clip recording can take
+    rec: () => { if (!ctx || !outNode) return null; if (!recDest){ recDest = ctx.createMediaStreamDestination(); outNode.connect(recDest); } return recDest.stream; }};
   return {init, music, sfx, syn};
 })();
 
@@ -1299,6 +1366,7 @@ function frameLoop(now){
   _o.set(0, 0, 0);
   if (camShake > .002 && !RM){ _o.set((Math.random()-.5)*camShake, (Math.random()-.5)*camShake, (Math.random()-.5)*camShake); camShake *= .9; }
   camera.position.add(_o); renderer.render(scene, camera); camera.position.sub(_o);
+  if (clip.on) clipFrame();   // straight after rendering, while the 3D frame is still there to copy
 }
 requestAnimationFrame(frameLoop);
 
@@ -2365,42 +2433,6 @@ async function moveFx(mv){
   if (/[kq]/.test(mv.flags)) mini(mv.to, 'CASTLE! 入城');
   else if (mv.piece === 'n') mini(mv.to, 'HYAH!');
 }
-/* ================= CREDITED YOUTUBE TV: short clips played through YouTube's official embed ================= */
-// Never downloaded or copied: each clip plays in a small TV that names the video and its channel and links to it.
-const CLIPS = {
-  // Julien Miquel, "How to Pronounce En Passant", 0:12–0:15
-  ep: {id: 'VO-YWOKX5jc', from: 12, len: 3000, title: 'How to Pronounce En Passant', channel: 'Julien Miquel'}
-};
-const yt = {player: null, ready: false, loading: false, state: -1};
-function ytBox(){
-  let el = $('#epTv');
-  if (!el){
-    el = document.createElement('div'); el.id = 'epTv'; el.className = 'eptv';
-    el.innerHTML = '<div class="eptv-screen"><div id="epTvFrame"></div></div><div class="eptv-meta"><b></b><span></span><a target="_blank" rel="noopener">Watch the full video ↗</a></div>';
-    document.body.appendChild(el);
-  }
-  return el;
-}
-function ytLabel(clip){
-  const el = ytBox();
-  el.querySelector('b').textContent = clip.title; el.querySelector('span').textContent = `${clip.channel} · YouTube`;
-  el.querySelector('a').href = `https://www.youtube.com/watch?v=${clip.id}`;
-}
-function ytLoad(){
-  if (yt.loading || location.protocol === 'file:') return; yt.loading = true;
-  ytLabel(CLIPS.ep);
-  window.onYouTubeIframeAPIReady = () => {
-    try {
-      yt.player = new YT.Player('epTvFrame', {width: 200, height: 113, videoId: CLIPS.ep.id,
-        playerVars: {controls: 0, disablekb: 1, playsinline: 1, rel: 0, modestbranding: 1, fs: 0, iv_load_policy: 3},
-        events: {onReady: () => { yt.ready = true; try { yt.player.cueVideoById({videoId: CLIPS.ep.id, startSeconds: CLIPS.ep.from}); } catch(e){} },
-          onStateChange: e => { yt.state = e.data; (window.__ytStates = window.__ytStates || []).push(e.data); }}});
-    } catch(e){}
-  };
-  const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = () => {}; document.head.appendChild(s);
-}
-// The player loads (paused) as soon as the page is up, so it is ready long before a clip is needed.
-if (document.readyState === 'complete') setTimeout(ytLoad, 1500); else addEventListener('load', () => setTimeout(ytLoad, 1500), {once: true});
 const sfxOnNow = () => $('#sfxBtn').getAttribute('aria-pressed') === 'true';
 let frVoices = [];
 const pickVoices = () => { try { frVoices = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); } catch(e){} };
@@ -2414,40 +2446,34 @@ function say(text, {rate = .85, pitch = 1.1} = {}){
     speechSynthesis.speak(u);
   } catch(e){}
 }
-// Slides the credited TV in and plays the clip. `started` resolves once it is audibly playing (or has given up and run
-// `fallback`, if any); `done` resolves when the TV has been put away.
-function playClip(clip, fallback = () => {}){
-  const p = yt.player, box = $('#epTv');
-  if (!sfxOnNow() || !yt.ready || !p || !box){ if (sfxOnNow()) fallback(); return {started: Promise.resolve(), done: Promise.resolve()}; }
-  ytLabel(clip); box.classList.add('on');
-  // A different video is loaded once (re-loading would restart its download); after that, nudges only press play.
-  let loaded = false;
-  const kick = () => {
-    try {
-      const cur = p.getVideoData && p.getVideoData().video_id;
-      p.unMute(); p.setVolume(100);
-      if (cur !== clip.id && !loaded){ loaded = true; p.loadVideoById({videoId: clip.id, startSeconds: clip.from}); }
-      else if (cur === clip.id && !loaded){ loaded = true; p.seekTo(clip.from, true); p.playVideo(); }
-      else p.playVideo();
-    } catch(e){}
-  };
-  yt.state = -1; kick();
+/* The en passant voice: a short recording (audio/en-passant.mp3), played through the game's own sound engine so it
+   starts reliably on phones and follows the SFX switch. `started` resolves as it starts (or once the backup French
+   voice has said it instead); `done` resolves when it has finished. */
+let epVoice = null;
+const loadEpVoice = () => epVoice || (epVoice = (async () => {
+  if (!A.syn.ok()) throw 0;
+  const c = A.syn.ctx();
+  const r = await fetch('audio/en-passant.mp3'); if (!r.ok) throw 0;
+  const b = await r.arrayBuffer();
+  return await new Promise((res, rej) => c.decodeAudioData(b, res, rej));
+})().catch(() => { epVoice = null; return null; }));
+function playEpVoice(fallback){
+  if (!sfxOnNow()) return {started: Promise.resolve(), done: Promise.resolve()};
   let doneRes; const done = new Promise(r => { doneRes = r; });
-  const finish = ms => setTimeout(() => { try { p.pauseVideo(); } catch(e){} box.classList.remove('on'); doneRes(); }, ms);
-  const started = new Promise(res => {
-    const t0 = Date.now(); let kicked = t0;
-    const check = setInterval(() => {
-      let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
-      // a late "cue" from the player's start-up can swallow the play request: ask again until it plays
-      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); kick(); }
-      if (st === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(clip.len + 600); res(); }
-      else if (Date.now() - t0 > (clip.wait || 4000)){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(800); res(); }
-    }, 50);
-  });
+  const backup = () => { fallback(); setTimeout(doneRes, 1200); };
+  const started = (async () => {
+    const buf = await Promise.race([loadEpVoice(), sleep(2500).then(() => null)]);
+    if (!buf || !A.syn.ok()) return backup();
+    const c = A.syn.ctx(), bus = A.syn.bus();
+    try {
+      if (c.state === 'suspended') await c.resume();
+      const src = c.createBufferSource(); src.buffer = buf; src.connect(bus); src.onended = () => doneRes(); src.start();
+    } catch(e){ backup(); }
+  })();
   return {started, done};
 }
 /* ================= EN PASSANT: a beret, a moustache, a baguette, and the word said properly ================= */
-// The word is Julien Miquel's clip in the credited TV; where YouTube cannot load, the browser's French voice says it.
+// The word is a recorded voice clip; if it can't load, the browser's French voice says it.
 const EPM = {
   beretW: toon(0x1b1b2a), beretB: toon(0xc8102e), stem: toon(0x111111),
   stache: {w: new THREE.MeshBasicMaterial({color: 0x2a1608}), b: new THREE.MeshBasicMaterial({color: 0xf6f0e0})},
@@ -2643,7 +2669,7 @@ async function enPassantFx(mv){
     await tween(900, k => { g.rotation.z = Math.sin(k * Math.PI * 4) * .08; });   // smug little shimmy
     g.rotation.z = 0;
     // 3. the victim realises what is about to happen
-    const voice = playClip(CLIPS.ep, () => say('En passant !', {rate: .7, pitch: 1}));   // the TV slides in now so the clip has time to buffer
+    const voice = playEpVoice(() => say('En passant !', {rate: .7, pitch: 1}));   // starts loading now, so it's ready by the wind-up
     const r0 = fr.eyes.face.rotation.y, r1 = Math.atan2(-d.z, d.x);   // ...then turns to face its victim
     let dr = r1 - r0; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
     tween(350, k => { fr.eyes.face.rotation.y = fr.piv.rotation.y = r0 + dr * easeIO(k); });
@@ -3217,7 +3243,7 @@ async function commit(input, remote, remoteClock){
 // ?mgEvery=N (testing only) uses a fixed gap of N plies instead.
 const MG_TEST = +new URLSearchParams(location.search).get('mgEvery') || 0;
 const MG_GAPS = [[20, 16], [12, 24], [7, 36]];   // [at least this many pieces, plies between minigames]
-const mgGap = pieces => MG_TEST ? Math.max(2, MG_TEST) : (MG_GAPS.find(([min]) => pieces >= min) || [0, Infinity])[1];
+const mgGap = pieces => MG_TEST && mode !== 'online' ? Math.max(2, MG_TEST) : (MG_GAPS.find(([min]) => pieces >= min) || [0, Infinity])[1];
 const piecesOn = g => g.board().flat().filter(p => p && p.type !== 'k').length;
 // When each minigame fell, worked out by replaying the moves (the gap is checked against the pieces on the board
 // after every move, so a big trade pushes the next one further away at once). The same on both screens online,
@@ -3353,6 +3379,7 @@ async function mgSync(id, k){
 }
 
 /* ---- The full-screen frame every minigame is built in ---- */
+let mgLive = null;   // the minigame on screen, so the trailer can cut away from it
 function mgFrame(key, title, jp){
   const seat = mgSeat(), ov = document.createElement('div'), name = `${jp} ${title.toUpperCase()}`;
   ov.className = 'mgx'; ov.id = 'mg'; ov.dataset.seat = seat; ov.dataset.game = key;
@@ -3388,7 +3415,8 @@ function mgFrame(key, title, jp){
     if (main && o.ms) bigT = F.after(o.ms, () => F.big(''));
   };
   if (passing()) mgTurn(F, 'w');
-  F.close = () => { F.closed = true; passTurn = null; F.timers.forEach(clearTimeout); F.offs.forEach(f => f()); cancelAnimationFrame(F.raf); document.removeEventListener('keydown', onKey); ov.remove(); A.music.duck(1); };
+  mgLive = F;
+  F.close = () => { F.closed = true; if (mgLive === F) mgLive = null; passTurn = null; F.timers.forEach(clearTimeout); F.offs.forEach(f => f()); cancelAnimationFrame(F.raf); document.removeEventListener('keydown', onKey); ov.remove(); A.music.duck(1); };
   // Taps: your half on a shared screen, anywhere otherwise. Buttons (READY, the dance pads) handle themselves.
   ov.addEventListener('pointerdown', e => {
     if (e.target.closest('button')) return;
@@ -3441,6 +3469,7 @@ async function mgGate(F, rules, {count = true} = {}){
   return true;
 }
 async function mgEnd(F, winner, why = ''){
+  if (F.closed) return null;   // cut short (the trailer): no result, no power-up
   F.input = null; F.key = null;
   if (winner) for (const c of winner === 'both' ? ['w', 'b'] : [winner]) award(c, 'mg' + F.id, `Minigame Winner (${F.name.replace(/^\S+ /, '')})`, 15);
   const head = winner === 'both' ? 'BOTH WIN!' : winner ? `${mgWho(winner)} WIN${winner === mgMe() ? '' : 'S'}!` : (why || 'NO WINNER');
@@ -5802,7 +5831,6 @@ function seenKeys(){
   const keys = []; do { keys.push(posKey(r)); } while (r.undo());
   return keys;
 }
-const CHESS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
 let cpuWorker = null, workerBroken = false, jobId = 0;
 const workerJobs = new Map();
 let mainThink = null;
@@ -5810,7 +5838,7 @@ const thinkHere = job => { try { return (mainThink = mainThink || kessenEngine()
 function getWorker(){
   if (cpuWorker || workerBroken) return cpuWorker;
   try {
-    const src = `importScripts('${CHESS_URL}');\n${kessenEngine.toString()}\nconst think = kessenEngine();\n` +
+    const src = `var Chess = ${Chess.toString()};\n${kessenEngine.toString()}\nconst think = kessenEngine();\n` +
       'onmessage = e => { let r = null; try { r = think(e.data.job); } catch(err){} postMessage({id: e.data.id, r}); };';
     cpuWorker = new Worker(URL.createObjectURL(new Blob([src], {type: 'text/javascript'})));
     cpuWorker.onmessage = e => { const j = workerJobs.get(e.data.id); if (j){ workerJobs.delete(e.data.id); j(e.data.r); } };
@@ -5844,9 +5872,9 @@ const IDLE_NOTE = () => net.kind === 'p2p'
 const inviteLink = code => location.origin + location.pathname + '#g' + code;
 // A QR code of the invite link, so a friend in the same room can scan it instead of being sent the link.
 // Only for invite links (PeerJS): the code box (and with it the QR) hides once both players are in, and for random matches.
-const QR_URL = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+const QR_URL = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', QR_SRI = 'sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k';
 let qrLib = null;
-const loadQr = () => qrLib || (qrLib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = QR_URL; s.onload = () => res(window.qrcode); s.onerror = () => { qrLib = null; rej(); }; document.head.appendChild(s); }));
+const loadQr = () => qrLib || (qrLib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = QR_URL; s.integrity = QR_SRI; s.crossOrigin = 'anonymous'; s.onload = () => res(window.qrcode); s.onerror = () => { qrLib = null; rej(); }; document.head.appendChild(s); }));
 async function drawInviteQr(code){
   const box = $('#codeQr'); box.hidden = true; box.classList.remove('big');
   if (net.kind !== 'p2p' || !code || isQM(code)) return;
@@ -5876,28 +5904,141 @@ $('#codeQr').onclick = e => e.currentTarget.classList.toggle('big');
   if (m){ mode = 'online'; seg('modeSeg', 'mode', mode); joinGame(m[1]); }
 })();
 // PeerJS: a ref that looks like a db document (update / onSnapshot), mirrored to the friend over the data channel.
-// Every change bumps a version number `v`; a side only accepts states newer than its own. Both sides re-send
-// their state every few seconds, so a move sent during a connection hiccup still arrives once the link is back,
-// and an old or repeated message can never roll the game back.
+// The host's copy is the real one. Every host change bumps a version number `v`, and the friend only accepts
+// states newer than the last one it saw. The friend never bumps `v` itself: it sends its changes to the host as
+// numbered patches and shows them straight away on top of the host's last state. The host applies each patch
+// once, in order, and says in `ack` which patches it has applied. (When both sides bumped `v`, two changes made
+// at the same moment got the same number and each side ignored the other's for good: the game froze.)
+// Both sides re-send every few seconds (the host its state, the friend any unconfirmed patches), so a change
+// sent during a connection hiccup still arrives once the link is back, and nothing is ever applied twice.
 function p2pRef(){
-  let listener = null;
+  let listener = null, base = null, seq = 0, pending = [];
+  const rid = Math.random().toString(36).slice(2, 10);   // tells the host when a new friend's patch numbers start over
   const emit = d => { if (listener) listener({exists: true, data: () => d}); };
+  const view = () => Object.assign({}, base || {}, ...pending.map(x => x.p));
   return {
     onSnapshot(fn){ listener = fn; return () => { listener = null; }; },
-    update(patch){ const d = Object.assign({}, net.data || {}, patch, {v: ((net.data && net.data.v) || 0) + 1}); emit(d); p2pSend(); return Promise.resolve(); },
-    receive(d){ if (net.data && (d.v || 0) <= (net.data.v || 0)) return; emit(d); }
+    update(patch){
+      if (net.myId === 'guest'){ pending.push({s: ++seq, p: patch}); emit(view()); this.flush(); return Promise.resolve(); }
+      const d = Object.assign({}, net.data || {}, patch, {v: ((net.data && net.data.v) || 0) + 1}); emit(d); p2pSend(); return Promise.resolve();
+    },
+    receive(d){
+      if (net.myId !== 'guest'){   // an older friend's page still sends whole states: they get the same checks as patches
+        if (!net.data || (d.v || 0) <= (net.data.v || 0) || !guestChangeOk(net.data, d)) return;
+        emit(d); return;
+      }
+      if (base && (d.v || 0) <= (base.v || 0)) return;
+      base = d; pending = pending.filter(x => x.s > (d.ack || 0)); emit(view());
+    },
+    flush(){ if (pending.length && net.conn && net.conn.open){ try { net.conn.send({t: 'patch', rid, list: pending}); } catch(e){} } }
   };
 }
-const p2pSend = () => { if (net.conn && net.conn.open && net.data){ try { net.conn.send({t: 'state', d: net.data}); } catch(e){} } };
-let lastHeard = 0, reconnecting = false, linkOk = null, lostSince = 0;
+const p2pSend = () => {
+  if (net.myId === 'guest'){ if (net.ref && net.ref.flush) net.ref.flush(); return; }
+  if (net.conn && net.conn.open && net.data){ try { net.conn.send({t: 'state', d: net.data}); } catch(e){} }
+};
+// The host applies the friend's patches in order, each one once.
+let guestPatches = {rid: null, last: 0};
+function applyPatches(m){
+  if (net.myId !== 'host' || !net.ref || !net.data || typeof m.rid !== 'string' || !Array.isArray(m.list)) return;
+  if (m.rid !== guestPatches.rid) guestPatches = {rid: m.rid, last: 0};
+  let d = net.data, n = 0;
+  for (const x of m.list.slice(0, 200)){
+    if (!x || x.s !== guestPatches.last + 1 || !x.p || typeof x.p !== 'object' || Array.isArray(x.p)) continue;
+    guestPatches.last = x.s;
+    const next = cleanState(Object.assign({}, d, x.p));
+    if (next && guestChangeOk(d, next)){ d = next; n++; }
+  }
+  if (n) net.ref.update(Object.assign(d, {ack: guestPatches.last}));
+  else if (guestPatches.last > (net.data.ack || 0)) net.ref.update({ack: guestPatches.last});   // only bad patches: still confirm them so they aren't re-sent
+  else p2pSend();   // all of them were already applied: the friend missed our state, so send it again
+}
+// The host checks every change from the friend against what the friend could really do from their own screen.
+// Moves, takebacks, results and seats that break the rules are refused outright. For the host's own things (its clock,
+// power-ups, profile and tab-out count) it keeps its own values: the friend's patch may carry an older copy of them.
+// (Minigame wins are still reported by each screen. No two-browser game can check those, so ratings are for fun.)
+function guestChangeOk(prev, next){
+  const g = prev.w === 'guest' ? 'w' : prev.b === 'guest' ? 'b' : null, h = g && OTHER(g);
+  if (!g || !(prev.w && prev.b)) return false;   // only a seated friend changes anything
+  if (!((next.w === 'host' && next.b === 'guest') || (next.w === 'guest' && next.b === 'host'))) return false;   // seats can be swapped (a rematch), never taken
+  // a rematch starts everything over, and starts it clean: no result, clock or power-ups can ride along with it.
+  // (Profile cards aren't moved when seats swap: each screen re-shares its own card when it sees the wrong one.)
+  if (next.pgn === '' && (prev.pgn !== '' || prev.result || prev.flag || next.w !== prev.w))
+    return !next.result && !next.flag && !next.clock && !next.tb && !next.heist && !next.drawOffer && !(next.pow && (next.pow.w.length || next.pow.b.length));
+  if (next.w !== prev.w || next.tc && prev.tc && (next.tc.base !== prev.tc.base || next.tc.inc !== prev.tc.inc) || (next.mg === false) !== (prev.mg === false)) return false;
+  const a = new Chess(); if (prev.pgn) a.load_pgn(prev.pgn);
+  const b = new Chess(); if (next.pgn) b.load_pgn(next.pgn);
+  const ha = a.history(), hb = b.history(), over = !!(prev.result || prev.flag);
+  const prefix = (x, y) => x.every((mv, i) => y[i] === mv);
+  const pp = prev.pow || {w: [], b: []}, np = next.pow || {w: [], b: []};
+  let tookBack = false, moved = false;
+  if (hb.length === ha.length + 1 && prefix(ha, hb)){ if (over || a.turn() !== g) return false; moved = true; }   // one move, with their own pieces, on their turn
+  else if (hb.length === ha.length - 2 && prefix(hb, ha) && next.tb === (prev.tb || 0) + 1){       // a Takeback they really had
+    if (over || a.turn() !== g || !(pp[g] || []).includes('takeback')) return false;
+    tookBack = true;
+  }
+  else if (hb.length !== ha.length || !prefix(ha, hb)) return false;
+  if (!tookBack && (next.tb || 0) !== (prev.tb || 0)) return false;
+  // results: they can resign, accept the host's draw offer, or claim the win once the host has been gone a while
+  const sameRes = (x, y) => (!x && !y) || (x && y && x.type === y.type && x.winner === y.winner && x.by === y.by);
+  if (!sameRes(prev.result, next.result)){
+    const r = next.result;
+    if (prev.result || !r) return false;
+    if (r.type === 'resign' && r.winner !== h) return false;
+    if (r.type === 'draw' && !(prev.drawOffer === h && r.by === h)) return false;
+    if (r.type === 'abandon' && !(r.winner === g && hostSawOutage())) return false;
+  }
+  if (next.flag !== prev.flag && !(prev.flag == null && (next.flag === g || (next.flag === h && remaining(h) <= 1500)))) return false;
+  if (next.drawOffer && next.drawOffer !== prev.drawOffer && next.drawOffer !== g) return false;   // they can't offer a draw for the host
+  // the host's own things (profile, tab-out count, power-ups, clock) stay as the host has them
+  next['p' + h] = prev['p' + h]; next['fp' + h] = prev['fp' + h];
+  const mine = pp[h] || [], theirs = np[h] || [];
+  // White's screen hands both players a power-up after a tied minigame: the host may gain one, but never lose one
+  const gained = theirs.length === mine.length + 1 && prefix(mine, theirs);
+  next.pow = {[g]: (np[g] || []).slice(0, 3), [h]: gained ? theirs.slice(0, 3) : mine.slice()};
+  const heist = (next.heist || 0) === (prev.heist || 0) + 1 && (pp[g] || []).includes('heist');
+  if ((next.heist || 0) !== (prev.heist || 0) && !heist) return false;
+  if (next.clock){
+    const pc = prev.clock || {w: (prev.tc && prev.tc.base) || 0, b: (prev.tc && prev.tc.base) || 0}, inc = (prev.tc && prev.tc.inc) || 0;
+    next.clock = {[h]: heist ? Math.max(0, pc[h] - 30000) : next.flag === h ? 0 : pc[h],
+      [g]: Math.min(next.clock[g], pc[g] + (moved ? inc : 0) + (heist ? 30000 : 0))};   // time is only ever gained from the increment or a heist
+  }
+  return true;
+}
+// Signal strength: each side pings the other over the data channel and times the reply.
+const sig = {rtt: 0, pongAt: 0};
+function drawSignal(){
+  const el = $('#sig'); if (!el) return;
+  const live = net.kind === 'p2p' && net.code && net.data && net.data.w && net.data.b;
+  el.hidden = !live; if (!live) return;
+  const open = !!(net.conn && net.conn.open), quiet = Date.now() - lastHeard;
+  let bars, label;
+  if (!open || quiet > 12000){ bars = 0; label = 'Offline'; }
+  else if (!sig.pongAt){ bars = quiet > 6000 ? 1 : 3; label = quiet > 6000 ? 'Weak' : 'Connected'; }   // a friend on an older page doesn't answer pings
+  else {
+    const r = Date.now() - sig.pongAt > 7000 ? Infinity : sig.rtt;
+    bars = r < 150 ? 4 : r < 300 ? 3 : r < 600 ? 2 : 1;
+    label = r === Infinity ? 'Weak' : Math.round(r) + ' ms';
+  }
+  el.dataset.bars = bars;
+  el.querySelector('.sig-ms').textContent = label;
+  el.title = el.ariaLabel = `Connection to your friend: ${['lost', 'weak', 'fair', 'good', 'excellent'][bars]}` + (sig.pongAt && bars ? ` (${Math.round(sig.rtt)} ms round trip)` : '');
+}
+let lastHeard = 0, reconnecting = false, linkOk = null, lostSince = 0, lastOutage = null;
+// The friend may claim the win after the host's side went quiet for a while. Their claim travels once the link is
+// back, so a long outage that only just ended counts too.
+const hostSawOutage = () => (lostSince && Date.now() - lostSince > 30000) || (lastOutage && lastOutage.len > 30000 && Date.now() - lastOutage.end < 120000);
 setInterval(() => {
-  if (net.kind !== 'p2p' || !net.code) return;
+  if (net.kind !== 'p2p' || !net.code){ drawSignal(); return; }
   p2pSend();
+  if (net.conn && net.conn.open){ try { net.conn.send({t: 'ping', ts: Date.now()}); } catch(e){} }
   const open = !!(net.conn && net.conn.open), quiet = Date.now() - lastHeard > 20000;
   if (net.myId === 'guest' && (!open || quiet)) reconnectGuest();
   if (net.data && net.data.w && net.data.b){
     const ok = open && !quiet;
-    if (!ok && !lostSince) lostSince = Date.now(); if (ok) lostSince = 0;
+    if (!ok && !lostSince) lostSince = Date.now();
+    if (ok && lostSince){ lastOutage = {len: Date.now() - lostSince, end: Date.now()}; lostSince = 0; }
+    drawSignal();
     $('#claimBtn').hidden = !(lostSince && Date.now() - lostSince > 45000 && net.my && !isOver());
     if (ok !== linkOk){ linkOk = ok; note(ok ? 'Connected to your friend. Keep this tab open while you play.' : net.myId === 'host' ? 'Connection lost. Waiting for your friend to reconnect…' : 'Connection lost. Reconnecting to your friend…', !ok); }
   }
@@ -5918,6 +6059,24 @@ async function reconnectGuest(){
   finally { reconnecting = false; }
 }
 const seatOk = v => v === null || v === 'host' || v === 'guest';
+// Checks a game state from the other screen and keeps only known fields with sane values (null if it isn't valid).
+function cleanState(d){
+  if (!d || typeof d !== 'object' || typeof d.pgn !== 'string' || d.pgn.length > 20000 || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return null;
+  if (d.w && d.w === d.b) return null;   // one player can't hold both seats
+  const tmp = new Chess(); if (d.pgn && !tmp.load_pgn(d.pgn)) return null;
+  if (tmp.history().length !== d.n) return null;
+  const num = v => typeof v === 'number' && isFinite(v) && v >= 0;
+  const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
+  const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
+  const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
+  const wb = v => (v === 'w' || v === 'b' ? v : null);
+  const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
+  const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.replace(/[^\p{L}\p{N} _.\-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
+  const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
+  const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
+  const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
+  return {fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: num(d.at) ? d.at : Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0, ack: num(d.ack) ? d.ack : 0};
+}
 function wireConn(conn){
   net.conn = conn;
   conn.on('data', m => {
@@ -5925,21 +6084,12 @@ function wireConn(conn){
     if (m && m.t === 'hello' && net.myId === 'host' && net.ref){ p2pSend(); return; }
     if (m && m.t === 'full'){ note('That game already has two players.', true); leaveGame(); return; }
     if (m && m.t === 'mg'){ mgRecv(m.m); return; }
+    if (m && m.t === 'ping'){ try { conn.send({t: 'pong', ts: m.ts}); } catch(e){} return; }
+    if (m && m.t === 'pong'){ const r = Date.now() - m.ts; if (typeof m.ts === 'number' && r >= 0 && r < 6e4){ sig.rtt = sig.pongAt ? sig.rtt * .6 + r * .4 : r; sig.pongAt = Date.now(); drawSignal(); } return; }
+    if (m && m.t === 'patch'){ applyPatches(m); return; }
     if (!m || m.t !== 'state' || !m.d || typeof m.d !== 'object') return;
-    const d = m.d;
-    if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return;
-    const tmp = new Chess(); if (d.pgn && !tmp.load_pgn(d.pgn)) return;
-    const num = v => typeof v === 'number' && isFinite(v) && v >= 0;
-    const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
-    const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
-    const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
-    const wb = v => (v === 'w' || v === 'b' ? v : null);
-    const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
-    const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
-    const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
-    const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
-    if (net.ref) net.ref.receive({fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
+    const d = cleanState(m.d);
+    if (d && net.ref) net.ref.receive(d);
   });
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
@@ -5957,22 +6107,21 @@ async function createGame(fixedCode, quiet){
     net.peer = peer; net.myId = 'host'; linkOk = null;
     net.guestToken = null;
     peer.on('connection', conn => {
-      conn.on('open', () => {
-        // wait for the guest's hello: it carries the token that proves a reconnect is the same friend
-        const bail = setTimeout(() => { try { conn.close(); } catch(e){} }, 8000);
-        const first = m => {
-          if (!m || m.t !== 'hello') return;
-          conn.off('data', first); clearTimeout(bail);
-          if (net.guestToken && m.token !== net.guestToken){ try { conn.send({t: 'full'}); setTimeout(() => conn.close(), 300); } catch(e){} return; }
-          net.guestToken = m.token || 'anon';
-          const old = net.conn; wireConn(conn); lastHeard = Date.now();
-          if (old && old !== conn){ try { old.close(); } catch(e){} }
-          const d = net.data || {};
-          if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
-          else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
-        };
-        conn.on('data', first);
-      });
+      // wait for the guest's hello: it carries the token that proves a reconnect is the same friend.
+      // (Listen from the start, not from 'open': a hello that arrives first would be missed and the friend dropped.)
+      const bail = setTimeout(() => { try { conn.close(); } catch(e){} }, 10000);
+      const first = m => {
+        if (!m || m.t !== 'hello') return;
+        conn.off('data', first); clearTimeout(bail);
+        if (net.guestToken && m.token !== net.guestToken){ try { conn.send({t: 'full'}); setTimeout(() => conn.close(), 300); } catch(e){} return; }
+        net.guestToken = m.token || 'anon';
+        const old = net.conn; wireConn(conn); lastHeard = Date.now();
+        if (old && old !== conn){ try { old.close(); } catch(e){} }
+        const d = net.data || {};
+        if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
+        else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
+      };
+      conn.on('data', first);
     });
     peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
     const ref = p2pRef();
@@ -6021,7 +6170,7 @@ async function joinGame(code){
 }
 function attach(code, ref){
   if (net.unsub) net.unsub();
-  net.code = code; net.ref = ref; net.data = null; net.my = null;
+  net.code = code; net.ref = ref; net.data = null; net.my = null; sig.rtt = sig.pongAt = 0;
   game.reset(); lastMove = null; selected = null; legal = []; clearEndFx(); syncPieces(true);
   clockReset({base: 0, inc: 0});   // the game document says which time control applies
   $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeBox').hidden = false; $('#codeOut').textContent = code; drawInviteQr(code);
@@ -6036,7 +6185,7 @@ function leaveGame(){
   if (net.unsub) net.unsub();
   if (net.kind === 'p2p') dropPeer();
   Object.assign(net, {code: null, ref: null, unsub: null, my: null, data: null});
-  $('#onIdle').hidden = false; $('#onActive').hidden = true;
+  $('#onIdle').hidden = false; $('#onActive').hidden = true; drawSignal();
   note(IDLE_NOTE());
   game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true);
 }
@@ -6093,8 +6242,9 @@ function onRemote(snap){
     bigText(en, jp, {hold: 1600, size: .55, color: 'var(--gold)', sub: side ? `YOU PLAY ${side} · ${side === 'WHITE' ? 'YOU MOVE FIRST' : 'WHITE MOVES FIRST'}` : 'YOU ARE WATCHING'});
     note(net.kind === 'p2p' ? 'Your friend is here! Keep this tab open while you play.' : 'Your friend is here!');
   }
-  if (net.my && (!d['p' + net.my] || d['p' + net.my].power !== profile.power || d['p' + net.my].name !== fighterName())) shareProfile();
-  drawPlayers();
+  // compare with the card as the other screen stores it (rounded power, name cut to 20), or this re-shares on every update
+  if (net.my && (!d['p' + net.my] || d['p' + net.my].power !== Math.min(Math.round(profile.power), 1e7) || d['p' + net.my].name !== myCard().name)) shareProfile();
+  drawPlayers(); drawSignal();
   const tc = d.tc || {base: 0, inc: 0};
   if (tc.base !== clock.base || tc.inc !== clock.inc){ clockReset(tc); if (d.clock){ clock.w = d.clock.w; clock.b = d.clock.b; } }
   if (busy){ pendingRemote = d; return; }   // finish the current animation first; nothing (not even a timeout) is dropped
@@ -6174,7 +6324,7 @@ function drawFriends(){
 }
 async function playFriend(f){
   if (qmBusy) return;
-  if (!net.ready || net.kind !== 'p2p'){ note('Playing friends works on the GitHub Pages version of the game.', true); return; }
+  if (!net.ready || net.kind !== 'p2p'){ note('Playing friends works at kessenchess.com.', true); return; }
   qmBusy = true;
   try {
     const code = friendCode(f.pid);
@@ -6219,7 +6369,7 @@ async function tryJoinQM(peer, code){
 }
 async function quickMatch(){
   if (qmBusy) return;
-  if (!net.ready || net.kind !== 'p2p'){ note('Random opponents work on the GitHub Pages version of the game.', true); return; }
+  if (!net.ready || net.kind !== 'p2p'){ note('Random opponents work at kessenchess.com.', true); return; }
   qmBusy = true; $('#qmBtn').disabled = true;
   try {
     note(`Looking for a ${qmWhat()} opponent…`);
@@ -6352,7 +6502,7 @@ function showEnd(title, sub, jp){
   $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>${isOver() && gameLog()[0] ? '<button class="btn" id="mReview">Review</button>' : ''}`;
   if ($('#mReview')) $('#mReview').onclick = () => { hideModal(); openReview(gameLog()[0]); };
   if ($('#mRules')) $('#mRules').onclick = showRules;
-  $('#mRe').onclick = () => { hideModal(); newGame(); };
+  $('#mRe').onclick = () => { hideModal(); if (mode === 'online' && net.code) rematchOnline(); else newGame(); };   // online, newGame() only opens this box again
   $('#mLook').onclick = () => { hideModal(); clearEndFx(); };
   $('#mRe').disabled = mode === 'online' && !net.my;
   $('#modal').hidden = false; $('#mRe').focus();
@@ -6375,6 +6525,8 @@ function weloRate(opp, score, cpu){
   const mine = profile.welo, expected = 1 / (1 + 10 ** ((opp - mine) / 400));
   profile.welo = Math.max(100, Math.round(mine + weloK(cpu) * (score - expected)));
   profile.weloGames++; profile.weloPeak = Math.max(profile.weloPeak || 0, profile.welo);
+  const delta = profile.welo - mine;
+  setTimeout(() => boardQueue(delta, score === 1), 0);   // after this frame: the leaderboard code is further down the script
   return {before: mine, after: profile.welo, opp, placement: profile.weloGames <= 15 ? profile.weloGames : 0};
 }
 // An online game in progress is noted on this device; if it never finishes (tab closed, Leave mid-game) it's a loss.
@@ -6395,6 +6547,13 @@ function settleAbandoned(why){
 const PROFILE_KEY = 'kessen-profile';
 let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0, welo: null, weloGames: 0, weloPeak: 0};
 try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch(e){}
+// a save from an older version, or one edited by hand, must never break the game: keep only sane values
+if (!Number.isFinite(profile.power) || profile.power < 0) profile.power = 500;
+for (const k of ['wins', 'losses', 'draws', 'elo', 'onlineGames', 'onlineWins', 'weloGames', 'weloPeak']) if (!Number.isFinite(profile[k]) || profile[k] < 0) profile[k] = 0;
+if (profile.welo != null && !(Number.isFinite(profile.welo) && profile.welo >= 100 && profile.welo <= 4000)) profile.welo = null;
+if (typeof profile.name !== 'string') profile.name = '';
+if (!CRESTS.includes(profile.crest)) profile.crest = 'n';
+if (!CREST_COLORS.includes(profile.color)) profile.color = CREST_COLORS[0];
 // WeLo replaced Elo: anyone who played online keeps their number, everyone else starts at 1000
 if (!Number.isFinite(profile.welo)){ profile.welo = profile.onlineGames > 0 ? profile.elo : 1000; profile.weloGames = profile.onlineGames || 0; profile.weloPeak = profile.welo; }
 const fighterName = () => profile.name || 'Nameless Challenger';
@@ -6405,35 +6564,61 @@ function drawFighter(){
   $('#fElo').textContent = profile.welo; $('#fElo').parentElement.title = `WeLo ${profile.welo} · ${beltOf(profile.welo)} (peak ${profile.weloPeak})${profile.weloGames < 15 ? ` · placement ${profile.weloGames}/15` : ''} · online: ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
 }
 // The name checker: length, characters, reserved names and a rude-word filter (also catching 0→o, 1→i style swaps).
-const RUDE = ['fuck', 'shit', 'cunt', 'bitch', 'dick', 'cock', 'pussy', 'nigg', 'fag', 'whore', 'slut', 'rape', 'nazi', 'hitler', 'penis', 'vagina', 'porn', 'retard', 'twat', 'wank', 'bastard', 'asshole', 'tits', 'kike', 'spic', 'chink'];
+// Rude names. The leaderboard's server rules (firebase/firestore.rules) apply exactly the same three lists, so a name
+// refused here can't be claimed by going around the game either. Keep the two in step.
+//   RUDE: refused anywhere in the name, even spaced out or in leetspeak ("f u c k", "sh1t").
+//   RUDE_WORD: refused as a whole word only, because they hide inside harmless words (grape, spicy, title).
+//   RUDE_START: refused at the start of a word (dickhead), but not inside one (peacock).
+const RUDE = ['fuck', 'shit', 'cunt', 'bitch', 'pussy', 'nigg', 'whore', 'slut', 'hitler', 'penis', 'vagina', 'porn', 'retard', 'twat', 'wank', 'bastard', 'asshole', 'kike', 'chink', 'faggot', 'nazi', 'rapist'];
+const RUDE_WORD = ['rape', 'spic', 'fag', 'fags', 'tits', 'tit', 'cum', 'jizz', 'sex', 'anal'];
+const RUDE_START = ['dick', 'cock'];
+const leet = t => t.toLowerCase().replace(/0/g, 'o').replace(/4/g, 'a').replace(/1/g, 'i').replace(/3/g, 'e').replace(/5/g, 's').replace(/7/g, 't');
+function rudeName(n){
+  const words = leet(n).split(/[ _.\-]+/).filter(Boolean), flat = words.join(''), once = t => t.replace(/(.)\1+/g, '$1');
+  // also with doubled letters squashed ("fuuuck"); the server rules can't do this part, so the game is the stricter one
+  return RUDE.some(w => flat.includes(w) || once(flat).includes(w)) || words.some(w => RUDE_WORD.includes(w) || RUDE_START.some(r => w.startsWith(r)));
+}
 function checkName(raw){
   const n = raw.trim().replace(/\s+/g, ' ');
   if (!n) return {ok: true, msg: 'Blank is fine: you\'ll be "Nameless Challenger".'};
   if (n.length < 2) return {ok: false, msg: 'At least 2 characters, please.'};
   if (!/^[\p{L}\p{N} _.\-]+$/u.test(n)) return {ok: false, msg: 'Letters, numbers, spaces and _ - . only.'};
   if (!/[\p{L}\p{N}]/u.test(n)) return {ok: false, msg: 'Needs at least one letter or number.'};
-  const flat = n.toLowerCase().replace(/[0@4]/g, m => ({0: 'o', '@': 'a', 4: 'a'})[m]).replace(/[1!]/g, 'i').replace(/3/g, 'e').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/[^a-z]/g, '');
-  if (/admin|moderator|official|kessenstaff|support|system/.test(flat)) return {ok: false, msg: "That one's reserved. Try another."};
-  if (RUDE.some(w => flat.includes(w))) return {ok: false, msg: 'Keep it friendly: pick another name.'};
-  return {ok: true, msg: '✓ Looks good. (Names aren\'t unique yet: that arrives with the online leaderboard.)'};
+  if (/admin|moderator|official|kessenstaff|support|system/.test(leet(n).replace(/[^a-z]/g, ''))) return {ok: false, msg: "That one's reserved. Try another."};
+  if (rudeName(n)) return {ok: false, msg: 'Keep it friendly: pick another name.'};
+  if (/^__.*__$/.test(n)) return {ok: false, msg: "That one's reserved. Try another."};
+  return {ok: true, msg: FB_ON ? '✓ Looks good. Checking it’s free…' : '✓ Looks good.'};
 }
 // what your friend sees online
-const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
+const myCard = () => ({name: fighterName().slice(0, 20), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
 function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
+// closing the editor hands focus back to the Edit button it came from
+function closeProfile(){ if ($('#prof').hidden) return; $('#prof').hidden = true; $('#fEdit').focus(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProfile(); });
 $('#fEdit').onclick = () => {
   let crest = profile.crest, color = profile.color;
   $('#pName').value = profile.name;
   $('#pCrests').innerHTML = CRESTS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === crest}" aria-label="${NAME[c]}"><span class="gw">${GLYPH[c]}${VS}</span></button>`).join('');
-  $('#pColors').innerHTML = CREST_COLORS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === color}" style="background:${c}" aria-label="Colour"></button>`).join('');
+  $('#pColors').innerHTML = CREST_COLORS.map((c, i) => `<button type="button" data-c="${c}" aria-pressed="${c === color}" style="background:${c}" aria-label="Colour ${i + 1}"></button>`).join('');
   $('#pCrests').onclick = e => { const b = e.target.closest('button'); if (!b) return; crest = b.dataset.c; $('#pCrests').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
   $('#pColors').onclick = e => { const b = e.target.closest('button'); if (!b) return; color = b.dataset.c; $('#pColors').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
   const check = () => {
     const r = checkName($('#pName').value), el = $('#pCheck');
     el.textContent = r.msg; el.className = `pcheck ${r.ok ? 'ok' : 'bad'}`; $('#pSave').disabled = !r.ok;
   };
-  $('#pName').oninput = check; check();
-  $('#pSave').onclick = () => { if (!checkName($('#pName').value).ok) return; profile.name = $('#pName').value.trim().replace(/\s+/g, ' ').slice(0, 16); profile.crest = crest; profile.color = color; saveProfile(); $('#prof').hidden = true; };
-  $('#pCancel').onclick = () => { $('#prof').hidden = true; };
+  $('#pName').oninput = () => { check(); nameCheckLive($('#pName').value, $('#pCheck'), $('#pSave')); }; check(); if (FB_ON && $('#pName').value.trim()) nameCheckLive($('#pName').value, $('#pCheck'), $('#pSave'));
+  $('#pSave').onclick = async () => {
+    if (!checkName($('#pName').value).ok) return;
+    const name = $('#pName').value.trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (FB_ON && name){
+      $('#pSave').disabled = true; $('#pCheck').textContent = 'Reserving your name…'; $('#pCheck').className = 'pcheck';
+      const r = await fbClaim(name); $('#pSave').disabled = false;
+      if (r === 'taken'){ $('#pCheck').textContent = '✗ Someone already has that name. Try another.'; $('#pCheck').className = 'pcheck bad'; return; }
+      if (r === 'offline') toast("Saved. Couldn't reach the leaderboard: your name is reserved next time you're online.");
+    }
+    profile.name = name; profile.named = true; profile.crest = crest; profile.color = color; saveProfile(); boardProfile(); closeProfile();
+  };
+  $('#pCancel').onclick = closeProfile;
   $('#prof').hidden = false; $('#pName').focus();
 };
 drawFighter();
@@ -6676,9 +6861,29 @@ $('#pgnBtn').onclick = () => {
   const pgn = game.pgn({max_width: 72}) || '(no moves yet)';
   try { navigator.clipboard.writeText(pgn).then(() => toast('PGN copied'), () => toast('Copy failed')); } catch(e){ toast('Copy failed'); }
 };
-$('#mGo').onclick = () => { A.init(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+// First visit: the start screen asks for a fighter name (optional; blank keeps "Nameless Challenger").
+const firstVisit = !profile.name && !profile.named;
+if (firstVisit){
+  $('#mName').hidden = false;
+  $('#mNameIn').oninput = () => { const v = $('#mNameIn').value, r = checkName(v), el = $('#mNameCheck');
+    el.textContent = v.trim() ? r.msg : 'Saved on this device with your WeLo and match history. You can change it any time.'; el.className = 'pcheck' + (v.trim() ? r.ok ? ' ok' : ' bad' : '');
+    if (v.trim() && r.ok) nameCheckLive(v, el, null); };
+  $('#mNameIn').onkeydown = e => { if (e.key === 'Enter') $('#mGo').click(); };
+}
+// Ask the browser to keep this site's saved data (name, WeLo, match history) instead of clearing it to free space.
+const keepSaves = () => { try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch(e){} };
+function claimName(){
+  const box = $('#mName'); if (!box || box.hidden) return true;
+  const v = $('#mNameIn').value, r = checkName(v);
+  if (!r.ok || $('#mNameCheck').dataset.taken === v.trim().toLowerCase()){ $('#mNameIn').focus(); return false; }   // known to be taken: pick another
+  profile.name = v.trim().replace(/\s+/g, ' ').slice(0, 16); profile.named = true; saveProfile();
+  if (FB_ON && profile.name) fbClaim(profile.name).then(st => { if (st === 'taken') toast(`Someone already has "${profile.name}" on the leaderboard. Tap Edit to pick another.`); });
+  box.remove();   // the same box is reused for end-of-game screens: the name question only belongs to the first one
+  return true;
+}
+$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); loadEpVoice(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Straight into random-opponent matchmaking from the start screen
-$('#mMatch').onclick = () => { A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
+$('#mMatch').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
 const DEMOS = {
   '#oracle-demo': ['1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle'],
@@ -6691,13 +6896,16 @@ const DEMOS = {
   '#repetition-demo': ['1. Nf3 Nf6 2. Ng1 Ng8 3. Nf3 Nf6 4. Ng1', {from: 'f6', to: 'g8'}],
   '#seventh-demo': ['rnbqkbnr/pp1ppppp/2P5/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1', {from: 'c6', to: 'c7'}]
 };
-// The trailer: open the page with #trailer and press FIGHT! for a goofy one-and-a-half-minute montage to screen-record.
+// The trailer: open the page with #trailer and press FIGHT! for a goofy two-minute montage to screen-record.
+const OPERA_GAME = '1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7 8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8#';
 async function trailer(){
   trailerOn = true; mode = 'pvp'; seg('modeSeg', 'mode', mode);
+  $('#goalBar').hidden = true;   // a clean frame for screen recording: the closing cards pitch the goals instead
   const card = (main, jp, sub, o = {}) => bigText(main, jp, Object.assign({hold: 1500, size: .75, color: 'var(--gold)', sub}, o));
   const idle = async () => { while (busy) await sleep(200); };
+  const reset = () => { hideModal(); clearEndFx(); newGame(); };
   const scene = async (main, jp, sub, pos, move) => {
-    await idle(); hideModal(); clearEndFx(); newGame();
+    await idle(); reset();
     if (pos.includes('/')) game.load(pos); else game.load_pgn(pos);
     const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
     await card(main, jp, sub);
@@ -6710,22 +6918,55 @@ async function trailer(){
     try { await sleep(400); await commit(move); await idle(); } finally { clearInterval(skipper); }
     await sleep(1200);
   };
+  // a few seconds of a real minigame against the CPU: Ronin plays live, the trailer presses READY, then cuts away
+  const mgClip = async (i, sub, ms = 6500) => {
+    await idle(); mode = 'cpu'; playerColor = 'w'; reset();
+    const g = MINIGAMES[i];
+    A.sfx.fight(); await card(`${g.name.toUpperCase()}!`, g.jp, sub, {hold: 1000, size: .6});
+    g.play().catch(() => {});
+    for (const t0 = Date.now(); Date.now() - t0 < ms; await sleep(120)){ const b = document.querySelector('#mg .mg-btn.go:not(:disabled)'); if (b) b.click(); }
+    if (mgLive) mgLive.close();
+    document.querySelector('#mg')?.remove();
+    mode = 'pvp';
+  };
+  // the review screen on a famous game: step through it while Rude Fishy grades the moves
+  const reviewClip = async () => {
+    await idle(); reset();
+    openReview({at: 0, mode: 'pvp', me: 'w', opp: 'Opera Game, Paris 1858', winner: 'w', reason: 'checkmate', pgn: OPERA_GAME, plies: 33});
+    await sleep(900);
+    const key = k => document.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+    key('Home'); await sleep(600);
+    for (let n = 0; n < 12; n++){ key('ArrowRight'); await sleep(450); }
+    key('End'); await sleep(2600);
+    closeHistory();
+  };
   try {
     A.sfx.fight();
     await card('KESSEN CHESS', '決戦', 'CHESS, BUT EVERY MOVE IS A SEASON FINALE', {hold: 2000, size: .9});
+    await card('100% FREE', '無料', 'NO SUBSCRIPTION · NO FEES · JUST VIBES ;)', {hold: 2200});
+    await card('100% ONLINE', '通信', 'PLAYS IN YOUR BROWSER · CHALLENGE A FRIEND WITH ONE LINK', {hold: 2200, color: 'var(--volt)'});
+    await card('MADE TO FUNDRAISE', '募金', 'FOR SMILE TRAIN & FOODBANK QUEENSLAND', {hold: 2400, color: 'var(--blood)'});
     await scene('CAPTURES?', '撃破', 'THEY GET A WHOLE CUT-IN', '1. e4 d5', {from: 'e4', to: 'd5'});
     await scene('CASTLING', '入城', 'THE KING HIDES. DRAMATICALLY.', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'});
     await scene('EN PASSANT', '通過', "DON'T GOOGLE IT. JUST WATCH.", '1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'});
     await scene('PROMOTION', '昇格', 'PAWN → GIANT MECH → …A HORSE??', 'k7/4P3/8/8/8/8/7p/K7 w - - 0 1', {from: 'e7', to: 'e8', promotion: 'n'});
-    await scene('DOUBLE CHECK', '両王手', 'TWICE THE PANIC', 'rn1qk2r/ppp3pp/8/8/8/8/PPPPBPPP/RNBQR1K1 w kq - 0 1', {from: 'e2', to: 'b5'});
+    await idle(); reset();
+    await card('MINIGAMES', '遊戯', 'EVERY FEW MOVES, THE BOARD BECOMES A DUEL', {hold: 1800, color: 'var(--blood)'});
+    await mgClip(0, 'WAIT FOR 斬… THEN DRAW!');
+    await mgClip(1, 'STOP YOUR BLADE IN THE GOLD');
+    await mgClip(2, 'THREAD THE KUNAI THROUGH THE RING');
+    await mgClip(3, 'HENSHIN!! A RHYTHM DANCE-OFF');
     await scene('POWER-UPS', '力', 'INCLUDING A FISH THAT JUDGES YOU', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle');
     await scene('CHECKMATE', '詰み', 'THE KING DOES NOT GO QUIETLY', '1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6', {from: 'h5', to: 'f7'});
-    await idle(); hideModal(); clearEndFx(); newGame();
+    await idle(); reset();
+    await card('REVIEW EVERY GAME', '検討', 'RUDE FISHY GRADES EVERY MOVE. BRUTALLY.', {hold: 1800, color: 'var(--volt)'});
+    await reviewClip();
+    await idle(); reset();
     A.sfx.heroic();
-    await card('PLAY FREE', '無料', 'VS CPU · SAME SCREEN · ONLINE WITH A FRIEND', {hold: 2200});
-    await card('MINIGAMES', '遊戯', 'SLAP FIGHTS · MEMORY FLASH · MATE IN ONE', {hold: 1800, color: 'var(--blood)'});
-    await card('KESSEN CHESS', '決戦', (location.host + location.pathname).replace(/\/$/, '').toUpperCase(), {hold: 3200, size: .9});
-  } finally { trailerOn = false; }
+    await card('PLAY ANYONE', '対戦', 'THE CPU · A FRIEND ON THIS SCREEN · ONLINE · QUICK MATCH', {hold: 2200, size: .7});
+    await card('HIT BOTH GOALS', '目標', `$1,000 EACH FOR SMILE TRAIN & FOODBANK QLD → ${GOAL_PRIZE.toUpperCase()}`, {hold: 2600, size: .7, color: 'var(--blood)'});
+    await card('KESSEN CHESS', '決戦', `100% FREE · 100% ONLINE · ${(location.host + location.pathname).replace(/\/(index\.html)?$/, '').toUpperCase()}`, {hold: 3400, size: .9});
+  } finally { trailerOn = false; mode = 'pvp'; $('#goalBar').hidden = false; }
 }
 function demo(pos, move){
   if (move === 'oracle'){ mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame(); game.load_pgn(pos); render(true); powers.w = ['oracle', 'hint']; panel(); return; }
@@ -6743,18 +6984,20 @@ function demo(pos, move){
 // until it exists, the button goes to the charity's own official donation page (`donate`), which has no public total.
 // `reg` = where to check the charity is real; `id` = its registration number (an Australian ABN, or a US EIN).
 // `abn` is only set for Australian charities: it matches receipts in the ledger.
+// `goal` is each fundraiser page's target, in that page's own currency (`cur`); it shows in the goal banner.
 const CHARITIES = [
-  {name: 'Smile Train', cause: 'Cleft surgery for kids', emoji: '😁', abn: null, id: 'US EIN 13-3661416',
+  {name: 'Smile Train', short: 'Smile Train', cause: 'Cleft surgery for kids', emoji: '😁', abn: null, id: 'US EIN 13-3661416',
    reg: {label: 'US registered charity ↗', url: 'https://projects.propublica.org/nonprofits/organizations/133661416'},
    note: "A US charity: donations aren't tax-deductible in Australia.",
-   donate: 'https://www.smiletrain.org/?form=givenow', page: 'TODO', total: null},
-  {name: 'The Fred Hollows Foundation', cause: 'Restoring sight', emoji: '👓', abn: '46 070 556 642', id: 'ABN 46 070 556 642',
-   reg: {label: 'ACNC registered ↗', url: 'https://www.acnc.gov.au/charity/charities/b4a55fbf-38af-e811-a95e-000d3ad24c60/profile'},
-   donate: 'https://www.hollows.org/au/donate', page: 'TODO', total: null},
-  {name: 'Foodbank Queensland', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209', id: 'ABN 89 067 251 209',
+   donate: 'https://www.smiletrain.org/?form=givenow', page: 'https://www.mysmiletrain.org/campaigns/Kessen-Chess--Checkmate-for-Smiles',
+   goal: 1000, cur: 'USD', total: null},   // TODO: {type: 'donordrive', host: 'www.mysmiletrain.org', participant: <the page's participant ID>}
+  {name: 'Foodbank Queensland', short: 'Foodbank QLD', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209', id: 'ABN 89 067 251 209',
    reg: {label: 'ACNC registered ↗', url: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile'},
-   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'TODO', total: null}
+   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'https://www.justgiving.com/page/kessen-chess',
+   goal: 1000, cur: 'AUD', total: {type: 'justgiving', page: 'kessen-chess'}}   // live once JUSTGIVING_APP_ID is set
 ];
+// The goal banner's promise: reach every charity's goal and the game comes to Android.
+const GOAL_PRIZE = 'Kessen Chess comes to Android';
 // `total` says where a page's live total can be read, or null for no number:
 //   {type: 'justgiving', page: '<page short name>'}  needs JUSTGIVING_APP_ID (a free key from developer.justgiving.com)
 //   {type: 'opencollective', slug: '<collective slug>'}
@@ -6848,7 +7091,25 @@ function drawDonationTotals(){
   $('#donBtn').title = sum != null ? 'Donated to the charities through Kessen Chess fundraiser pages (the developer\'s holiday fund isn\'t included)' : '';
   const el = $('#donRaised'); el.hidden = sum == null;
   if (!el.hidden) el.textContent = `💝 ${fmtMoney(sum, 'AUD')} raised by ${donors != null ? `${donors.toLocaleString()} Kessen player${donors === 1 ? '' : 's'}` : 'Kessen players'}`;
+  drawGoals();
   CHARITIES.forEach((c, i) => { const t = donTotals.per[i], r = document.querySelector(`#donGrid [data-i="${i}"] .raised`); if (r) { r.hidden = !t; r.textContent = t ? `${fmtMoney(t.amount, t.currency)} raised` : ''; r.title = t && t.receipts ? `Includes ${fmtMoney(t.receipts, 'AUD')} from receipts in the public ledger` : ''; } });
+}
+function drawGoals(){
+  const rows = $('#goalRows'); if (!rows) return;
+  let allMet = true; rows.innerHTML = '';
+  CHARITIES.forEach((c, i) => {
+    const t = donTotals.per[i], got = t && t.currency === c.cur ? t.amount : null, frac = got == null ? 0 : Math.min(1, got / c.goal);
+    if (got == null || got < c.goal) allMet = false;
+    const row = document.createElement('div'); row.className = 'g-row' + (frac >= 1 ? ' met' : '');
+    row.innerHTML = '<span class="g-name"><span aria-hidden="true"></span> <b></b></span><span class="g-bar"><i></i></span><span class="g-amt"></span>';
+    row.querySelector('.g-name span').textContent = c.emoji; row.querySelector('.g-name b').textContent = c.short;
+    row.querySelector('.g-bar i').style.width = `${Math.round(frac * 100)}%`;
+    // only a real total fills the bar: until a page's total can be read, it shows just the goal
+    const money = n => fmtMoney(n, c.cur).replace(/^USD\s?/, 'US$');   // en-AU writes US dollars as "USD 420"
+    row.querySelector('.g-amt').textContent = got == null ? `Goal ${money(c.goal)}` : `${money(got)} of ${money(c.goal)}${frac >= 1 ? ' ✓' : ''}`;
+    rows.appendChild(row);
+  });
+  $('#goalPitch').textContent = allMet ? `Both goals reached! ${GOAL_PRIZE}. Thank you! 🎉` : `Reach both goals and ${GOAL_PRIZE}! 🤖`;
 }
 function charityLink(c, label){
   const url = isSet(c.page) ? c.page : c.donate;
@@ -7001,6 +7262,8 @@ async function openDonate(toFund){
 }
 function closeDonate(){ plinko.stop(); $('#donate').hidden = true; $('#donBtn').focus(); }
 $('#donBtn').onclick = () => openDonate();
+$('#goalBar').onclick = () => openDonate();   // the whole banner opens it; the button is there for keyboards and screen readers
+drawGoals();
 // The holiday-fund chip only appears once the dev's Open Collective link is filled in.
 $('#fundBtn').hidden = !(isSet(COFFEE.url) && isSet(COFFEE.slug));
 $('#fundBtn').onclick = () => openDonate(true);
@@ -7009,6 +7272,336 @@ $('#donate').addEventListener('click', e => { if (e.target === $('#donate')) clo
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#donate').hidden) closeDonate(); });
 $('#dropBtn').onclick = () => plinko.drop();
 loadCharityTotals();   // fills the header chip's total once real numbers are configured (no network calls until then)
+
+/* ================= ONLINE LEADERBOARD AND UNIQUE NAMES (Firebase) =================
+   Off (and invisible) until FIREBASE below is filled in: see "Leaderboard" in the README for the five-minute setup.
+   It talks to Firebase over its REST API, with no SDK to load. Each device gets an anonymous Firebase account (no
+   email, no personal details). names/{name} reserves a fighter name for one player, owners/{uid} records which name
+   that player holds, and players/{uid} is their public leaderboard entry. firebase/firestore.rules keeps it honest:
+   one name per player, nobody can touch anyone else's entry, and a leaderboard WeLo starts at 1000 and can only move
+   by one game's worth (at most 64) at most once a minute. Results are still reported by each player's own browser,
+   so the board is for fun, like WeLo itself. */
+const FIREBASE = {apiKey: 'TODO', projectId: 'TODO'};
+const FB_ON = isSet(FIREBASE.apiKey) && isSet(FIREBASE.projectId);
+const FBH = Object.assign({auth: 'https://identitytoolkit.googleapis.com', token: 'https://securetoken.googleapis.com', db: 'https://firestore.googleapis.com'}, FIREBASE.hosts || {});
+const fbDocs = () => `projects/${FIREBASE.projectId}/databases/(default)/documents`;
+const nameKey = n => n.trim().toLowerCase();
+async function fbFetch(url, opts = {}, ms = 10000){
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
+  try { const r = await fetch(url, Object.assign({}, opts, {signal: ctl.signal})); let j = null; try { j = await r.json(); } catch(e){} return {ok: r.ok, status: r.status, j}; }
+  catch(e){ return {ok: false, status: 0, j: null}; } finally { clearTimeout(timer); }
+}
+// this device's anonymous account, signed in once and refreshed as needed
+const FB_AUTH_KEY = 'kessen-fb-auth';
+let fbAuth = null, fbSigning = null;
+function fbUser(){ return fbSigning || (fbSigning = fbSignIn().finally(() => { fbSigning = null; })); }
+async function fbSignIn(){
+  if (!FB_ON) return null;
+  if (!fbAuth){ try { const a = JSON.parse(localStorage.getItem(FB_AUTH_KEY) || 'null'); if (a && typeof a.uid === 'string' && typeof a.refresh === 'string') fbAuth = a; } catch(e){} }
+  if (fbAuth && fbAuth.token && fbAuth.exp > Date.now() + 60000) return fbAuth;
+  const key = encodeURIComponent(FIREBASE.apiKey);
+  let a = null;
+  if (fbAuth){
+    const r = await fbFetch(`${FBH.token}/v1/token?key=${key}`, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(fbAuth.refresh)});
+    if (r.ok && r.j && r.j.id_token) a = {uid: r.j.user_id, token: r.j.id_token, refresh: r.j.refresh_token, exp: Date.now() + (+r.j.expires_in || 3600) * 1000};
+    else if (r.status === 0 || r.status >= 500) return null;   // offline: keep the account and try again later
+  }
+  if (!a){
+    const r = await fbFetch(`${FBH.auth}/v1/accounts:signUp?key=${key}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({returnSecureToken: true})});
+    if (!(r.ok && r.j && r.j.idToken)) return null;
+    a = {uid: r.j.localId, token: r.j.idToken, refresh: r.j.refreshToken, exp: Date.now() + (+r.j.expiresIn || 3600) * 1000};
+  }
+  fbAuth = a; try { localStorage.setItem(FB_AUTH_KEY, JSON.stringify(a)); } catch(e){}
+  return a;
+}
+// Firestore's REST format, both ways
+const fbVal = v => typeof v === 'number' ? {integerValue: String(Math.round(v))} : {stringValue: String(v)};
+const fbFields = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, fbVal(v)]));
+const fbRead = f => { const o = {}; for (const [k, v] of Object.entries(f || {})) o[k] = v.integerValue != null ? Number(v.integerValue) : v.stringValue != null ? v.stringValue : v.timestampValue != null ? Date.parse(v.timestampValue) : null; return o; };
+const fbDoc = path => `${fbDocs()}/${path}`;
+const fbAuthHeader = () => fbAuth && fbAuth.token && fbAuth.exp > Date.now() ? {Authorization: 'Bearer ' + fbAuth.token} : {};
+// a document's fields; false when it doesn't exist; null when it couldn't be read
+async function fbGet(path){
+  const r = await fbFetch(`${FBH.db}/v1/${fbDoc(path.split('/').map(encodeURIComponent).join('/'))}`, {headers: fbAuthHeader()});
+  return r.ok && r.j ? fbRead(r.j.fields) : r.status === 404 ? false : null;
+}
+async function fbCommit(writes){
+  const u = await fbUser(); if (!u) return {ok: false, status: 0};
+  return fbFetch(`${FBH.db}/v1/${fbDocs()}:commit`, {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + u.token}, body: JSON.stringify({writes})});
+}
+const stamp = [{fieldPath: 'at', setToServerValue: 'REQUEST_TIME'}];
+const entryOf = (p, name) => ({name, key: nameKey(name), welo: p.welo, games: p.games, wins: p.wins, crest: profile.crest, color: profile.color});
+// 'free', 'mine', 'taken', or null when it can't be checked right now
+async function nameStatus(name){
+  if (!FB_ON) return null;
+  const d = await fbGet('names/' + nameKey(name));
+  if (d === null) return null;
+  if (d === false) return 'free';
+  return fbAuth && d.uid === fbAuth.uid ? 'mine' : 'taken';
+}
+// As you type: say whether the name is free (and hold the Save button while it's taken).
+let nameCheckJob = 0;
+function nameCheckLive(raw, el, btn){
+  if (!FB_ON) return;
+  const v = raw.trim().replace(/\s+/g, ' '), job = ++nameCheckJob;
+  if (!checkName(v).ok || !v) return;
+  setTimeout(async () => {
+    if (job !== nameCheckJob) return;
+    if (!fbAuth) await fbUser();
+    const st = await nameStatus(v); if (job !== nameCheckJob) return;
+    el.dataset.taken = st === 'taken' ? v.toLowerCase() : '';
+    if (st === 'taken'){ el.textContent = '✗ Someone already has that name. Try another.'; el.className = 'pcheck bad'; if (btn) btn.disabled = true; }
+    else if (st === 'free' || st === 'mine'){ el.textContent = st === 'mine' ? '✓ That name is yours.' : '✓ Looks good, and it’s free.'; el.className = 'pcheck ok'; if (btn) btn.disabled = false; }
+    else { el.textContent = '✓ Looks good. (Couldn’t check the leaderboard just now.)'; el.className = 'pcheck ok'; }
+  }, 350);
+}
+// Reserve a name for this player (freeing their old one): 'ok', 'taken' or 'offline'.
+async function fbClaim(name){
+  if (!FB_ON) return 'ok';
+  const u = await fbUser(); if (!u) return 'offline';
+  const key = nameKey(name), [own, p] = await Promise.all([fbGet('owners/' + u.uid), fbGet('players/' + u.uid)]);
+  if (own === null || p === null) return 'offline';
+  const writes = [];
+  if (!own || own.key !== key){
+    writes.push({update: {name: fbDoc('names/' + key), fields: fbFields({uid: u.uid, name})}, currentDocument: {exists: false}},
+      {update: {name: fbDoc('owners/' + u.uid), fields: fbFields({key})}});
+    if (own && own.key) writes.push({delete: fbDoc('names/' + own.key)});
+  }
+  if (p) writes.push({update: {name: fbDoc('players/' + u.uid), fields: fbFields(entryOf(p, name))}, updateTransforms: stamp});
+  if (!writes.length) return 'ok';
+  const r = await fbCommit(writes);
+  if (r.ok) return 'ok';
+  if (r.status === 0 || r.status >= 500) return 'offline';
+  return (await nameStatus(name)) === 'taken' ? 'taken' : 'offline';
+}
+// A new crest or colour shows on the board too.
+async function boardProfile(){
+  if (!FB_ON || !profile.name) return;
+  const u = await fbUser(); if (!u) return;
+  const p = await fbGet('players/' + u.uid); if (!p) return;
+  if (p.crest === profile.crest && p.color === profile.color && p.name === profile.name) return;
+  fbCommit([{update: {name: fbDoc('players/' + u.uid), fields: fbFields(entryOf(p, profile.name))}, updateTransforms: stamp}]);
+}
+// Rated games wait in a queue on this device until they reach the leaderboard (offline, or less than a minute apart).
+const BOARD_Q = 'kessen-board-queue';
+const boardQ = () => { try { const q = JSON.parse(localStorage.getItem(BOARD_Q) || '[]'); return Array.isArray(q) ? q.filter(g => g && Number.isFinite(g.d)).slice(-50) : []; } catch(e){ return []; } };
+const saveBoardQ = q => { try { localStorage.setItem(BOARD_Q, JSON.stringify(q.slice(-50))); } catch(e){} };
+function boardQueue(delta, won){
+  if (!FB_ON || trailerOn) return;
+  saveBoardQ(boardQ().concat({d: Math.max(-64, Math.min(64, Math.round(delta))), w: won ? 1 : 0, tries: 0}));
+  boardFlush();
+}
+let boardFlushing = false, boardRetry = 0;
+async function boardFlush(){
+  if (!FB_ON || boardFlushing) return;
+  boardFlushing = true;
+  try {
+    for (let q = boardQ(); q.length && profile.name; q = boardQ()){
+      const u = await fbUser(); if (!u) return;
+      const own = await fbGet('owners/' + u.uid); if (own === null) return;
+      if (!own || own.key !== nameKey(profile.name)){ if (await fbClaim(profile.name) !== 'ok') return; }
+      const p = await fbGet('players/' + u.uid); if (p === null) return;
+      const g = q[0];
+      const next = p ? {welo: Math.max(100, Math.min(4000, p.welo + g.d)), games: p.games + 1, wins: p.wins + g.w} : {welo: 1000 + g.d, games: 1, wins: g.w};
+      const r = await fbCommit([{update: {name: fbDoc('players/' + u.uid), fields: fbFields(entryOf(next, profile.name))}, currentDocument: {exists: !!p}, updateTransforms: stamp}]);
+      if (r.ok){ q.shift(); saveBoardQ(q); boardCache = null; continue; }
+      if (r.status === 0 || r.status >= 500) return;
+      // refused: most likely two games less than a minute apart. Try again in a minute; give up on it after three tries.
+      g.tries = (g.tries || 0) + 1; if (g.tries >= 3) q.shift(); saveBoardQ(q);
+      clearTimeout(boardRetry); boardRetry = setTimeout(boardFlush, 65000);
+      return;
+    }
+  } finally { boardFlushing = false; }
+}
+// The leaderboard: the top 50 by WeLo, and where you stand.
+let boardCache = null;
+async function openBoard(){
+  A.init(); $('#board').hidden = false; $('#boardClose').focus();
+  const list = $('#boardList'), note = $('#boardNote'), meBox = $('#boardMe');
+  list.innerHTML = ''; meBox.hidden = true; note.textContent = 'Loading…';
+  if (!fbAuth) await fbUser();
+  // Firebase's free plan counts every entry read: keep the board for a minute rather than re-reading 50 entries each time
+  let r = boardCache && Date.now() - boardCache.t < 60000 ? boardCache.r : null;
+  if (!r){
+    r = await fbFetch(`${FBH.db}/v1/${fbDocs()}:runQuery`, {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({structuredQuery: {from: [{collectionId: 'players'}], orderBy: [{field: {fieldPath: 'welo'}, direction: 'DESCENDING'}], limit: 50}})});
+    if (r.ok) boardCache = {t: Date.now(), r};
+  }
+  if (!r.ok || !Array.isArray(r.j)){ note.textContent = "Couldn't load the leaderboard. Check your connection and try again."; return; }
+  const rows = r.j.filter(x => x.document).map(x => Object.assign(fbRead(x.document.fields), {uid: x.document.name.split('/').pop()}));
+  const mine = fbAuth && fbAuth.uid;
+  note.textContent = rows.length
+    ? 'Every player starts at 1000 with their first rated game. Each game moves it like your WeLo: CPU games half as much, placement games more.'
+    : 'Nobody on the board yet. Finish a rated game to be the first!';
+  rows.forEach((x, i) => {
+    const li = document.createElement('li'); li.className = 'lb-row' + (x.uid === mine ? ' me' : '');
+    li.innerHTML = '<span class="rk"></span><span class="cr" aria-hidden="true"></span><span class="nm"><b></b><span></span></span><span class="wl"></span>';
+    li.querySelector('.rk').textContent = i + 1;
+    const cr = li.querySelector('.cr'); cr.textContent = GLYPH[CRESTS.includes(x.crest) ? x.crest : 'n'] + VS; cr.style.setProperty('--c', CREST_COLORS.includes(x.color) ? x.color : CREST_COLORS[0]);
+    li.querySelector('.nm b').textContent = typeof x.name === 'string' ? x.name.slice(0, 16) : '?';
+    if (x.uid === mine){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; li.querySelector('.nm b').appendChild(y); }
+    const welo = Number.isFinite(x.welo) ? x.welo : 1000, games = Number.isFinite(x.games) ? x.games : 0;
+    li.querySelector('.nm > span').textContent = `${beltOf(welo)} · ${games} game${games === 1 ? '' : 's'}`;
+    li.querySelector('.wl').textContent = welo;
+    list.appendChild(li);
+  });
+  // you, if you're not in the top 50
+  if (!mine || rows.some(x => x.uid === mine)) return;
+  const me = await fbGet('players/' + mine);
+  if (!me){ meBox.hidden = false; meBox.textContent = profile.name ? 'Finish a rated game to join the board.' : 'Pick a fighter name (Edit, top right of the board) and finish a rated game to join the board.'; return; }
+  const c = await fbFetch(`${FBH.db}/v1/${fbDocs()}:runAggregationQuery`, {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({structuredAggregationQuery: {structuredQuery: {from: [{collectionId: 'players'}], where: {fieldFilter: {field: {fieldPath: 'welo'}, op: 'GREATER_THAN', value: {integerValue: String(me.welo)}}}}, aggregations: [{alias: 'n', count: {}}]}})});
+  const above = c.ok && Array.isArray(c.j) && c.j[0] && c.j[0].result ? Number(c.j[0].result.aggregateFields.n.integerValue) : null;
+  meBox.hidden = false; meBox.textContent = `You: ${me.name} · WeLo ${me.welo} · ${me.games} game${me.games === 1 ? '' : 's'}${above != null ? ` · rank ${above + 1}` : ''}`;
+}
+function closeBoard(){ $('#board').hidden = true; $('#boardBtn').focus(); }
+$('#boardBtn').hidden = !FB_ON;
+$('#boardBtn').onclick = openBoard;
+$('#boardClose').onclick = closeBoard;
+$('#board').addEventListener('click', e => { if (e.target === $('#board')) closeBoard(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#board').hidden) closeBoard(); });
+/* ================= CLIPS: an instant replay you can share =================
+   While a game is on, the last 12 to 24 seconds are kept on this device: the 3D board, the particles, the board's own
+   HUD, the big anime captions and the sound, with a small Kessen Chess tag in the corner. 🎬 Clip turns them into a
+   video: Share opens the phone's share sheet (TikTok, Instagram, Messages…), Save video downloads it. Nothing is
+   uploaded by the game. Two recorders take turns, each starting 12 s after the other, so one always holds the
+   moment that just happened. (The captions are redrawn from the page, so they're close to the real thing, not exact.) */
+const CLIP = {W: 960, FPS: 30, SEG: 24000, BPS: 3000000};
+const clip = {on: false, cv: null, cx: null, stream: null, recs: [], timer: 0, saving: false, url: null, file: null};
+// MP4 with AAC sound first: it's what Instagram, TikTok and phones' galleries take most happily
+const clipType = () => ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+  .find(t => { try { return MediaRecorder.isTypeSupported(t); } catch(e){ return false; } });
+const clipOk = () => !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && clipType());
+function clipRecorder(){
+  const type = clipType(), rec = new MediaRecorder(clip.stream, {mimeType: type, videoBitsPerSecond: CLIP.BPS});
+  const r = {rec, t0: Date.now(), chunks: [], type};
+  rec.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
+  rec.start(); return r;
+}
+function clipStart(){
+  if (clip.on || !clipOk() || trailerOn || document.hidden) return;
+  try {
+    const rect = stageEl.getBoundingClientRect(); if (rect.width < 50) return;
+    const w = Math.min(CLIP.W, Math.round(rect.width * (devicePixelRatio || 1))) & ~1, h = Math.round(w * rect.height / rect.width) & ~1;
+    clip.cv = Object.assign(document.createElement('canvas'), {width: w, height: h}); clip.cx = clip.cv.getContext('2d');
+    clip.stream = clip.cv.captureStream(CLIP.FPS);
+    const audio = A.syn.rec(); if (audio) audio.getAudioTracks().forEach(t => clip.stream.addTrack(t));
+    clip.on = true; clipFrame();
+    clip.recs = [clipRecorder()];
+    // every 12 s the older recorder is let go and a fresh one starts
+    clip.timer = setInterval(() => {
+      if (clip.saving) return;
+      if (clip.recs.length >= 2){ const old = clip.recs.shift(); old.rec.ondataavailable = null; try { old.rec.stop(); } catch(e){} }
+      clip.recs.push(clipRecorder());
+    }, CLIP.SEG / 2);
+    $('#clipBtn').classList.add('rec');
+  } catch(e){ clipStop(); }
+}
+function clipStop(){
+  clearInterval(clip.timer); clip.on = false;
+  for (const r of clip.recs){ r.rec.ondataavailable = null; try { r.rec.stop(); } catch(e){} }
+  clip.recs = []; if (clip.stream) clip.stream.getVideoTracks().forEach(t => t.stop()); clip.stream = null;
+  $('#clipBtn').classList.remove('rec');
+}
+// one frame of the clip: the board, the particles, then the page's captions and HUD drawn on top
+function clipFrame(){
+  const now = performance.now(); if (now - (clip.last || 0) < 1000 / CLIP.FPS - 4) return;   // the clip runs at 30 fps, the board may run faster
+  clip.last = now;
+  const view = stageEl.getBoundingClientRect(), c = clip.cx, k = clip.cv.width / view.width;
+  if (!view.width) return;
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0c0a17'; c.fillRect(0, 0, clip.cv.width, clip.cv.height);
+  const gl = renderer.domElement, g = gl.getBoundingClientRect();
+  c.drawImage(gl, (g.left - view.left) * k, (g.top - view.top) * k, g.width * k, g.height * k);
+  const d = cv.width / innerWidth;   // the particle overlay covers the whole window
+  c.drawImage(cv, view.left * d, view.top * d, view.width * d, view.height * d, 0, 0, clip.cv.width, clip.cv.height);
+  c.setTransform(k, 0, 0, k, -view.left * k, -view.top * k);
+  for (const root of [stageEl, fxEl]) clipDraw(root, view, 1);
+  // the tag, so a shared clip says where it's from
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = .85;
+  const fs = Math.round(clip.cv.width / 42); c.font = `400 ${fs}px "Dela Gothic One", sans-serif`; c.textBaseline = 'bottom'; c.textAlign = 'right';
+  c.lineWidth = Math.max(2, fs / 6); c.strokeStyle = '#000'; c.fillStyle = '#ff6fb5';
+  const tag = `決戦 KESSEN CHESS · ${location.host || 'free in your browser'}`;
+  c.strokeText(tag, clip.cv.width - fs * .6, clip.cv.height - fs * .5); c.fillText(tag, clip.cv.width - fs * .6, clip.cv.height - fs * .5);
+}
+const clipRange = document.createRange();
+function clipDraw(el, view, alpha){
+  for (const ch of el.children){
+    if (ch === renderer.domElement || ch.id === 'hangar' || ch.id === 'clipBtn' || ch.classList.contains('hint-orbit') || /^(CANVAS|VIDEO|IFRAME|svg)$/i.test(ch.tagName)) continue;
+    const cs = getComputedStyle(ch);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+    const a = alpha * (+cs.opacity || 0); if (a < .02) continue;
+    const r = ch.getBoundingClientRect();
+    const onScreen = r.width && r.height && r.right > view.left && r.left < view.right && r.bottom > view.top && r.top < view.bottom;
+    const c = clip.cx; c.save(); c.globalAlpha = a;
+    // the element's own rotation (most anime captions are tilted)
+    const m = /^matrix\(([^)]+)\)/.exec(cs.transform);
+    if (m){ const [ma, mb] = m[1].split(',').map(Number), cx2 = r.left + r.width / 2, cy2 = r.top + r.height / 2; c.translate(cx2, cy2); c.rotate(Math.atan2(mb, ma)); c.translate(-cx2, -cy2); }
+    if (onScreen){
+      const bg = cs.backgroundColor;
+      if (bg && !/rgba\(.*,\s*0\)$|transparent/.test(bg)){ c.fillStyle = bg; c.fillRect(r.left, r.top, r.width, r.height); }
+      const bw = parseFloat(cs.borderTopWidth);
+      if (bw >= 2 && cs.borderTopStyle !== 'none'){ c.lineWidth = bw; c.strokeStyle = cs.borderTopColor; c.strokeRect(r.left + bw / 2, r.top + bw / 2, r.width - bw, r.height - bw); }
+      for (const n of ch.childNodes){
+        if (n.nodeType !== 3 || !n.data.trim()) continue;
+        clipRange.selectNodeContents(n); const tr = clipRange.getBoundingClientRect(); if (!tr.width) continue;
+        let text = n.data.trim().replace(/\s+/g, ' '); if (cs.textTransform === 'uppercase') text = text.toUpperCase();
+        c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        if ('letterSpacing' in c) c.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing;
+        c.textBaseline = 'middle'; c.textAlign = 'center';
+        const x = tr.left + tr.width / 2, y = tr.top + tr.height / 2, sw = parseFloat(cs.webkitTextStrokeWidth) || 0;
+        if (sw){ c.lineWidth = sw * 2; c.strokeStyle = cs.webkitTextStrokeColor || '#000'; c.lineJoin = 'round'; c.strokeText(text, x, y); }
+        c.fillStyle = cs.color; c.fillText(text, x, y);
+      }
+    }
+    c.restore();
+    if (ch.children.length) clipDraw(ch, view, a);
+  }
+}
+async function clipSave(){
+  if (clip.saving) return;
+  if (!clip.on || !clip.recs.length){ toast(clipOk() ? 'Play a few moves first: clips keep the last few seconds' : "This browser can't record clips. Try Chrome, Edge, Firefox or Safari"); return; }
+  clip.saving = true; $('#clipBtn').textContent = '🎬 Saving…';
+  const r = clip.recs.shift();   // the older one: it holds the last 12 to 24 seconds
+  const blob = await new Promise(res => { r.rec.onstop = () => res(new Blob(r.chunks, {type: r.type.split(';')[0]})); try { r.rec.requestData(); r.rec.stop(); } catch(e){ res(null); } });
+  if (clip.on) clip.recs.push(clipRecorder());
+  clip.saving = false; $('#clipBtn').textContent = '🎬 Clip';
+  if (!blob || blob.size < 1000){ toast("Couldn't save that clip. Try again in a moment"); return; }
+  const ext = /mp4/.test(blob.type) ? 'mp4' : 'webm', when = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  clip.file = new File([blob], `kessen-chess-${when}.${ext}`, {type: blob.type});
+  if (clip.url) URL.revokeObjectURL(clip.url); clip.url = URL.createObjectURL(blob);
+  $('#clipVideo').src = clip.url; $('#clipSave').href = clip.url; $('#clipSave').download = clip.file.name;
+  const canShare = !!(navigator.canShare && navigator.canShare({files: [clip.file]}));
+  $('#clipShare').hidden = !canShare;
+  $('#clipNote').textContent = canShare ? 'Saved on this device only. Nothing is uploaded until you share it.' : 'Save the video, then post it anywhere. Nothing is uploaded until you do.';
+  $('#clipSheet').hidden = false; $('#clipClose').focus();
+}
+const clipCaption = () => `Caught this in Kessen Chess 😂 Free chess with way too much anime, in your browser: ${location.origin}${location.pathname}`;
+function clipClose(){ $('#clipSheet').hidden = true; try { $('#clipVideo').pause(); } catch(e){} $('#clipBtn').focus(); }
+$('#clipBtn').onclick = clipSave;
+$('#clipClose').onclick = clipClose;
+$('#clipSheet').addEventListener('click', e => { if (e.target === $('#clipSheet')) clipClose(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#clipSheet').hidden) clipClose(); });
+$('#clipShare').onclick = async () => { try { await navigator.share({files: [clip.file], title: 'Kessen Chess', text: clipCaption()}); } catch(e){ /* closed the share sheet */ } };
+$('#clipCopy').onclick = async () => { try { await navigator.clipboard.writeText(clipCaption()); toast('Caption copied'); } catch(e){ toast(clipCaption()); } };
+// recording runs while a game is on and the tab is visible
+function clipWatch(){
+  const want = started && !trailerOn && !document.hidden && clipOk();
+  $('#clipBtn').hidden = !(started && !trailerOn && clipOk());
+  if (want && !clip.on) clipStart(); else if (!want && clip.on && !clip.saving) clipStop();
+}
+document.addEventListener('visibilitychange', clipWatch);
+setInterval(clipWatch, 1000);
+addEventListener('resize', () => { if (clip.on && !clip.saving){ clipStop(); clipWatch(); } });
+
+// On load: make sure this player's name is reserved (names chosen before the leaderboard existed), then send any games
+// still waiting.
+if (FB_ON) setTimeout(async () => {
+  if (profile.name){
+    const st = await fbClaim(profile.name);
+    if (st === 'taken') toast(`Someone already has "${profile.name}" on the leaderboard. Tap Edit to pick another name.`);
+  }
+  boardFlush();
+}, 3000);
 
 setCamSide('w');
 function start(data){

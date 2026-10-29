@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kessen Chess Smile Train profile photo</title>
+<!-- Source for smile-profile.png: a square profile photo for the Smile Train fundraiser page. Render the .cover element at 1000x1000.
+     Everything that matters sits inside the middle circle, since profile photos are usually cropped round. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap">
+<style>
+:root{--ink:#0c0a17;--night:#17122b;--blood:#ff2e4d;--gold:#ffc83d;--volt:#3fe0ff;--text:#f4eee2;
+  --display:"Dela Gothic One","Arial Black",Impact,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{background:var(--ink)}
+.cover{position:relative;width:1000px;height:1000px;overflow:hidden;color:var(--text);
+  background:radial-gradient(circle at 50% 50%,#4a2470 0%,var(--night) 50%,var(--ink) 78%)}
+.rays{position:absolute;inset:-30%;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,.08) 0deg 2.5deg,transparent 2.5deg 10deg)}
+.ring{position:absolute;left:50%;top:50%;width:820px;height:820px;transform:translate(-50%,-50%);border-radius:50%;
+  border:14px solid var(--gold);box-shadow:0 0 0 10px #000,inset 0 0 0 10px #000,0 0 60px rgba(255,200,61,.35)}
+.jp{position:absolute;left:50%;top:14%;transform:translateX(-50%) rotate(-5deg);font:400 120px/1 var(--display);color:var(--blood);
+  -webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:7px 7px 0 #000;white-space:nowrap}
+.king{position:absolute;left:50%;top:52%;width:440px;height:440px;transform:translate(-50%,-50%);filter:drop-shadow(12px 12px 0 #000)}
+.tag{position:absolute;left:50%;bottom:16%;transform:translateX(-50%) rotate(-3deg);font:400 64px/1 var(--display);color:#fff;
+  background:var(--blood);padding:14px 30px;box-shadow:8px 8px 0 #000;white-space:nowrap;-webkit-text-stroke:1px #000}
+.spark{position:absolute;width:34px;height:34px;background:var(--gold);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="rays"></div>
+  <div class="ring"></div>
+  <div class="jp">決戦</div>
+  <svg class="king" viewBox="0 0 400 400" aria-hidden="true">
+    <g stroke="#000" stroke-width="12" stroke-linejoin="round" stroke-linecap="round">
+      <!-- face -->
+      <circle cx="200" cy="250" r="128" fill="#f4eee2"/>
+      <!-- happy closed eyes -->
+      <path d="M138 238 Q156 216 174 238" fill="none" stroke-width="13"/>
+      <path d="M226 238 Q244 216 262 238" fill="none" stroke-width="13"/>
+      <!-- big grin -->
+      <path d="M140 280 Q200 356 260 280 Z" fill="#ff2e4d"/>
+      <!-- a small nose, and a subtle cleft lip: a soft line from the upper lip up to one nostril -->
+      <path d="M186 258 Q200 268 214 258" fill="none" stroke-width="8"/>
+      <path d="M181 280 Q181 270 188 263" fill="none" stroke-width="6"/>
+      <!-- crown, resting on the head: its band follows the curve of the head, tilted a touch for swagger -->
+      <g transform="rotate(-8 200 150)">
+        <path d="M118 166 L104 66 L156 112 L200 46 L244 112 L296 66 L282 166 Q200 146 118 166 Z" fill="#ffc83d"/>
+        <path d="M116 150 Q200 128 284 150 L282 168 Q200 148 118 168 Z" fill="#e0a92a" stroke-width="10"/>
+        <circle cx="104" cy="66" r="13" fill="#ff2e4d"/><circle cx="200" cy="46" r="15" fill="#3fe0ff"/><circle cx="296" cy="66" r="13" fill="#ff2e4d"/>
+        <circle cx="200" cy="146" r="9" fill="#ff2e4d" stroke-width="7"/>
+      </g>
+    </g>
+    <ellipse cx="128" cy="280" rx="22" ry="13" fill="#ff7a90" opacity=".9"/><ellipse cx="272" cy="280" rx="22" ry="13" fill="#ff7a90" opacity=".9"/><ellipse cx="272" cy="270" rx="22" ry="13" fill="#ff7a90" opacity=".9"/>
+  </svg>
+  <div class="tag">SMILES!!</div>
+  <i class="spark" style="right:150px;top:170px"></i>
+  <i class="spark" style="left:150px;bottom:190px;width:24px;height:24px"></i>
+  <i class="spark" style="right:120px;bottom:240px;width:20px;height:20px"></i>
+</div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+rules_version = '2';
+// Kessen Chess: unique fighter names and the online leaderboard.
+// Paste this whole file into Firebase console > Firestore Database > Rules, then Publish.
+//
+//   names/{key}    reserves one fighter name. key = the name in lower case, so "Rook Lord" and "rook lord" clash.
+//   owners/{uid}   which name a player holds. One per player: claiming a new name frees the old one.
+//   players/{uid}  the public leaderboard entry. It starts at 1000 WeLo with the player's first rated game, and each
+//                  later write may add one game, move WeLo by at most 64 and come at least a minute after the last.
+// Every player is a Firebase anonymous account: no email or personal details.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function me(uid) { return signedIn() && request.auth.uid == uid; }
+    // 2 to 16 letters, numbers, spaces, _ - . (the same as the in-game name editor)
+    function validName(n) {
+      return n is string && n.matches('^[\\p{L}\\p{N} _.\\-]{2,16}$') && n == n.trim()
+        && n.matches('.*[\\p{L}\\p{N}].*') && !n.matches('^__.*__$') && !rude(n) && !reserved(n);
+    }
+    // The same lists as RUDE, RUDE_WORD and RUDE_START in index.html: keep the two in step.
+    function leet(n) { return n.lower().replace('0', 'o').replace('4', 'a').replace('1', 'i').replace('3', 'e').replace('5', 's').replace('7', 't'); }
+    function rude(n) {
+      return leet(n).replace('[ _.\\-]', '').matches('.*(fuck|shit|cunt|bitch|pussy|nigg|whore|slut|hitler|penis|vagina|porn|retard|twat|wank|bastard|asshole|kike|chink|faggot|nazi|rapist).*')
+        || leet(n).split('[ _.\\-]+').hasAny(['rape', 'spic', 'fag', 'fags', 'tits', 'tit', 'cum', 'jizz', 'sex', 'anal'])
+        || leet(n).matches('(^|.*[ _.\\-])(dick|cock).*');
+    }
+    function reserved(n) { return leet(n).replace('[^a-z]', '').matches('.*(admin|moderator|official|kessenstaff|support|system).*'); }
+    function nameDoc(key) { return /databases/$(db)/documents/names/$(key); }
+    function ownerDoc(uid) { return /databases/$(db)/documents/owners/$(uid); }
+
+    match /names/{key} {
+      allow read: if true;
+      // claim a free name, in the same batch that points owners/{uid} at it
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'name'])
+        && request.resource.data.uid == request.auth.uid
+        && validName(request.resource.data.name)
+        && key == request.resource.data.name.lower()
+        && getAfter(ownerDoc(request.auth.uid)).data.key == key;
+      // give up your old name, in the same batch that moves owners/{uid} to the new one
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid
+        && getAfter(ownerDoc(request.auth.uid)).data.key != key;
+      allow update: if false;
+    }
+
+    match /owners/{uid} {
+      allow read: if me(uid);
+      allow create, update: if me(uid)
+        && request.resource.data.keys().hasOnly(['key'])
+        && request.resource.data.key is string
+        && getAfter(nameDoc(request.resource.data.key)).data.uid == uid;
+      allow delete: if false;
+    }
+
+    match /players/{uid} {
+      function entry() { return request.resource.data; }
+      function shape() {
+        return entry().keys().hasOnly(['name', 'key', 'welo', 'games', 'wins', 'crest', 'color', 'at'])
+          && validName(entry().name) && entry().key == entry().name.lower()
+          && getAfter(nameDoc(entry().key)).data.uid == uid          // the name must be yours
+          && getAfter(ownerDoc(uid)).data.key == entry().key
+          && entry().welo is int && entry().welo >= 100 && entry().welo <= 4000
+          && entry().games is int && entry().wins is int && entry().wins >= 0 && entry().wins <= entry().games
+          && entry().crest in ['k', 'q', 'r', 'b', 'n', 'p']
+          && entry().color in ['#ffc83d', '#ff2e4d', '#3fe0ff', '#b06cff', '#7dff8a']
+          && entry().at == request.time;
+      }
+      allow read: if true;
+      // the first rated game: 1000 plus that one game's change
+      allow create: if me(uid) && shape()
+        && entry().games == 1 && entry().wins <= 1
+        && entry().welo >= 936 && entry().welo <= 1064;
+      allow update: if me(uid) && shape() && (
+        // a new name, crest or colour: the numbers stay put
+        (entry().games == resource.data.games && entry().wins == resource.data.wins && entry().welo == resource.data.welo)
+        // one more rated game, a minute or more after the last one
+        || (entry().games == resource.data.games + 1
+            && (entry().wins == resource.data.wins || entry().wins == resource.data.wins + 1)
+            && math.abs(entry().welo - resource.data.welo) <= 64
+            && request.time > resource.data.at + duration.value(60, 's'))
+      );
+      allow delete: if false;
+    }
+  }
+}

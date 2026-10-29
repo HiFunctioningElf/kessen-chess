@@ -1,5 +1,5 @@
 {
   "about": "Donations to the Kessen Chess charities made somewhere other than a Kessen fundraiser page (for example on the charity's own website). Only add an entry after checking a receipt. The game adds these on top of each fundraiser page's live total, so never list a donation that was made through a fundraiser page.",
-  "format": {"abn": "the charity's ABN, e.g. 46 070 556 642 (Fred Hollows). Smile Train has no ABN, so gifts to it can't be listed here", "amount": "a number in Australian dollars, e.g. 25", "currency": "AUD", "date": "YYYY-MM-DD", "donors": "how many people gave (optional, default 1)", "receipt": "where the receipt can be seen (optional), e.g. a redacted image in this repository"},
+  "format": {"abn": "the charity's ABN, e.g. 89 067 251 209 (Foodbank Queensland). Smile Train has no ABN, so gifts to it can't be listed here", "amount": "a number in Australian dollars, e.g. 25", "currency": "AUD", "date": "YYYY-MM-DD", "donors": "how many people gave (optional, default 1)", "receipt": "where the receipt can be seen (optional), e.g. a redacted image in this repository"},
   "entries": []
 }
