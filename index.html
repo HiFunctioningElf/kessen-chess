@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029173755">
+<meta name="kessen-build" content="20261029174320">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -96,6 +96,10 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .eb-cap a{color:var(--muted);font-weight:400;text-decoration:underline}
 .eb-cap .fishy{width:56px;height:auto;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.6));animation:fishbob 1.6s ease-in-out infinite}
 @keyframes fishbob{50%{transform:translateY(-3px) rotate(-4deg)}}
+.pow-ico{display:inline-block;width:1.9em;height:1.9em;vertical-align:-.6em;margin:-.2em .35em -.2em 0;flex:none}
+.pow-ico.fish{width:2.7em;height:1.9em;animation:none;filter:none}
+.bigtext .pow-ico.big{display:block;width:1.3em;height:1.3em;margin:0 auto .08em;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.6))}
+.bigtext .pow-ico.big.fish{width:2.1em;height:1.45em}
 .fish-swim{position:absolute;top:30%;left:0;width:min(46vw,380px);z-index:6;pointer-events:none;filter:drop-shadow(5px 5px 0 rgba(0,0,0,.5))}
 .fish-swim svg{width:100%;height:auto}
 .eb-quip{position:absolute;left:62px;bottom:0;width:max-content;max-width:230px;background:#fff;color:#111;border:3px solid #000;border-radius:12px;padding:5px 9px;font:700 12px/1.3 var(--body);box-shadow:3px 3px 0 #000}
@@ -3985,7 +3989,7 @@ async function kunaiStorm(){
   const wins = {w: 0, b: 0}, clear = {w: 0, b: 0}, time = {w: 0, b: 0};   // (clear / time: passing the phone, it's against the clock)
   let K = null, stage = 0;
   const hud = () => ['w', 'b'].forEach(c => F.pts(c, passing()
-    ? (K && c === passTurn && K.live ? `⏱ ${K.t.toFixed(1)} s · ${K.left[c]} left` : `${clear[c]}/3${clear[c] ? ` · ${time[c].toFixed(2)} s` : ''}`)
+    ? (K && c === passTurn && K.live ? `${K.t.toFixed(1)} s · ${K.left[c]} left` : `${clear[c]}/3${clear[c] ? ` · ${time[c].toFixed(2)} s` : ''}`)
     : `${'●'.repeat(wins[c])}${'○'.repeat(Math.max(0, 2 - wins[c]))}${K ? ` · ${K.left[c]} left` : ''}`));
   // a fresh stage; every random number comes from the shared seed, so both online screens build the same one
   const setup = s => {
@@ -4613,13 +4617,24 @@ function drawHud(){
   const plies = MG_EVERY - (game.history().length % MG_EVERY), moves = Math.ceil(plies / 2);
   const rows = mode === 'pvp' ? [game.turn()] : mode === 'cpu' ? [playerColor] : net.my ? [net.my] : [];
   hud.innerHTML = `<span class="next">⚔️ <b></b> in ${moves} move${moves === 1 ? '' : 's'}</span>` +
-    rows.flatMap(c => powers[c].map(p => `<button class="pow" type="button" data-c="${c}" data-p="${p}" ${canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${POWERS[p][0]} ${POWERS[p][1]}</button>`)).join('');
+    rows.flatMap(c => powers[c].map(p => `<button class="pow" type="button" data-c="${c}" data-p="${p}" ${canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${powIcon(p)}${POWERS[p][1]}</button>`)).join('');
   hud.querySelector('.next b').textContent = upcomingMinigame().name;
 }
 $('#mgHud').addEventListener('click', e => { const b = e.target.closest('.pow'); if (b) usePower(b.dataset.c, b.dataset.p); });
 
 /* ---- Power-ups: won in minigames, used on your own turn ---- */
-const POWERS = {hint: ['💡', "Sensei's Hint"], takeback: ['⏪', 'Takeback'], heist: ['⏱', 'Time Heist'], oracle: ['🐟', 'Rude Fishy']};
+const POWERS = {hint: ['', "Sensei's Hint"], takeback: ['', 'Takeback'], heist: ['', 'Time Heist'], oracle: ['', 'Rude Fishy']};
+// Ink-sketch icons for the power-ups (white fill, black ink), drawn to match Rude Fishy. Rude Fishy's own drawing is the
+// one on the eval bar, reused here.
+const POW_INK = 'fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"';
+const POW_SVG = {
+  hint: `<svg viewBox="0 0 48 48"><g ${POW_INK}><path d="M24 7 C14 7 9 15 12 23 C14 28 18 30 18 35 L30 35 C30 30 34 28 36 23 C39 15 34 7 24 7 Z" fill="#fff6c8"/><path d="M19 39 L29 39 M20 43 L28 43"/><path d="M21 27 L24 31 L27 27" stroke-width="2.5"/><path d="M5 16 L1 14 M43 16 L47 14 M8 6 L5 3 M40 6 L43 3" stroke-width="3"/></g></svg>`,
+  takeback: `<svg viewBox="0 0 48 48"><g ${POW_INK}><path d="M24 10 L4 24 L24 38 Z" fill="#fff"/><path d="M44 10 L24 24 L44 38 Z" fill="#fff"/></g></svg>`,
+  heist: `<svg viewBox="0 0 48 48"><g ${POW_INK}><circle cx="24" cy="27" r="16" fill="#fff"/><path d="M20 6 L28 6 M24 6 L24 11 M37 13 L40 10"/><path d="M24 27 L24 17 M24 27 L31 31"/><path d="M12 42 Q18 47 24 43" stroke-width="2.5"/></g></svg>`
+};
+// the icon for a power-up, as HTML (class adds a size)
+const powIcon = (p, cls = '') => p === 'oracle' ? document.querySelector('.eb-cap .fishy').outerHTML.replace('class="fishy"', `class="pow-ico fish ${cls}"`).replace(/ aria-label="[^"]*" role="img"/, ' aria-hidden="true"')
+  : (POW_SVG[p] || '').replace('<svg ', `<svg class="pow-ico ${cls}" aria-hidden="true" `);
 let powers = {w: [], b: []}, hintMove = null, tbSeen = 0, heistSeen = 0;
 async function awardPower(winner){
   if (winner === 'both'){
@@ -4639,7 +4654,7 @@ async function givePower(winner){
   powers[winner] = powers[winner].concat(p);
   if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
   A.sfx.promote(); panel();
-  await bigText(`${POWERS[p][0]} ${POWERS[p][1].toUpperCase()}`, '力', {hold: 1100, size: .5, color: 'var(--gold)', sub: `${SIDE(winner).toUpperCase()} GETS A POWER-UP`});
+  await bigText(`${powIcon(p, 'big')}${POWERS[p][1].toUpperCase()}`, '力', {hold: 1100, size: .5, color: 'var(--gold)', sub: `${SIDE(winner).toUpperCase()} GETS A POWER-UP`});
 }
 const canUsePower = c => started && !busy && !isOver() && game.turn() === c && (mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my));
 function spendPower(c, p){ const i = powers[c].indexOf(p); if (i < 0) return false; powers[c] = powers[c].filter((_, j) => j !== i); return true; }
@@ -4693,7 +4708,7 @@ function drawPowers(){
   if (!any) return;
   $('#powRows').innerHTML = rows.map(c => {
     const mine = mode === 'pvp' || (mode === 'cpu' ? c === playerColor : c === net.my);
-    const items = powers[c].map((p, i) => `<button class="pow${mine ? '' : ' theirs'}" type="button" data-c="${c}" data-p="${p}" ${mine && canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${POWERS[p][0]} ${POWERS[p][1]}</button>`).join('');
+    const items = powers[c].map((p, i) => `<button class="pow${mine ? '' : ' theirs'}" type="button" data-c="${c}" data-p="${p}" ${mine && canUsePower(c) ? '' : 'disabled'} title="${POWERS[p][1]}">${powIcon(p)}${POWERS[p][1]}</button>`).join('');
     return `<div class="powrow"><span class="who ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span>${items || '<span class="none">Win a minigame to earn one</span>'}</div>`;
   }).join('');
 }
@@ -4756,9 +4771,9 @@ async function oracleUpdate(){
   $('#ebSrc').hidden = v.src !== 'sf';
   // ...and an opinion, from the point of view of whoever summoned it: first on the move just played, then on the position
   const me = oracle.color === 'w' ? 1 : -1, mine = cp * me, mate = v.mate != null ? v.mate * me : null;
-  const overall = mate != null ? (mate > 0 ? `Mate in ${mate}. Even a fish sees it.` : `You get mated in ${-mate}. Blub.`)
+  const overall = mate != null ? (mate > 0 ? `Mate in ${mate}. Even a fish sees it.` : `They have mate in ${-mate}. Find a miracle. Blub.`)
     : mine >= 300 ? "Even you can't lose this. Probably." : mine >= 100 ? "You're better. Somehow." : mine > -100 ? 'Dead even. How boring.'
-    : mine > -300 ? "You're worse. Shocking." : "It's over. I'd resign. 🐟";
+    : mine > -300 ? "You're worse. Shocking." : mgPick(['This is a disaster. Keep going, I need the laughs.', "You're losing badly. I'll stay for the comeback I don't believe in.", "Grim. I've seen worse. Once. From a goldfish.", 'Big trouble. Prove me wrong, if you can.']);
   const said = fishOnMove(oracle.prev, mine, mate, v.best);
   oracle.prev = {mine, best: v.best, fen: game.fen()};
   $('#ebQuip').textContent = said ? `${said} ${overall}` : overall;
@@ -4773,7 +4788,7 @@ function fishOnMove(prev, mine, mate, best){
     // what the move left hanging: Stockfish's best reply takes it
     const hung = best && !mate ? what(best.slice(2, 4)) : null;
     if (mate != null && mate < 0) return `${san}?? You walked into mate.`;
-    if (swing <= -300) return hung ? `${san}?? You just hung your ${hung}.` : `${san}?? That threw the game away.`;
+    if (swing <= -300) return hung ? `${san}?? You just hung your ${hung}.` : `${san}?? That threw away a lot. Claw it back.`;
     if (swing <= -120) return hung ? `${san}? Your ${hung} is wobbling.` : `${san}? A wobbly noodle of a move.`;
     if (prev.best && prev.best === uci) return `${san}. That's exactly my move. Suspicious.`;
     if (mv.flags.includes('e')) return `${san}, en passant?! …Respect.`;
@@ -4796,7 +4811,7 @@ function fishOnMove(prev, mine, mate, best){
 // after every move: count down, refresh or retire the bar
 function oracleTick(){
   if (!oracle) return;
-  if (--oracle.plies <= 0){ oracle = null; $('#evalBar').hidden = true; toast('Rude Fishy swims off, unimpressed 🐟'); return; }
+  if (--oracle.plies <= 0){ oracle = null; $('#evalBar').hidden = true; toast('Rude Fishy swims off, unimpressed.'); return; }
   oracleUpdate();
 }
 /* ---- Fair-play report (online games): signals, not proof ----
@@ -4950,7 +4965,7 @@ async function gradeGame(r){
     const g = new Chess(r.fens[k]);
     evals.push(g.game_over() ? {score: g.in_checkmate() ? -10000 : 0, best: null} : await sfSearch(r.fens[k], 160));
     if (job !== revJob) return;
-    $('#rvProg').textContent = `🐟 Rude Fishy is judging every move… ${k + 1}/${n}`;
+    $('#rvProg').innerHTML = `${powIcon('oracle')}Rude Fishy is judging every move… ${k + 1}/${n}`;
   }
   const grades = r.moves.map((m, k) => {
     const e0 = evals[k], e1 = evals[k + 1];
@@ -5759,7 +5774,7 @@ function onRemote(snap){
   if (d.pow && JSON.stringify(d.pow) !== JSON.stringify(powers)){
     const them = net.my ? OTHER(net.my) : null, before = them ? powers[them].slice() : [];
     powers = {w: (d.pow.w || []).slice(0, 3), b: (d.pow.b || []).slice(0, 3)};
-    if (them){ const left = powers[them].slice(); for (const p of left){ const i = before.indexOf(p); if (i >= 0) before.splice(i, 1); } if (before.length && POWERS[before[0]]) toast(`Your friend used ${POWERS[before[0]][0]} ${POWERS[before[0]][1]}!`); }
+    if (them){ const left = powers[them].slice(); for (const p of left){ const i = before.indexOf(p); if (i >= 0) before.splice(i, 1); } if (before.length && POWERS[before[0]]) toast(`Your friend used ${POWERS[before[0]][1]}!`); }
   }
   if ((d.heist || 0) > heistSeen && d.clock){ heistSeen = d.heist; const run = clock.run, live = !clock.paused; clockPause(); clock.w = d.clock.w; clock.b = d.clock.b; if (run && live) clockStart(run); drawClocks(); toast('Your friend pulled a Time Heist!'); }
   const off = d.drawOffer || null, poff = (prev && prev.drawOffer) || null;
