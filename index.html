@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029173049">
+<meta name="kessen-build" content="20261029173327">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -480,6 +480,16 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   .sam g.body{transition:none}
 }
 /* on-board HUD: next minigame + your power-ups */
+/* saved friends (online lobby) */
+.friends{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.friends .fh{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.friends .fr{display:flex;align-items:center;gap:8px;background:var(--night);border:1px solid var(--line);padding:6px 8px}
+.friends .fr b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.friends .fr .btn{flex:none;padding:6px 12px;min-height:0}
+.friends .fr .x{flex:none;background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}
+.friends .fr .x:hover{color:var(--blood)}
+.pl .fav{margin-left:auto;background:none;border:1px solid var(--gold);color:var(--gold);font-weight:700;font-size:11px;padding:2px 8px;cursor:pointer}
+.pl .fav.on{background:var(--gold);color:#111}
 .mghud{position:absolute;left:10px;top:10px;z-index:2;display:flex;gap:6px;flex-wrap:wrap;align-items:center;max-width:calc(100% - 170px)}
 .mghud .next{background:rgba(12,10,23,.88);border:2px solid var(--line);padding:3px 10px;font-size:12px;font-weight:700;letter-spacing:.04em}
 .mghud .next b{color:var(--gold)}
@@ -596,7 +606,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       </section>
       <section class="card ctrl">
         <div class="field"><span class="label">Opponent</span>
-          <div class="seg" id="modeSeg"><button id="mCpu" data-mode="cpu" aria-pressed="true">CPU</button><button id="mPvp" data-mode="pvp" aria-pressed="false">Same screen</button><button id="mOn" data-mode="online" aria-pressed="false">Online friend</button></div></div>
+          <div class="seg" id="modeSeg"><button id="mCpu" data-mode="cpu" aria-pressed="true">CPU</button><button id="mPvp" data-mode="pvp" aria-pressed="false">Same screen</button><button id="mOn" data-mode="online" aria-pressed="false">Online</button></div></div>
         <div class="field" id="sideField"><span class="label">You play</span>
           <div class="seg" id="sideSeg"><button id="sW" data-side="w" aria-pressed="true">White</button><button id="sB" data-side="b" aria-pressed="false">Black</button></div></div>
         <div class="field" id="gmField"><span class="label">Game mode</span>
@@ -617,11 +627,12 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
             <optgroup label="Rapid"><option value="10+0">10 min</option><option value="15+10">15 | 10</option><option value="30+0">30 min</option></optgroup>
           </select></div>
         <div class="field" id="onlineField" hidden>
-          <span class="label">Online duel</span>
+          <span class="label">Online</span>
           <div id="onIdle" class="field">
             <button class="btn primary" id="createBtn">Create game</button>
             <button class="btn" id="qmBtn" type="button">Quick match</button>
             <div class="note" id="qmNote"></div>
+            <div class="friends" id="friends"></div>
             <form class="joinrow" id="joinForm"><input id="joinCode" maxlength="6" placeholder="Code" autocomplete="off" aria-label="Game code"><button class="btn" type="submit" style="flex:none">Join</button></form>
           </div>
           <div id="onActive" class="field" hidden>
@@ -630,7 +641,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
             <button class="btn primary" id="claimBtn" hidden>Claim the win (your friend left)</button>
             <button class="btn" id="leaveBtn">Leave game</button>
           </div>
-          <div class="note" id="onNote">Create a game and send your friend the code. They open this same page, pick Online friend and join with it.</div>
+          <div class="note" id="onNote">Create a game and send your friend the code. They open this same page, pick Online and join with it.</div>
         </div>
         <div class="note" id="modeNote">Changing opponent or side starts a new duel.</div>
         <div class="actions"><button class="btn primary" id="newBtn">New duel</button><button class="btn" id="undoBtn">Undo</button><button class="btn" id="flipBtn">Flip view</button></div>
@@ -1957,7 +1968,7 @@ function panel(){
   else if (mode === 'online'){
     if (!net.code) s = 'Create or join an online game';
     else if (!net.my) s = `Watching. ${side} to move`;
-    else if (!(net.data && net.data.w && net.data.b)) s = isQM(net.code) ? `Searching for a ${qmWhat()} opponent…` : `Waiting for your friend to join with code ${net.code}`;
+    else if (!(net.data && net.data.w && net.data.b)) s = isQM(net.code) ? `Searching for a ${qmWhat()} opponent…` : friendWait ? `Waiting for ${friendWait}…` : `Waiting for your friend to join with code ${net.code}`;
     else s = (t === net.my ? 'Your move' : "Friend's move") + (game.in_check() ? '. Check!' : '');
   }
   else if (game.in_check()) s = `${side} is in check!`;
@@ -4834,7 +4845,7 @@ function recordGame(){
   if (!plies || key === lastRecorded || trailerOn) return;
   lastRecorded = key;
   const card = mode === 'online' && net.data && me ? net.data['p' + OTHER(me)] : null;
-  const opp = mode === 'cpu' ? `CPU · ${['Rookie', 'Rival', 'Final Boss'][level]}` : mode === 'online' ? ((card && card.name) || 'Online friend') : 'Same screen';
+  const opp = mode === 'cpu' ? `CPU · ${['Rookie', 'Rival', 'Final Boss'][level]}` : mode === 'online' ? ((card && card.name) || 'Online opponent') : 'Same screen';
   const log = gameLog();
   log.unshift({at: Date.now(), mode, me, opp, winner, reason: gameReason(), pgn, plies});
   saveLog(log);
@@ -5497,7 +5508,7 @@ const CODE_CH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const PEER_PREFIX = 'kessen-chess-v1-';
 const IDLE_NOTE = () => net.kind === 'p2p'
   ? 'Create a game and send your friend the invite link. Keep this tab open while you play.'
-  : 'Create a game and send your friend the code. They open this same page, pick Online friend and join with it.';
+  : 'Create a game and send your friend the code. They open this same page, pick Online and join with it.';
 const inviteLink = code => location.origin + location.pathname + '#g' + code;
 (async () => {
   if (window.claude && window.claude.use){
@@ -5576,7 +5587,7 @@ function wireConn(conn){
     const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, elo: num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1200} : null;
+    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, elo: num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1200, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
     const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
     const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
     const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
@@ -5666,12 +5677,13 @@ function attach(code, ref){
   game.reset(); lastMove = null; selected = null; legal = []; clearEndFx(); syncPieces(true);
   clockReset({base: 0, inc: 0});   // the game document says which time control applies
   $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeBox').hidden = false; $('#codeOut').textContent = code;
-  note('Send this code to your friend. They open this page, choose Online friend and join with it.');
+  note('Send this code to your friend. They open this page, choose Online and join with it.');
   hideModal(); started = true; A.music.start();
   net.unsub = ref.onSnapshot(s => onRemote(s), () => note('Lost the live connection to this game. Leave and rejoin to reconnect.', true));
   render(true);
 }
 function leaveGame(){
+  friendWait = null;
   if (net.unsub) net.unsub();
   if (net.kind === 'p2p') dropPeer();
   Object.assign(net, {code: null, ref: null, unsub: null, my: null, data: null});
@@ -5695,6 +5707,13 @@ async function drawPlayers(){
     row.appendChild(nm);
     if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `${rankOf(card.power)} · ${Number(card.power).toLocaleString()}`; row.appendChild(pw); }
     if (id && id === net.myId){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; row.appendChild(y); }
+    else if (card && card.pid && card.pid !== MY_PID){
+      const fav = document.createElement('button'); fav.type = 'button'; fav.className = 'fav' + (isFriend(card.pid) ? ' on' : '');
+      fav.textContent = isFriend(card.pid) ? '★ Friend' : '☆ Save';
+      fav.title = isFriend(card.pid) ? 'Remove from Friends' : 'Save to Friends';
+      fav.onclick = () => { toggleFriend(card); drawPlayers(); };
+      row.appendChild(fav);
+    }
     box.appendChild(row);
   }
 }
@@ -5770,6 +5789,58 @@ function rematchOnline({sides = 'swap', tc = null, mg} = {}){
   net.ref.update(Object.assign({pgn: '', n: 0, w: (swap ? d.b : d.w) || null, b: (swap ? d.w : d.b) || null, at: Date.now(), clock: null, flag: null, result: null, drawOffer: null, pow: null, tb: 0, heist: 0, fpw: null, fpb: null}, tc ? {tc} : {}, mg !== undefined ? {mg} : {})).catch(() => note('Could not start the rematch. Try again.', true));
 }
 $('#createBtn').onclick = () => { A.init(); createGame(); };
+/* ---- Friends: a saved list on this device. Each pair of friends gets its own private room code (from both player
+   ids), so tapping Play joins your friend if they're already waiting there, or opens the room and waits for them. ---- */
+const MY_PID = (() => { const mk = () => Array.from({length: 10}, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)]).join('');
+  try { let v = localStorage.getItem('kessen-player-id'); if (!/^[a-z0-9]{10}$/.test(v || '')){ v = mk(); localStorage.setItem('kessen-player-id', v); } return v; } catch(e){ return mk(); } })();
+const FRIENDS_KEY = 'kessen-friends';
+const friendList = () => { try { const a = JSON.parse(localStorage.getItem(FRIENDS_KEY) || '[]'); return Array.isArray(a) ? a.filter(f => f && /^[a-z0-9]{10}$/.test(f.pid) && typeof f.name === 'string').slice(0, 50) : []; } catch(e){ return []; } };
+const saveFriends = a => { try { localStorage.setItem(FRIENDS_KEY, JSON.stringify(a.slice(0, 50))); } catch(e){} drawFriends(); };
+const isFriend = pid => friendList().some(f => f.pid === pid);
+function toggleFriend(card){
+  if (!card || !card.pid) return;
+  const a = friendList();
+  if (isFriend(card.pid)){ saveFriends(a.filter(f => f.pid !== card.pid)); toast(`Removed ${card.name || 'your friend'} from Friends`); }
+  else { saveFriends([{pid: card.pid, name: card.name || 'Friend', at: Date.now()}].concat(a)); toast(`⭐ Saved ${card.name || 'your friend'} to Friends`); }
+}
+// the same 6-letter room code on both devices, whichever of the two works it out
+function friendCode(pid){
+  const key = [MY_PID, pid].sort().join(':'); let h = 2166136261;
+  for (const ch of key){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return 'F' + h.toString(36).toUpperCase().padStart(5, '0').slice(-5);
+}
+let friendWait = null;   // the friend we're waiting for in our private room
+function drawFriends(){
+  const box = $('#friends'); if (!box) return;
+  const a = friendList();
+  box.innerHTML = `<div class="fh">Friends</div>` + (a.length ? '' : '<div class="note">After an online game, tap ☆ Save next to your opponent and they’ll show up here.</div>');
+  for (const f of a){
+    const row = document.createElement('div'); row.className = 'fr';
+    row.innerHTML = '<b></b><button class="btn" type="button">Play</button><button class="x" type="button" aria-label="Remove">✕</button>';
+    row.querySelector('b').textContent = f.name;
+    row.querySelector('.btn').onclick = () => { A.init(); playFriend(f); };
+    row.querySelector('.x').onclick = () => { saveFriends(friendList().filter(x => x.pid !== f.pid)); };
+    box.appendChild(row);
+  }
+}
+async function playFriend(f){
+  if (qmBusy) return;
+  if (!net.ready || net.kind !== 'p2p'){ note('Playing friends works on the GitHub Pages version of the game.', true); return; }
+  qmBusy = true;
+  try {
+    const code = friendCode(f.pid);
+    note(`Looking for ${f.name}…`);
+    dropPeer();
+    let peer;
+    try { peer = await new Promise((res, rej) => { const p = new Peer(); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); }); }
+    catch(e){ note('Could not reach the matchmaking server. Try again in a moment.', true); return; }
+    if (await tryJoinQM(peer, code)){ note(`Connected to ${f.name}!`); return; }
+    try { peer.destroy(); } catch(e){}
+    // they're not there yet: open our private room and wait
+    if (await createGame(code, true)){ friendWait = f.name; note(`Waiting for ${f.name}. Ask them to tap Play next to your name under Friends, or send them the invite link.`); panel(); }
+    else note('Could not open your room. Try again in a moment.', true);
+  } finally { qmBusy = false; }
+}
 /* ---- Random opponent: join someone already waiting in a matchmaking room, or open one and wait ---- */
 const clientToken = Math.random().toString(36).slice(2, 12);
 // (function declarations, so the panel can use them before this point in the script runs)
@@ -5816,6 +5887,7 @@ async function quickMatch(){
   } finally { qmBusy = false; $('#qmBtn').disabled = false; }
 }
 $('#qmBtn').onclick = () => { A.init(); quickMatch(); };
+drawFriends();
 $('#tcSel').addEventListener('change', drawQmNote);
 $('#joinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); joinGame($('#joinCode').value); });
 $('#leaveBtn').onclick = leaveGame;
@@ -5963,7 +6035,7 @@ function checkName(raw){
   return {ok: true, msg: '✓ Looks good. (Names aren\'t unique yet: that arrives with the online leaderboard.)'};
 }
 // what your friend sees online
-const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, elo: profile.elo});
+const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, elo: profile.elo, pid: MY_PID});
 function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
 $('#fEdit').onclick = () => {
   let crest = profile.crest, color = profile.color;

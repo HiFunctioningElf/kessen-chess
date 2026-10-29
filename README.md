@@ -8,7 +8,8 @@
 
 - **CPU**: three levels (Rookie, Rival, Final Boss). The CPU thinks in a background thread.
 - **Same screen**: two players on one device, with optional auto-flip
-- **Online friend**: click *Create game*, then *Copy invite link* and send it to your friend. Keep your tab open while you play.
+- **Online**: click *Create game*, then *Copy invite link* and send it to a friend. Keep your tab open while you play.
+- **Friends**: after an online game, tap ☆ next to your opponent to save them. They appear under *Friends*; tap *Play* and you'll meet in your own private room (whoever taps first waits for the other). Saved on this device.
 - **Quick match**: get paired with someone else searching right now who picked the same game mode (Classic or Kessen) and time control. *Find an online match* on the start screen jumps straight in.
 
 ## Extras
