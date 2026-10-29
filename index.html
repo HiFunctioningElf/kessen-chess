@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029175356">
+<meta name="kessen-build" content="20261029180016">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -112,6 +112,22 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .clock{position:absolute;right:10px;z-index:2;display:flex;align-items:center;gap:8px;background:rgba(12,10,23,.88);border:2px solid var(--line);padding:4px 12px;
   font:700 clamp(18px,3vw,28px)/1.2 ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;pointer-events:none}
 .clock.top{top:10px} .clock.bot{bottom:10px}
+/* style meters: a D–SSS rank for each player; yours at the bottom right, theirs at the top right */
+.style-meter{position:absolute;right:10px;z-index:2;display:flex;align-items:center;gap:8px;min-width:150px;background:rgba(12,10,23,.86);border:2px solid var(--line);padding:4px 10px 4px 6px;box-shadow:3px 3px 0 #000;pointer-events:none}
+.style-meter.top{top:52px} .style-meter.bot{bottom:52px}
+.style-meter.sw{border-left:4px solid #fffaf0} .style-meter.sb{border-left:4px solid var(--gold)}
+.style-meter .g{font:400 26px/1 var(--display);min-width:1.4em;text-align:center;color:var(--muted);-webkit-text-stroke:1px #000;text-shadow:2px 2px 0 #000}
+.style-meter .mid{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.style-meter .lab{font:700 9px var(--body);letter-spacing:.16em;color:var(--muted)}
+.style-meter .lab span{font-family:var(--chess);font-size:11px;letter-spacing:0}
+.style-meter .word{font:400 12px var(--display);color:var(--text);white-space:nowrap}
+.style-meter .bar{display:block;height:4px;background:rgba(255,255,255,.12)}
+.style-meter .bar i{display:block;height:100%;background:var(--gold);transition:width .4s}
+.style-meter .n{font:700 12px ui-monospace,Consolas,monospace;color:var(--gold);font-variant-numeric:tabular-nums}
+.style-meter[data-g=C] .g{color:#3fe0ff}.style-meter[data-g=B] .g{color:#7dff8a}.style-meter[data-g=A] .g{color:var(--gold)}
+.style-meter[data-g=S] .g,.style-meter[data-g=SS] .g,.style-meter[data-g=SSS] .g{color:var(--blood)}
+.style-meter[data-g=SS],.style-meter[data-g=SSS]{border-color:var(--blood);box-shadow:3px 3px 0 #000,0 0 18px rgba(255,46,77,.45)}
+@media (max-width:600px){.style-meter{min-width:0;padding:3px 7px 3px 5px}.style-meter .g{font-size:20px}.style-meter .lab,.style-meter .bar{display:none}.style-meter .word{font-size:10px}.style-meter.top{top:44px}.style-meter.bot{bottom:44px}}
 .clock .g{font-family:var(--chess);font-size:.85em}
 .clock.on{border-color:var(--gold);color:var(--gold);box-shadow:0 0 18px rgba(255,200,61,.35)}
 .clock.low{border-color:var(--blood);color:var(--blood);animation:lowtime .5s ease-in-out infinite alternate}
@@ -596,7 +612,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     </div>
   </header>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
@@ -1992,6 +2008,7 @@ function panel(){
   $('#flipField').hidden = mode !== 'pvp';
   if (typeof drawGameMode === 'function') drawGameMode();
   if (typeof drawPowers === 'function') drawPowers();
+  if (typeof drawStyle === 'function') drawStyle();
   $('#sideField').hidden = mode === 'pvp' || (mode === 'online' && !!net.code);
   $('#onlineField').hidden = mode !== 'online';
   $('#tcField').hidden = mode === 'cpu' || (mode === 'online' && !!net.code);
@@ -2980,7 +2997,7 @@ let ended = null;     // {type: 'resign' | 'draw' | 'abandon', winner: 'w' | 'b'
 const isOver = () => game.game_over() || !!flagged || !!ended;
 const tcOn = () => clock.base > 0 && mode !== 'cpu';
 const parseTc = v => { const [m, i] = String(v).split('+').map(Number); return {base: (m || 0) * 60000, inc: (i || 0) * 1000}; };
-function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof styleBonus !== 'undefined') resetStyle(); if (typeof fp !== 'undefined'){ fp = {tabouts: 0, awayMs: 0}; awaySince = 0; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; oracle = null; const eb = document.querySelector('#evalBar'); if (eb) eb.hidden = true; } drawClocks(); }
+function clockReset(tc){ clock.base = tc.base; clock.inc = tc.inc; clock.w = clock.b = tc.base; clock.run = null; clock.paused = true; flagged = null; ended = null; timeoutDraw = false; if (typeof style !== 'undefined' && style) resetStyle(); if (typeof fp !== 'undefined'){ fp = {tabouts: 0, awayMs: 0}; awaySince = 0; } if (typeof powers !== 'undefined'){ powers = {w: [], b: []}; hintMove = null; oracle = null; const eb = document.querySelector('#evalBar'); if (eb) eb.hidden = true; } drawClocks(); }
 function clockPause(){ if (clock.run && !clock.paused) clock[clock.run] -= performance.now() - clock.since; clock.paused = true; }
 function clockStart(c){ clock.run = c; clock.since = performance.now(); clock.paused = false; }
 const remaining = c => clock[c] - (clock.run === c && !clock.paused ? performance.now() - clock.since : 0);
@@ -3380,7 +3397,7 @@ async function mgGate(F, rules, {count = true} = {}){
 }
 async function mgEnd(F, winner, why = ''){
   F.input = null; F.key = null;
-  const me = myColor(); if (me && (winner === me || winner === 'both') && typeof styleState !== 'undefined') styleState.mgWins++;
+  if (winner) for (const c of winner === 'both' ? ['w', 'b'] : [winner]) award(c, 'mg' + F.id, `Minigame Winner (${F.name.replace(/^\S+ /, '')})`, 15);
   const head = winner === 'both' ? 'BOTH WIN!' : winner ? `${mgWho(winner)} WIN${winner === mgMe() ? '' : 'S'}!` : (why || 'NO WINNER');
   F.big(head, winner === 'both' ? 'A POWER-UP EACH' : winner ? 'POWER-UP INCOMING' : 'NO POWER-UP THIS TIME', {cls: 'end'});
   A.sfx[winner ? 'heroic' : 'draw']();
@@ -3549,7 +3566,7 @@ async function quickDraw(){
   });
 
   const gsWin = async (c, ms) => {
-    if (c === myColor() && typeof styleState !== 'undefined') styleState.godspeed = true;
+    award(c, 'gs', 'GODSPEED (a 100 ms draw)', 50);
     await F.wait(700); await godspeedFilm(F, c, ms);
     F.big('GODSPEED VICTORY!!', 'THE WHOLE MINIGAME, IN ONE DRAW', {color: 'var(--gold)'}); mgSfx.gong(); await F.wait(1600);
   };
@@ -6125,66 +6142,153 @@ $('#fEdit').onclick = () => {
   $('#prof').hidden = false; $('#pName').focus();
 };
 drawFighter();
-// Style bonuses earned during a rated game (vs CPU or online), and the result's swing.
-// Each bonus pays out once per game (so a Takeback can't farm it), pops up the moment you earn it, and is listed
-// on the end screen's scouter readout. A few cheeky taxes too.
-let styleBonus = [], styleSeen = {}, styleState = {checks: 0, worst: 0, promos: 0, castled: false, lostAny: false, mgWins: 0, godspeed: false}, ratedDone = false, lastRating = null;
-const resetStyle = () => { styleBonus = []; styleSeen = {}; styleState = {checks: 0, worst: 0, promos: 0, castled: false, lostAny: false, mgWins: 0, godspeed: false}; ratedDone = false; };
+// Style: every move can earn style for whoever played it (you, your friend, the CPU), shown on each player's style
+// meter during the game. In a rated game (vs CPU or online) your style also goes into your Power Level.
+// Each bonus pays once per player per game (so a Takeback can't farm it). A few cheeky taxes too.
+const STYLE0 = () => ({lines: [], seen: {}, checks: 0, worst: 0, promos: 0, castled: false, lostAny: false});
+var style = null;   // (var, so the panel can ask before this line has run)
+style = {w: STYLE0(), b: STYLE0()};
+let ratedDone = false, lastRating = null;
+const resetStyle = () => { style = {w: STYLE0(), b: STYLE0()}; ratedDone = false; drawStyle(); };
+const styleTotal = c => style ? style[c].lines.reduce((a, l) => a + l[1], 0) : 0;
 const STYLE_VAL = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
 const sideMaterial = c => game.board().flat().reduce((a, p) => a + (p && p.color === c ? STYLE_VAL[p.type] : 0), 0);
-function award(key, label, pts, quiet){
-  if (styleSeen[key]) return; styleSeen[key] = 1; styleBonus.push([label, pts]);
-  if (!quiet) toast(`${pts >= 0 ? '✨' : '💸'} ${label} ${pts >= 0 ? '+' : ''}${pts} 戦闘力`);
+function award(c, key, label, pts){
+  const S = style[c]; if (S.seen[key]) return; S.seen[key] = 1; S.lines.push([label, pts]);
+  const who = mode === 'pvp' ? `${SIDE(c)}: ` : c === myColor() ? '' : mode === 'cpu' ? 'CPU: ' : 'Opponent: ';
+  toast(`${who}${pts >= 0 ? '✨' : '💸'} ${label} ${pts >= 0 ? '+' : ''}${pts} style`);
+  drawStyle(c);
+}
+// The style meter: a rank from D to SSS for each player, your end of the board at the bottom right.
+const STYLE_RANKS = [[-Infinity, 'D', 'Dull'], [60, 'C', 'Cool'], [150, 'B', 'Bold'], [280, 'A', 'Awesome'], [450, 'S', 'Stylish!'], [650, 'SS', 'Super Stylish!!'], [900, 'SSS', 'SSSensational!!!']];
+const styleRank = n => { let i = 0; while (i + 1 < STYLE_RANKS.length && n >= STYLE_RANKS[i + 1][0]) i++; return i; };
+function drawStyle(gained){
+  const top = $('#styleTop'), bot = $('#styleBot'); if (!top || !style) return;
+  const show = started && !(mode === 'online' && !(net.data && net.data.w && net.data.b));
+  top.hidden = bot.hidden = !show; if (!show) return;
+  for (const [el, col, pos] of [[bot, orientation, 'bot'], [top, OTHER(orientation), 'top']]){
+    const n = styleTotal(col), i = styleRank(n), [min, g, word] = STYLE_RANKS[i], next = STYLE_RANKS[i + 1], lo = Math.max(0, min);
+    const pct = next ? Math.max(0, Math.min(100, (n - lo) / (next[0] - lo) * 100)) : 100;
+    const was = el.dataset.g;
+    el.className = `style-meter ${pos} s${col}`; el.dataset.g = g;
+    el.innerHTML = `<b class="g">${g}</b><span class="mid"><span class="lab"><span class="${col === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span> STYLE</span><span class="word">${word}</span><span class="bar"><i style="width:${pct}%"></i></span></span><span class="n">${n}</span>`;
+    if (gained === col && !RM){
+      el.animate([{transform: 'scale(1.18)'}, {transform: 'scale(1)'}], {duration: 320, easing: 'cubic-bezier(.3,1.6,.6,1)'});
+      if (was && was !== g){ el.querySelector('.g').animate([{transform: 'scale(2.4) rotate(-12deg)', opacity: 0}, {transform: 'scale(1) rotate(0)', opacity: 1}], {duration: 380, easing: 'cubic-bezier(.3,1.6,.6,1)'}); A.sfx.ding(); }   // a new rank
+    }
+  }
 }
 // squares a knight on `sq` attacks
 const knightHops = sq => { const f = sq.charCodeAt(0) - 97, r = +sq[1]; return [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]].map(([df, dr]) => [f + df, r + dr]).filter(([x, y]) => x >= 0 && x < 8 && y >= 1 && y <= 8).map(([x, y]) => String.fromCharCode(97 + x) + y); };
+// Rare and meme openings: the moves from the start of the game ('*' = any move). `by` is who earns it; the bonus lands
+// the moment the last move of the line is played. Checks (+) don't matter.
+const RARE_OPENINGS = [
+  {line: ['e4', '*', 'Ke2'], by: 'w', name: 'The Bongcloud', pts: 150},
+  {line: ['f3', '*', 'Kf2'], by: 'w', name: 'Fried Fox', pts: 150},
+  {line: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'Bxf7'], by: 'w', name: 'Jerome Gambit', pts: 150},
+  {line: ['e4', 'e5', 'Nf3', 'Nc6', 'Nc3', 'Nf6', 'Nxe5'], by: 'w', name: 'Halloween Gambit', pts: 120},
+  {line: ['e4', 'e5', 'd4', 'exd4', 'c3'], by: 'w', name: 'Danish Gambit', pts: 60},
+  {line: ['e4', 'e5', 'f4'], by: 'w', name: "King's Gambit (very romantic)", pts: 40},
+  {line: ['e4', 'c5', 'd4', 'cxd4', 'c3'], by: 'w', name: 'Smith-Morra Gambit', pts: 40},
+  {line: ['g4'], by: 'w', name: "Grob's Attack (1.g4?!)", pts: 60},
+  {line: ['Nh3'], by: 'w', name: 'Amar Opening (1.Nh3)', pts: 60},
+  {line: ['Na3'], by: 'w', name: "Durkin's Sodium Attack (1.Na3)", pts: 60},
+  {line: ['b4'], by: 'w', name: 'The Orangutan (1.b4)', pts: 50},
+  {line: ['f3'], by: 'w', name: 'Barnes Opening (1.f3)', pts: 50},
+  {line: ['h3'], by: 'w', name: 'Clemenz Opening (1.h3)', pts: 40},
+  {line: ['h4'], by: 'w', name: 'Kádas Opening (1.h4)', pts: 40},
+  {line: ['a4'], by: 'w', name: 'Ware Opening (1.a4)', pts: 40},
+  {line: ['a3'], by: 'w', name: 'Anderssen Opening (1.a3)', pts: 30},
+  {line: ['f4'], by: 'w', name: "Bird's Opening (1.f4)", pts: 25},
+  {line: ['e4', 'e5', 'Ke2', 'Ke7'], by: 'both', name: 'DOUBLE BONGCLOUD', pts: 300},
+  {line: ['*', 'e5', '*', 'Ke7'], by: 'b', name: 'The Bongcloud (as Black)', pts: 150},
+  {line: ['e4', 'e5', 'Nf3', 'd5'], by: 'b', name: 'Elephant Gambit', pts: 80},
+  {line: ['e4', 'e5', 'Nf3', 'f5'], by: 'b', name: 'Latvian Gambit', pts: 80},
+  {line: ['e4', 'e5', 'Nf3', 'Nf6', 'Nxe5', 'Nc6'], by: 'b', name: 'Stafford Gambit', pts: 80},
+  {line: ['d4', 'e5'], by: 'b', name: 'Englund Gambit', pts: 60},
+  {line: ['e4', 'f5'], by: 'b', name: 'Fred Defence (1...f5)', pts: 60},
+  {line: ['*', 'g5'], by: 'b', name: 'Borg Defence (1...g5)', pts: 60},
+  {line: ['*', 'Nh6'], by: 'b', name: 'Adams Defence (1...Nh6)', pts: 60},
+  {line: ['*', 'Na6'], by: 'b', name: 'Lemming Defence (1...Na6)', pts: 60},
+  {line: ['*', 'b5'], by: 'b', name: 'Polish Defence (1...b5)', pts: 50},
+  {line: ['*', 'f6'], by: 'b', name: 'Barnes Defence (1...f6)', pts: 50}
+];
+function noteOpening(){
+  const h = game.history().map(m => m.replace(/[+#]/g, '')), n = h.length;
+  if (n > 8) return;
+  for (const o of RARE_OPENINGS){
+    if (o.line.length !== n || !o.line.every((m, i) => m === '*' || m === h[i])) continue;
+    for (const c of o.by === 'both' ? ['w', 'b'] : [o.by]) award(c, 'op:' + o.name, o.name, o.pts);
+  }
+}
+const ON_BOARD = (x, y) => x >= 0 && x < 8 && y >= 1 && y <= 8, SQN = (x, y) => String.fromCharCode(97 + x) + y;
+const TACTIC_VAL = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 100};
 function noteStyle(mv){
-  const me = myColor(); if (!me) return;
-  styleState.worst = Math.min(styleState.worst, sideMaterial(me) - sideMaterial(OTHER(me)));   // for comebacks
-  if (mv.color !== me){ if (mv.captured) styleState.lostAny = true; return; }
+  const c = mv.color, them = OTHER(c), S = style[c], a = (k, l, p) => award(c, k, l, p);
+  noteOpening();
+  for (const x of ['w', 'b']) style[x].worst = Math.min(style[x].worst, sideMaterial(x) - sideMaterial(OTHER(x)));   // for comebacks
+  if (mv.captured) style[them].lostAny = true;
   const myMove = Math.ceil(game.history().length / 2), check = game.in_check(), mate = game.in_checkmate();
+  const castle = /[kq]/.test(mv.flags), atk = check ? checkers() : [];
   // the move itself
-  if (mv.flags.includes('e')) award('ep', 'Baguette Bonus (en passant)', 50);
-  if (mv.flags.includes('k')){ styleState.castled = true; award('ck', 'Six-Pack Bonus (castled)', 5); }
-  if (mv.flags.includes('q')){ styleState.castled = true; award('cq', 'Long Way Round (castled queenside)', 10); }
+  if (mv.flags.includes('e')) a('ep', 'Baguette Bonus (en passant)', 50);
+  if (mv.flags.includes('k')){ S.castled = true; a('ck', 'Six-Pack Bonus (castled)', 5); }
+  if (mv.flags.includes('q')){ S.castled = true; a('cq', 'Long Way Round (castled queenside)', 10); }
   if (mv.promotion){
-    styleState.promos++;
+    S.promos++;
     // underpromotion is the height of style: it pays big (the silliest pick pays most)
-    if (mv.promotion === 'n' && check) award('horse', 'Horse Delivery (knight promotion with check)', 300);
-    else if (mv.promotion === 'n') award('under', 'Horse Girl Energy (promoted to a knight)', 200);
-    else if (mv.promotion === 'r') award('under', 'Why Not a Queen? (promoted to a rook)', 200);
-    else if (mv.promotion === 'b') award('under', 'A Bishop?! Of All Things (promoted to a bishop)', 250);
-    else award('glow', 'Glow Up (promoted a pawn)', 15);
-    if (styleState.promos >= 2) award('factory', 'Pawn Factory (two promotions)', 30);
+    if (mv.promotion === 'n' && check) a('horse', 'Horse Delivery (knight promotion with check)', 300);
+    else if (mv.promotion === 'n') a('under', 'Horse Girl Energy (promoted to a knight)', 200);
+    else if (mv.promotion === 'r') a('under', 'Why Not a Queen? (promoted to a rook)', 200);
+    else if (mv.promotion === 'b') a('under', 'A Bishop?! Of All Things (promoted to a bishop)', 250);
+    else a('glow', 'Glow Up (promoted a pawn)', 15);
+    if (S.promos >= 2) a('factory', 'Pawn Factory (two promotions)', 30);
   }
-  if (mv.captured === 'q') award('qsnatch', 'Queen Snatcher', 30);
-  if (mv.piece === 'k' && mv.captured) award('kbrawl', 'The King Joins the Brawl', 10);
-  if (check && checkers().length > 1) award('dbl', 'Double Trouble (double check)', 40);
-  if (check){ if (++styleState.checks >= 5) award('spam', 'Annoying Little Brother (5 checks in a row)', 10); } else styleState.checks = 0;
+  if (mv.captured === 'q') a('qsnatch', 'Queen Snatcher', 30);
+  if (mv.piece === 'k' && mv.captured) a('kbrawl', 'The King Joins the Brawl', 10);
+  // checks: double, discovered (the piece that moved isn't the one giving check), and check spam
+  if (atk.length > 1) a('dbl', 'Double Trouble (double check)', 40);
+  else if (check && !castle && !atk.includes(mv.to)) a('disc', mate ? 'Now You See Me (discovered checkmate)' : 'Surprise! (discovered check)', mate ? 120 : 40);
+  if (check){ if (++S.checks >= 5) a('spam', 'Annoying Little Brother (5 checks in a row)', 10); } else S.checks = 0;
+  // knight forks
   if (mv.piece === 'n' && !mate){
-    const hit = knightHops(mv.to).map(q => game.get(q)).filter(p => p && p.color !== me && 'rqk'.includes(p.type)).map(p => p.type);
-    if (hit.includes('k') && hit.includes('q')) award('famfork', 'Family Fork (king and queen)', 35);
-    else if (hit.length >= 2) award('fork', 'Forkful (knight fork)', 15);
+    const hit = knightHops(mv.to).map(q => game.get(q)).filter(p => p && p.color === them && 'rqk'.includes(p.type)).map(p => p.type);
+    if (hit.includes('k') && hit.includes('q')) a('famfork', 'Family Fork (king and queen)', 35);
+    else if (hit.length >= 2) a('fork', 'Forkful (knight fork)', 15);
   }
-  if (mv.piece === 'k' && (me === 'w' ? +mv.to[1] >= 5 : +mv.to[1] <= 4) && game.board().flat().some(p => p && p.type === 'q')) award('kwalk', 'Main Character Walk (king strolls into enemy land)', 30);
-  if (mv.piece === 'q' && myMove <= 3) award('earlyq', 'Queen Out Too Early Tax', -5);
+  // pins and skewers: along each line from the piece that moved, the first two enemy pieces in a row
+  const lineT = mv.promotion || mv.piece;
+  if ('bqr'.includes(lineT) && !mate){
+    const dirs = [...(lineT !== 'b' ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : []), ...(lineT !== 'r' ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : [])];
+    const f0 = mv.to.charCodeAt(0) - 97, r0 = +mv.to[1];
+    for (const [df, dr] of dirs){
+      let x = f0 + df, y = r0 + dr, first = null, second = null;
+      while (ON_BOARD(x, y)){ const p = game.get(SQN(x, y)); if (p){ if (p.color === c) break; if (!first) first = p; else { second = p; break; } } x += df; y += dr; }
+      if (!first || !second) continue;
+      const v1 = TACTIC_VAL[first.type], v2 = TACTIC_VAL[second.type];
+      if ('kq'.includes(first.type) && v1 > v2 && v2 >= 3) a('skewer', first.type === 'k' ? 'Shish Kebab (skewered the king)' : 'Skewered (skewer)', first.type === 'k' ? 40 : 25);
+      else if (v2 > v1 && v1 >= 3 && 'kqr'.includes(second.type)) a('pin', second.type === 'k' ? 'Pinned to the Wall (pinned to the king)' : 'Pinned Down (pin)', second.type === 'k' ? 20 : 15);
+    }
+  }
+  if (mv.piece === 'k' && (c === 'w' ? +mv.to[1] >= 5 : +mv.to[1] <= 4) && game.board().flat().some(p => p && p.type === 'q')) a('kwalk', 'Main Character Walk (king strolls into enemy land)', 30);
+  if (mv.piece === 'q' && myMove <= 3) a('earlyq', 'Queen Out Too Early Tax', -5);
   // the finishing blow
   if (mate){
-    const ks = kingSq(OTHER(me)), kf = ks.charCodeAt(0) - 97, kr = +ks[1];
+    const ks = kingSq(them), kf = ks.charCodeAt(0) - 97, kr = +ks[1];
     const around = [];
-    for (let df = -1; df <= 1; df++) for (let dr = -1; dr <= 1; dr++){ if (!df && !dr) continue; const x = kf + df, y = kr + dr; if (x >= 0 && x < 8 && y >= 1 && y <= 8) around.push(String.fromCharCode(97 + x) + y); }
-    const smothered = mv.piece === 'n' && around.every(q => { const p = game.get(q); return p && p.color !== me; });
-    if (mv.flags.includes('e')) award('epmate', 'Baguette to the Face (en passant checkmate)', 200);
-    else if (/[kq]/.test(mv.flags)) award('castlemate', 'Castle Crusher (checkmate by castling)', 150);
-    else if (mv.promotion && mv.promotion !== 'q') award('twist', 'Plot Twist (underpromotion checkmate)', 400);
-    else if (smothered) award('smother', 'Smothered in Love (smothered mate)', 120);
-    else if (mv.piece === 'p') award('pawnmate', 'Humiliation (checkmate with a pawn)', 100);
-    else if (mv.piece === 'k') award('kingmate', 'Humiliation (checkmate with a king)', 120);
-    else if (mv.piece === 'n') award('ponymate', 'Pony Express (knight checkmate)', 40);
-    else if (mv.piece === 'b') award('holymate', 'Holy Smite (bishop checkmate)', 30);
-    if ('rq'.includes(mv.piece) && kr === (me === 'w' ? 8 : 1) && +mv.to[1] === kr) award('backrank', 'Read the Back Rank (back-rank mate)', 25);
-    if (myMove <= 4) award('wr', 'Any% World Record (checkmate in 4 moves or fewer)', 150);
-    else if (myMove <= 10) award('speed', 'Speedrun (checkmate by move 10)', 60);
+    for (let df = -1; df <= 1; df++) for (let dr = -1; dr <= 1; dr++){ if ((df || dr) && ON_BOARD(kf + df, kr + dr)) around.push(SQN(kf + df, kr + dr)); }
+    const smothered = mv.piece === 'n' && around.every(q => { const p = game.get(q); return p && p.color === them; });
+    if (mv.flags.includes('e')) a('epmate', 'Baguette to the Face (en passant checkmate)', 200);
+    else if (castle) a('castlemate', 'Castle Crusher (checkmate by castling)', 150);
+    else if (mv.promotion && mv.promotion !== 'q') a('twist', 'Plot Twist (underpromotion checkmate)', 400);
+    else if (smothered) a('smother', 'Smothered in Love (smothered mate)', 120);
+    else if (mv.piece === 'p') a('pawnmate', 'Humiliation (checkmate with a pawn)', 100);
+    else if (mv.piece === 'k') a('kingmate', 'Humiliation (checkmate with a king)', 120);
+    else if (mv.piece === 'n') a('ponymate', 'Pony Express (knight checkmate)', 40);
+    else if (mv.piece === 'b') a('holymate', 'Holy Smite (bishop checkmate)', 30);
+    if ('rq'.includes(mv.piece) && kr === (c === 'w' ? 8 : 1) && +mv.to[1] === kr) a('backrank', 'Read the Back Rank (back-rank mate)', 25);
+    if (myMove <= 4) a('wr', 'Any% World Record (checkmate in 4 moves or fewer)', 150);
+    else if (myMove <= 10) a('speed', 'Speedrun (checkmate by move 10)', 60);
   }
 }
 function rateGame(){
@@ -6197,12 +6301,12 @@ function rateGame(){
   else if (game.in_checkmate()) winner = game.turn() === 'w' ? 'b' : 'w';
   const out = winner === null ? 'draw' : winner === me ? 'win' : 'loss';
   const table = mode === 'cpu' ? {win: [40, 90, 200][level], loss: [-60, -40, -20][level], draw: [10, 25, 60][level]} : {win: 150, loss: -60, draw: 20};
-  const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]], ...styleBonus];
+  const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]], ...style[me].lines];
   if (ended && ended.type === 'resign' && winner !== me) lines.push(['White Flag Tax', -10]);
   if (out === 'draw' && game.in_stalemate()) lines.push(['Tea Party (stalemate)', 20]);
   if (out === 'draw' && game.in_threefold_repetition()) lines.push(['Déjà Vu Tax', -5]);
   // the whole game's story
-  const moves = Math.ceil(game.history().length / 2), st = styleState;
+  const moves = Math.ceil(game.history().length / 2), st = style[me];
   if (out === 'win'){
     if (st.worst <= -9) lines.push(['Anime Comeback (won from a queen down)', 150]);
     else if (st.worst <= -5) lines.push(['Plot Armor Comeback (won from 5+ down)', 80]);
@@ -6212,8 +6316,6 @@ function rateGame(){
     if (!st.castled && moves >= 20) lines.push(['Never Castled, Never Scared', 10]);
   }
   if (moves >= 80) lines.push(['Marathon (80+ moves)', 20]);
-  if (st.mgWins) lines.push([`Minigame Merchant (${st.mgWins} won)`, Math.min(50, st.mgWins * 10)]);
-  if (st.godspeed) lines.push(['GODSPEED (a 100 ms draw)', 50]);
   const before = profile.power, delta = lines.reduce((a, l) => a + l[1], 0);
   profile.power = Math.max(0, before + delta); profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
   // Elo (online games only), against the rating your opponent's screen shared; new players move faster (K 40, then 24)
