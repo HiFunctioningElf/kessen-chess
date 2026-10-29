@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029203804">
+<meta name="kessen-build" content="20261029205239">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -327,15 +327,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .ep-vhs .cap{position:absolute;left:50%;bottom:calc(11vh + 44px);transform:translateX(-50%);max-width:92vw;text-align:center;font-family:var(--display);font-weight:400;font-size:clamp(20px,4.6vw,46px);line-height:1.1;-webkit-text-stroke:1.5px #000;paint-order:stroke fill;text-shadow:4px 4px 0 #0055a4}
 @keyframes epBlink{50%{opacity:0}}
 @keyframes epRoll{to{background-position:0 14px}}
-.eptv{position:fixed;right:max(16px,3vw);top:calc(11vh + 14px);z-index:65;width:min(280px,calc(100vw - 32px));background:#111;border:4px solid #000;box-shadow:0 0 0 3px var(--gold),6px 6px 0 #000;
   transform:translateY(calc(-100% - 11vh - 60px)) rotate(3deg);transition:transform .35s cubic-bezier(.2,1.3,.4,1);pointer-events:none}
-.eptv.on{transform:translateY(0) rotate(-2deg)}
-.eptv-screen{position:relative;aspect-ratio:16/9;background:#000;border-bottom:3px solid #000}
-.eptv-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.eptv-meta{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff;color:#0f0f0f;font:400 12px/1.35 var(--body)}
-.eptv-meta b{font-weight:700;font-size:14px}
-.eptv-meta span{color:#606060}
-.eptv-meta a{color:#065fd4;pointer-events:auto;text-decoration:none;font-weight:700}
 .dsplit{position:absolute;inset:0}
 .dsplit .half{position:absolute;inset:0;display:flex;align-items:center;gap:3vw;padding-inline:7vw}
 .dsplit .l{clip-path:polygon(0 0,58% 0,42% 100%,0 100%);background:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 3px,transparent 3px 26px),linear-gradient(135deg,#2a0610,#ff2e4d);justify-content:flex-start}
@@ -2406,42 +2398,6 @@ async function moveFx(mv){
   if (/[kq]/.test(mv.flags)) mini(mv.to, 'CASTLE! 入城');
   else if (mv.piece === 'n') mini(mv.to, 'HYAH!');
 }
-/* ================= CREDITED YOUTUBE TV: short clips played through YouTube's official embed ================= */
-// Never downloaded or copied: each clip plays in a small TV that names the video and its channel and links to it.
-const CLIPS = {
-  // Julien Miquel, "How to Pronounce En Passant", 0:12–0:15
-  ep: {id: 'VO-YWOKX5jc', from: 12, len: 3000, title: 'How to Pronounce En Passant', channel: 'Julien Miquel'}
-};
-const yt = {player: null, ready: false, loading: false, state: -1};
-function ytBox(){
-  let el = $('#epTv');
-  if (!el){
-    el = document.createElement('div'); el.id = 'epTv'; el.className = 'eptv';
-    el.innerHTML = '<div class="eptv-screen"><div id="epTvFrame"></div></div><div class="eptv-meta"><b></b><span></span><a target="_blank" rel="noopener">Watch the full video ↗</a></div>';
-    document.body.appendChild(el);
-  }
-  return el;
-}
-function ytLabel(clip){
-  const el = ytBox();
-  el.querySelector('b').textContent = clip.title; el.querySelector('span').textContent = `${clip.channel} · YouTube`;
-  el.querySelector('a').href = `https://www.youtube.com/watch?v=${clip.id}`;
-}
-function ytLoad(){
-  if (yt.loading || location.protocol === 'file:') return; yt.loading = true;
-  ytLabel(CLIPS.ep);
-  window.onYouTubeIframeAPIReady = () => {
-    try {
-      yt.player = new YT.Player('epTvFrame', {width: 200, height: 113, videoId: CLIPS.ep.id,
-        playerVars: {controls: 0, disablekb: 1, playsinline: 1, rel: 0, modestbranding: 1, fs: 0, iv_load_policy: 3},
-        events: {onReady: () => { yt.ready = true; try { yt.player.cueVideoById({videoId: CLIPS.ep.id, startSeconds: CLIPS.ep.from}); } catch(e){} },
-          onStateChange: e => { yt.state = e.data; (window.__ytStates = window.__ytStates || []).push(e.data); }}});
-    } catch(e){}
-  };
-  const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = () => {}; document.head.appendChild(s);
-}
-// The player loads (paused) as soon as the page is up, so it is ready long before a clip is needed.
-if (document.readyState === 'complete') setTimeout(ytLoad, 1500); else addEventListener('load', () => setTimeout(ytLoad, 1500), {once: true});
 const sfxOnNow = () => $('#sfxBtn').getAttribute('aria-pressed') === 'true';
 let frVoices = [];
 const pickVoices = () => { try { frVoices = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang)); } catch(e){} };
@@ -2455,40 +2411,34 @@ function say(text, {rate = .85, pitch = 1.1} = {}){
     speechSynthesis.speak(u);
   } catch(e){}
 }
-// Slides the credited TV in and plays the clip. `started` resolves once it is audibly playing (or has given up and run
-// `fallback`, if any); `done` resolves when the TV has been put away.
-function playClip(clip, fallback = () => {}){
-  const p = yt.player, box = $('#epTv');
-  if (!sfxOnNow() || !yt.ready || !p || !box){ if (sfxOnNow()) fallback(); return {started: Promise.resolve(), done: Promise.resolve()}; }
-  ytLabel(clip); box.classList.add('on');
-  // A different video is loaded once (re-loading would restart its download); after that, nudges only press play.
-  let loaded = false;
-  const kick = () => {
-    try {
-      const cur = p.getVideoData && p.getVideoData().video_id;
-      p.unMute(); p.setVolume(100);
-      if (cur !== clip.id && !loaded){ loaded = true; p.loadVideoById({videoId: clip.id, startSeconds: clip.from}); }
-      else if (cur === clip.id && !loaded){ loaded = true; p.seekTo(clip.from, true); p.playVideo(); }
-      else p.playVideo();
-    } catch(e){}
-  };
-  yt.state = -1; kick();
+/* The en passant voice: a short recording (audio/en-passant.mp3), played through the game's own sound engine so it
+   starts reliably on phones and follows the SFX switch. `started` resolves as it starts (or once the backup French
+   voice has said it instead); `done` resolves when it has finished. */
+let epVoice = null;
+const loadEpVoice = () => epVoice || (epVoice = (async () => {
+  if (!A.syn.ok()) throw 0;
+  const c = A.syn.ctx();
+  const r = await fetch('audio/en-passant.mp3'); if (!r.ok) throw 0;
+  const b = await r.arrayBuffer();
+  return await new Promise((res, rej) => c.decodeAudioData(b, res, rej));
+})().catch(() => { epVoice = null; return null; }));
+function playEpVoice(fallback){
+  if (!sfxOnNow()) return {started: Promise.resolve(), done: Promise.resolve()};
   let doneRes; const done = new Promise(r => { doneRes = r; });
-  const finish = ms => setTimeout(() => { try { p.pauseVideo(); } catch(e){} box.classList.remove('on'); doneRes(); }, ms);
-  const started = new Promise(res => {
-    const t0 = Date.now(); let kicked = t0;
-    const check = setInterval(() => {
-      let st = yt.state; try { st = p.getPlayerState(); } catch(e){}
-      // a late "cue" from the player's start-up can swallow the play request: ask again until it plays
-      if (st !== 1 && st !== 3 && Date.now() - kicked > 500){ kicked = Date.now(); kick(); }
-      if (st === 1){ clearInterval(check); box.dataset.voice = 'youtube'; finish(clip.len + 600); res(); }
-      else if (Date.now() - t0 > (clip.wait || 4000)){ clearInterval(check); box.dataset.voice = 'fallback'; fallback(); finish(800); res(); }
-    }, 50);
-  });
+  const backup = () => { fallback(); setTimeout(doneRes, 1200); };
+  const started = (async () => {
+    const buf = await Promise.race([loadEpVoice(), sleep(2500).then(() => null)]);
+    if (!buf || !A.syn.ok()) return backup();
+    const c = A.syn.ctx(), bus = A.syn.bus();
+    try {
+      if (c.state === 'suspended') await c.resume();
+      const src = c.createBufferSource(); src.buffer = buf; src.connect(bus); src.onended = () => doneRes(); src.start();
+    } catch(e){ backup(); }
+  })();
   return {started, done};
 }
 /* ================= EN PASSANT: a beret, a moustache, a baguette, and the word said properly ================= */
-// The word is Julien Miquel's clip in the credited TV; where YouTube cannot load, the browser's French voice says it.
+// The word is a recorded voice clip; if it can't load, the browser's French voice says it.
 const EPM = {
   beretW: toon(0x1b1b2a), beretB: toon(0xc8102e), stem: toon(0x111111),
   stache: {w: new THREE.MeshBasicMaterial({color: 0x2a1608}), b: new THREE.MeshBasicMaterial({color: 0xf6f0e0})},
@@ -2684,7 +2634,7 @@ async function enPassantFx(mv){
     await tween(900, k => { g.rotation.z = Math.sin(k * Math.PI * 4) * .08; });   // smug little shimmy
     g.rotation.z = 0;
     // 3. the victim realises what is about to happen
-    const voice = playClip(CLIPS.ep, () => say('En passant !', {rate: .7, pitch: 1}));   // the TV slides in now so the clip has time to buffer
+    const voice = playEpVoice(() => say('En passant !', {rate: .7, pitch: 1}));   // starts loading now, so it's ready by the wind-up
     const r0 = fr.eyes.face.rotation.y, r1 = Math.atan2(-d.z, d.x);   // ...then turns to face its victim
     let dr = r1 - r0; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
     tween(350, k => { fr.eyes.face.rotation.y = fr.piv.rotation.y = r0 + dr * easeIO(k); });
@@ -6869,7 +6819,7 @@ function claimName(){
   box.remove();   // the same box is reused for end-of-game screens: the name question only belongs to the first one
   return true;
 }
-$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); loadEpVoice(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Straight into random-opponent matchmaking from the start screen
 $('#mMatch').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; hideModal(); $('#mOn').click(); quickMatch(); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
