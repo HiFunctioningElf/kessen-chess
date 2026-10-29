@@ -80,10 +80,10 @@ Online games connect the two browsers directly over WebRTC, using [PeerJS](https
 - [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT): online play
 - [Stockfish](https://github.com/official-stockfish/Stockfish) (GPLv3), through the [stockfish.js](https://github.com/nmrugg/stockfish.js) 10.0.2 browser build on cdnjs: powers the Rude Fishy eval bar. It's loaded from the CDN at runtime and isn't part of this repository; its source code is at the links above.
 - Fonts from Google Fonts (SIL Open Font License): Dela Gothic One, Zen Kaku Gothic New, Noto Sans Symbols 2
-- Magical Dance song: ["Anime-esque Intro-Outro Theme"](https://opengameart.org/content/anime-esque-intro-outro-theme) by CleytonKauffman, CC0 (public domain), from OpenGameArt. It's the only audio file in the game, in `audio/`.
+- Magical Dance songs, both CC0 (public domain) from OpenGameArt, in `audio/`: ["Anime-esque Intro-Outro Theme"](https://opengameart.org/content/anime-esque-intro-outro-theme) by CleytonKauffman, and ["kawaii 8bit"](https://opengameart.org/content/kawaii-8bit) by haruta (cut and sped up 1.3×). Each round plays one of them.
 - The en passant voice clip plays through YouTube's official embed: "How to Pronounce En Passant" by Julien Miquel. It's credited on screen and never downloaded.
 
-Apart from the Magical Dance song, the browser generates all music and sound effects live with the Web Audio API. The battle music is an original composition written in code.
+Apart from the Magical Dance songs, the browser generates all music and sound effects live with the Web Audio API. The battle music is an original composition written in code.
 
 ## License
 
