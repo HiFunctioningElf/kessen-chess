@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029163456">
+<meta name="kessen-build" content="20261029172010">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -472,7 +472,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .dn-pads{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .dn-pad{position:relative;height:clamp(52px,9vh,76px);font:400 clamp(22px,6vw,32px)/1 var(--display);color:#111;background:var(--pc);border:3px solid #000;box-shadow:3px 3px 0 #000;cursor:pointer;touch-action:none}
 .dn-pad.on,.dn-pad:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000;filter:brightness(1.25)}
-.dn-pad kbd{position:absolute;right:5px;bottom:3px;font:700 9px var(--body);opacity:.7}
+.dn-pad kbd{position:absolute;right:5px;bottom:3px;font:700 12px/1 var(--body);background:rgba(0,0,0,.18);padding:2px 5px;border-radius:3px}
+@media (pointer:coarse){.dn-pad kbd{display:none}}
 @media (prefers-reduced-motion:reduce){
   .mgx,.mgx-big .m,.qd-bub .qd-say,.bl-stamp.on,.qd-pad.go,.qd-speed.on{animation:none}
   .mgx.signal,.mgx.signal .qd-scene{animation:none;background:#e8241a}
@@ -3315,13 +3316,13 @@ function mgFrame(key, title, jp){
 // The rules card and READY button. Everyone at this screen taps READY (the CPU is always ready);
 // online, both screens must be ready, and then they start the countdown together.
 async function mgGate(F, rules, {count = true} = {}){
-  const face = F.seat === 'face', here = face ? ['w', 'b'] : [mgMe()], ready = {}, cards = {};
+  const face = F.seat === 'face', here = face ? ['w', 'b'] : [mgMe()], ready = {}, cards = {}, gameKeys = F.key;   // the game's own keys come back after READY
   await new Promise(res => {
     const press = c => {
       if (ready[c]) return; ready[c] = true; mgSfx.tick(true);
       const btn = cards[c].querySelector('button'); btn.disabled = true; btn.textContent = 'READY ✓';
       for (const x of here) if (ready[x] && !here.every(y => ready[y])) cards[x].querySelector('.wait').textContent = `Waiting for ${mgName(OTHER(x))}…`;
-      if (here.every(x => ready[x])){ F.key = null; res(); }
+      if (here.every(x => ready[x])){ F.key = gameKeys; res(); }
     };
     for (const c of here){
       const host = face ? F.P[c].el : F.body, r = rules(c), card = document.createElement('div');
@@ -4224,7 +4225,7 @@ async function kunaiStorm(){
    its own accents, and run on the audio clock, corrected for the speaker's delay. If the file can't load, a synthesised
    J-pop loop plays the same chart instead. ---- */
 const DN = {
-  hit: ['Kyaa~! ♡', 'Moe moe KYUN~ ♡', 'So sparkly!!', 'Notice me, senpai!!', 'My honor is now ✨sparkly✨', 'Twirl twirl~ ☆'],
+  hit: ['Kyaa~! ♡', 'Moe moe KYUN~ ♡', 'So sparkly!!', 'Sparkle POWER!!', 'My honor is now ✨sparkly✨', 'Twirl twirl~ ☆'],
   miss: ['Hawawa?!', 'Mou~! Focus!!', '(╥﹏╥) my frills…', 'Not my wand!!', 'I tripped on my bow!!'],
   fever: ['FEVER TIME ♡♡♡', 'MAXIMUM KAWAII OVERDRIVE!!', 'RAINBOW MODE~!!'],
   ronin: ['I lost the ramen bet… so now I dance. ♡', 'Tell ANYONE about this and you’re dead. ♡', 'Behold!! Magical Girl Ronin-chan!!']
@@ -4245,7 +4246,14 @@ const DN_PAL = {
   w: {dress: '#fffaf0', frill: '#ffd6ec', trim: '#ff6fb5', line: '#22183a', hair: '#0c0a17', bow: '#ff6fb5', star: '#ffc83d'},
   b: {dress: '#2b2350', frill: '#3a2f63', trim: '#ffc83d', line: '#ffc83d', hair: '#0c0a17', bow: '#ff2e4d', star: '#ffc83d'}
 };
-const DN_KEYS = {solo: {arrowleft: 0, arrowdown: 1, arrowup: 2, arrowright: 3, a: 0, s: 1, w: 2, d: 3}, w: {a: 0, s: 1, w: 2, d: 3}, b: {arrowleft: 0, arrowdown: 1, arrowup: 2, arrowright: 3}};
+// Keyboard: four keys in a row, so a mouse (one click at a time) is never needed for jumps.
+// Alone: A S D F (or J K L ;, or the arrow keys). Face to face on one keyboard: White A S D F, Black J K L ;.
+const DN_KEYS = {
+  solo: {a: 0, s: 1, d: 2, f: 3, j: 0, k: 1, l: 2, ';': 3, arrowleft: 0, arrowdown: 1, arrowup: 2, arrowright: 3},
+  w: {a: 0, s: 1, d: 2, f: 3},
+  b: {j: 0, k: 1, l: 2, ';': 3, arrowleft: 0, arrowdown: 1, arrowup: 2, arrowright: 3}
+};
+const DN_KEYCAPS = {w: 'ASDF', b: 'JKL;'};
 async function magicalDance(){
   const F = mgFrame('dn', 'Magical Dance', '☆'), id = F.id, rnd = seededRandom(id * 7919 + 404), me = mgMe();
   A.music.duck(240000, 0);
@@ -4280,8 +4288,8 @@ async function magicalDance(){
     let pads = null;
     if (full){
       pads = document.createElement('div'); pads.className = 'dn-pads';
-      const wasd = F.seat === 'face' && c === 'w';   // face to face, White plays W A S D and Black the arrow keys
-      pads.innerHTML = DN_LANES.map((L, i) => `<button type="button" class="dn-pad" data-l="${i}" style="--pc:${L.c}" aria-label="${['Left', 'Down', 'Up', 'Right'][i]}">${L.k}${wasd ? `<kbd>${'ASWD'[i]}</kbd>` : ''}</button>`).join('');
+      const caps = F.seat === 'face' ? DN_KEYCAPS[c] : DN_KEYCAPS.w;   // the key for each pad (hidden on touch screens)
+      pads.innerHTML = DN_LANES.map((L, i) => `<button type="button" class="dn-pad" data-l="${i}" style="--pc:${L.c}" aria-label="${['Left', 'Down', 'Up', 'Right'][i]} (${caps[i]})">${L.k}<kbd>${caps[i]}</kbd></button>`).join('');
       pads.querySelectorAll('.dn-pad').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); press(c, +b.dataset.l, e.timeStamp); }));
       wrap.appendChild(pads);
     }
@@ -4516,7 +4524,7 @@ async function magicalDance(){
   // play
   const rules = c => ({
     how: `HENSHIN!! Then a 30-second anime opening at 190 BPM. Hit the arrow${F.seat === 'face' ? ' on your side' : ''} as each one reaches the line: <b>PERFECT, GREAT, GOOD</b>. ${passing() ? 'Then pass the phone: the other dancer gets the very same arrows.' : 'Same arrows for both of you.'} A 20 combo starts <b>FEVER</b> (×1.5). Highest score wins. Sound on ♡`,
-    keys: (F.seat === 'face' ? (c === 'w' ? 'Keyboard: W A S D' : 'Keyboard: arrow keys') : 'Keyboard: arrow keys or W A S D') + '<br>♪ “Anime-esque Intro-Outro Theme” by CleytonKauffman (CC0)'
+    keys: (F.seat === 'face' ? (c === 'w' ? 'Keyboard: A S D F' : 'Keyboard: J K L ;') : 'Keyboard: A S D F (or J K L ; or the arrow keys). Press two at once for the double arrows.') + '<br>♪ “Anime-esque Intro-Outro Theme” by CleytonKauffman (CC0)'
   });
   // Pass the phone: White dances the song, then Black dances the very same chart with White's score to beat
   if (passing()){
