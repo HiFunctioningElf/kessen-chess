@@ -8,7 +8,7 @@
 
 - **CPU**: three levels (Rookie, Rival, Final Boss). The CPU thinks in a background thread.
 - **Same screen**: two players on one device, with optional auto-flip
-- **Online**: click *Create game*, then *Copy invite link* and send it to a friend. Keep your tab open while you play.
+- **Online**: click *Create game*, then *Copy invite link* and send it to a friend. If they're in the same room, they can scan the QR code under the code instead. Keep your tab open while you play.
 - **Friends**: after an online game, tap ☆ next to your opponent to save them. They appear under *Friends*; tap *Play* and you'll meet in your own private room (whoever taps first waits for the other). Saved on this device.
 - **Quick match**: get paired with someone else searching right now who picked the same game mode (Classic or Kessen) and time control. *Find an online match* on the start screen jumps straight in.
 
@@ -75,6 +75,7 @@ Online games connect the two browsers directly over WebRTC, using [PeerJS](https
 - [three.js](https://threejs.org/) r128 (MIT): 3D rendering
 - [chess.js](https://github.com/jhlywa/chess.js) 0.10.3 (BSD-2-Clause): move rules
 - [PeerJS](https://github.com/peers/peerjs) 1.5.4 (MIT): online play
+- [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 by Kazuhiko Arase (MIT), from cdnjs: draws the invite QR code.
 - [Stockfish](https://github.com/official-stockfish/Stockfish) (GPLv3), through the [stockfish.js](https://github.com/nmrugg/stockfish.js) 10.0.2 browser build on cdnjs: powers the Rude Fishy eval bar. It's loaded from the CDN at runtime and isn't part of this repository; its source code is at the links above.
 - Fonts from Google Fonts (SIL Open Font License): Dela Gothic One, Zen Kaku Gothic New, Noto Sans Symbols 2
 - Magical Dance songs, both CC0 (public domain) from OpenGameArt, in `audio/`: ["Anime-esque Intro-Outro Theme"](https://opengameart.org/content/anime-esque-intro-outro-theme) by CleytonKauffman, and ["kawaii 8bit"](https://opengameart.org/content/kawaii-8bit) by haruta (cut and sped up 1.3×). Each round plays one of them.

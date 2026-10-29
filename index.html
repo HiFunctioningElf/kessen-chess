@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029183128">
+<meta name="kessen-build" content="20261029183357">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -140,6 +140,12 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .joinrow input{flex:1;min-width:0;background:var(--night);border:1px solid var(--line);padding:10px;font-weight:700;letter-spacing:.3em;text-transform:uppercase}
 .codebox{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .codebox strong{font-family:var(--display);font-size:26px;letter-spacing:.18em;color:var(--gold)}
+.qr{flex-basis:100%;display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;cursor:zoom-in;text-align:left;color:var(--muted)}
+.qr .qr-img{flex:none;width:112px;height:112px;background:#fff;padding:6px;border:3px solid #000;box-shadow:3px 3px 0 var(--gold);transition:width .2s,height .2s}
+.qr .qr-img svg{display:block;width:100%;height:100%}
+.qr small{font-size:12px;line-height:1.4}
+.qr.big{flex-direction:column;cursor:zoom-out;text-align:center}
+.qr.big .qr-img{width:min(260px,70vw);height:min(260px,70vw)}
 .players{display:flex;flex-direction:column;gap:6px}
 .pl{display:flex;align-items:center;gap:8px;font-size:13px}
 .pl .g{font-family:var(--chess);font-size:20px}
@@ -690,7 +696,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
             <form class="joinrow" id="joinForm"><input id="joinCode" maxlength="6" placeholder="Code" autocomplete="off" aria-label="Game code"><button class="btn" type="submit" style="flex:none">Join</button></form>
           </div>
           <div id="onActive" class="field" hidden>
-            <div class="codebox" id="codeBox"><span class="label">Code</span><strong id="codeOut"></strong><button class="chip" id="copyCode">Copy</button></div>
+            <div class="codebox" id="codeBox"><span class="label">Code</span><strong id="codeOut"></strong><button class="chip" id="copyCode">Copy</button>
+              <button class="qr" id="codeQr" type="button" hidden aria-label="QR code of the invite link: tap to make it bigger"><span class="qr-img"></span><small>Scan with your friend's phone to join</small></button></div>
             <div class="players" id="players"></div>
             <button class="btn primary" id="claimBtn" hidden>Claim the win (your friend left)</button>
             <button class="btn" id="leaveBtn">Leave game</button>
@@ -5835,6 +5842,22 @@ const IDLE_NOTE = () => net.kind === 'p2p'
   ? 'Create a game and send your friend the invite link. Keep this tab open while you play.'
   : 'Create a game and send your friend the code. They open this same page, pick Online and join with it.';
 const inviteLink = code => location.origin + location.pathname + '#g' + code;
+// A QR code of the invite link, so a friend in the same room can scan it instead of being sent the link.
+// Only for invite links (PeerJS): the code box (and with it the QR) hides once both players are in, and for random matches.
+const QR_URL = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+let qrLib = null;
+const loadQr = () => qrLib || (qrLib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = QR_URL; s.onload = () => res(window.qrcode); s.onerror = () => { qrLib = null; rej(); }; document.head.appendChild(s); }));
+async function drawInviteQr(code){
+  const box = $('#codeQr'); box.hidden = true; box.classList.remove('big');
+  if (net.kind !== 'p2p' || !code || isQM(code)) return;
+  try {
+    const qrcode = await loadQr(); if (net.code !== code) return;
+    const q = qrcode(0, 'M'); q.addData(inviteLink(code)); q.make();
+    box.querySelector('.qr-img').innerHTML = q.createSvgTag({cellSize: 4, margin: 0, scalable: true});
+    box.hidden = false;
+  } catch(e){}   // no QR if it can't load: the link and the code still work
+}
+$('#codeQr').onclick = e => e.currentTarget.classList.toggle('big');
 (async () => {
   if (window.claude && window.claude.use){
     try {
@@ -6001,7 +6024,7 @@ function attach(code, ref){
   net.code = code; net.ref = ref; net.data = null; net.my = null;
   game.reset(); lastMove = null; selected = null; legal = []; clearEndFx(); syncPieces(true);
   clockReset({base: 0, inc: 0});   // the game document says which time control applies
-  $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeBox').hidden = false; $('#codeOut').textContent = code;
+  $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeBox').hidden = false; $('#codeOut').textContent = code; drawInviteQr(code);
   note('Send this code to your friend. They open this page, choose Online and join with it.');
   hideModal(); started = true; A.music.start();
   net.unsub = ref.onSnapshot(s => onRemote(s), () => note('Lost the live connection to this game. Leave and rejoin to reconnect.', true));
