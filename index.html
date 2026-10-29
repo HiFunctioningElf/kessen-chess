@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029224948">
+<meta name="kessen-build" content="20261029225750">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -5016,7 +5016,7 @@ function recordGame(){
   if (!plies || key === lastRecorded || trailerOn) return;
   lastRecorded = key;
   const card = mode === 'online' && net.data && me ? net.data['p' + OTHER(me)] : null;
-  const opp = mode === 'cpu' ? `CPU · ${['Rookie', 'Rival', 'Final Boss'][level]}` : mode === 'online' ? ((card && card.name) || 'Online opponent') : 'Same screen';
+  const opp = mode === 'cpu' ? `CPU · ${CPU_NAMES[ratedLevel]}` : mode === 'online' ? ((card && card.name) || 'Online opponent') : 'Same screen';
   const log = gameLog();
   const entry = {at: Date.now(), mode, me, opp, winner, reason: gameReason(), pgn, plies};
   log.unshift(entry); saveLog(log);
@@ -6420,7 +6420,13 @@ $('#modeSeg').addEventListener('click', e => { const b = e.target.closest('butto
   mode = b.dataset.mode; seg('modeSeg', 'mode', mode); newGame(); });
 $('#sideSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || busy) return; playerColor = b.dataset.side; seg('sideSeg', 'side', playerColor); if (mode !== 'online') newGame(); else { orientation = playerColor; setCamSide(orientation); } });
 $('#tcSel').addEventListener('change', () => { if (busy) return; if (mode === 'pvp') newGame(); else if (mode === 'online' && !net.code) note('Your friend will play with the time control you pick here when you create the game.'); });
-$('#lvlSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; level = +b.dataset.lvl; seg('lvlSeg', 'lvl', level); });
+$('#lvlSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; level = +b.dataset.lvl; seg('lvlSeg', 'lvl', level);
+  if (mode === 'cpu' && started && game.history().length && !isOver() && level !== ratedLevel){
+    ratedLevel = Math.min(ratedLevel, level); saveGame();
+    toast(`Level changed mid-game: this one counts as a game vs the ${CPU_NAMES[ratedLevel]} (the easiest level you played).`);
+  } else if (!game.history().length) ratedLevel = level;
+});
 $('#newBtn').onclick = () => { if (!busy){ A.init(); started = true; hideModal(); newGame(); } };
 $('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; swingTo(orientation); };
 // Same screen: optionally swing the board round after every move so it always faces the player to move.
@@ -6519,7 +6525,7 @@ const rankOf = p => RANKS.filter(([min]) => p >= min).pop()[1];
    CPU games against the CPU's fixed WeLo (Rookie 800, Rival 1200, Final Boss 1700) and move it half as much.
    The first 15 games are placement (big swings), then it settles (smaller still above 1600). Dojo belts mark the way.
    A game you used Undo in is practice, and an online game you walk out of counts as a loss. ---- */
-const WELO_CPU = [800, 1200, 1700];
+const WELO_CPU = [800, 1200, 1700], CPU_NAMES = ['Rookie', 'Rival', 'Final Boss'];
 const BELTS = [[0, 'White Belt'], [700, 'Yellow Belt'], [850, 'Green Belt'], [1000, 'Blue Belt'], [1150, 'Red Belt'], [1300, 'Black Belt'], [1500, '2nd Dan'], [1700, '3rd Dan'], [1950, 'Sensei'], [2250, 'Grand Sensei']];
 const beltOf = w => BELTS.filter(([min]) => w >= min).pop()[1];
 const weloK = cpu => (profile.weloGames < 15 ? 48 : profile.welo >= 1600 ? 24 : 32) * (cpu ? .5 : 1);
@@ -6633,7 +6639,10 @@ var style = null;   // (var, so the panel can ask before this line has run)
 style = {w: STYLE0(), b: STYLE0()};
 let ratedDone = false, lastRating = null;
 var practice = false;   // Undo was used vs the CPU: nothing is rated
-const resetStyle = () => { style = {w: STYLE0(), b: STYLE0()}; ratedDone = false; practice = false; drawStyle(); };
+// The CPU level a game is rated at: the level it started at, or the easiest one picked during it. So switching levels
+// mid-game (to win against an easy CPU and be paid like a hard one) can only ever count against you.
+var ratedLevel = 1;
+const resetStyle = () => { style = {w: STYLE0(), b: STYLE0()}; ratedDone = false; practice = false; ratedLevel = level; drawStyle(); };
 const styleTotal = c => style ? style[c].lines.reduce((a, l) => a + l[1], 0) : 0;
 const STYLE_VAL = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
 const sideMaterial = c => game.board().flat().reduce((a, p) => a + (p && p.color === c ? STYLE_VAL[p.type] : 0), 0);
@@ -6786,15 +6795,15 @@ function rateGame(){
   else if (flagged) winner = timeoutDraw ? null : (flagged === 'w' ? 'b' : 'w');
   else if (game.in_checkmate()) winner = game.turn() === 'w' ? 'b' : 'w';
   const out = winner === null ? 'draw' : winner === me ? 'win' : 'loss';
-  const table = mode === 'cpu' ? {win: [40, 90, 200][level], loss: [-60, -40, -20][level], draw: [10, 25, 60][level]} : {win: 150, loss: -60, draw: 20};
+  const table = mode === 'cpu' ? {win: [40, 90, 200][ratedLevel], loss: [-60, -40, -20][ratedLevel], draw: [10, 25, 60][ratedLevel]} : {win: 150, loss: -60, draw: 20};
   // Style counts in full online and against the Final Boss, less against easier CPUs, and not at all in a game under
   // 10 moves (so you can't Bongcloud, resign and repeat to farm it). Taxes always count.
   const moves = Math.ceil(game.history().length / 2), st = style[me];
-  const counts = moves >= 10, mult = mode === 'cpu' ? [.5, .75, 1][level] : 1, styled = (t, p) => [t, p > 0 ? Math.round(p * mult) : p];
+  const counts = moves >= 10, mult = mode === 'cpu' ? [.5, .75, 1][ratedLevel] : 1, styled = (t, p) => [t, p > 0 ? Math.round(p * mult) : p];
   const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]]];
   if (counts) lines.push(...st.lines.map(([t, p]) => styled(t, p)));
   else if (st.lines.some(l => l[1] > 0)) lines.push(['Style (only counts in games of 10+ moves)', 0]);
-  if (counts && mult < 1 && st.lines.some(l => l[1] > 0)) lines.push([`(style ×${mult} against the ${['Rookie', 'Rival'][level]} CPU)`, 0]);
+  if (counts && mult < 1 && st.lines.some(l => l[1] > 0)) lines.push([`(style ×${mult} against the ${CPU_NAMES[ratedLevel]} CPU)`, 0]);
   if (ended && ended.type === 'resign' && winner !== me) lines.push(['White Flag Tax', -10]);
   if (out === 'draw' && game.in_stalemate()) lines.push(['Tea Party (stalemate)', 20]);
   if (out === 'draw' && game.in_threefold_repetition()) lines.push(['Déjà Vu Tax', -5]);
@@ -6813,7 +6822,7 @@ function rateGame(){
   profile.power = Math.max(0, before + delta); profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
   // WeLo: against your online opponent's (as their screen shared it) or the CPU's fixed rating
   const theirs = mode === 'online' && net.data && net.data['p' + OTHER(me)];
-  const welo = weloRate(mode === 'cpu' ? WELO_CPU[level] : theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, out === 'win' ? 1 : out === 'draw' ? .5 : 0, mode === 'cpu');
+  const welo = weloRate(mode === 'cpu' ? WELO_CPU[ratedLevel] : theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, out === 'win' ? 1 : out === 'draw' ? .5 : 0, mode === 'cpu');
   if (mode === 'online'){ profile.onlineGames++; if (out === 'win') profile.onlineWins++; }
   saveProfile();
   return lastRating = {before, after: profile.power, welo, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
@@ -6837,7 +6846,7 @@ const SAVE_KEY = 'kessen-save';
 function saveGame(){
   try {
     if (mode === 'online' || !started || isOver() || !game.history().length){ localStorage.removeItem(SAVE_KEY); return; }
-    localStorage.setItem(SAVE_KEY, JSON.stringify({pgn: game.pgn(), mode, playerColor, level, orientation, at: Date.now()}));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({pgn: game.pgn(), mode, playerColor, level, ratedLevel, practice, orientation, at: Date.now()}));
   } catch(e){}
 }
 let savedGame = null;
@@ -6853,6 +6862,7 @@ if (savedGame && savedGame.pgn && (savedGame.mode === 'cpu' || savedGame.mode ==
       mode = savedGame.mode; playerColor = savedGame.playerColor || 'w'; level = savedGame.level ?? level;
       seg('modeSeg', 'mode', mode); seg('sideSeg', 'side', playerColor); seg('lvlSeg', 'lvl', level);
       newGame();
+      ratedLevel = Math.min(level, savedGame.ratedLevel ?? level); practice = !!savedGame.practice;
       game.load_pgn(savedGame.pgn); orientation = savedGame.orientation || orientation; setCamSide(orientation);
       const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
       render(true); cpuTurn();
@@ -7624,7 +7634,7 @@ if (FB_ON) setTimeout(async () => {
 
 setCamSide('w');
 function start(data){
-  try { if (data && data.pgn && data.mode !== 'online'){ game.load_pgn(data.pgn); mode = data.mode || mode; playerColor = data.playerColor || playerColor; level = data.level ?? level; orientation = data.orientation || orientation;
+  try { if (data && data.pgn && data.mode !== 'online'){ game.load_pgn(data.pgn); mode = data.mode || mode; playerColor = data.playerColor || playerColor; level = data.level ?? level; ratedLevel = Math.min(level, data.ratedLevel ?? level); practice = !!data.practice; orientation = data.orientation || orientation;
     seg('modeSeg','mode',mode); seg('sideSeg','side',playerColor); seg('lvlSeg','lvl',level); setCamSide(orientation);
     const h = game.history({verbose:true}), l = h[h.length-1]; if (l) lastMove = {from:l.from, to:l.to}; } } catch(e){}
   render(true);
