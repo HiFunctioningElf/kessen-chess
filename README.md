@@ -43,7 +43,7 @@ The 💝 **Donate** button links to three charities. **Your donation goes straig
 
 **Kessen Chess is not affiliated with or endorsed by these charities.**
 
-**Fundraiser cover photo.** [`fundraiser/justgiving-cover.png`](fundraiser/justgiving-cover.png) is a JustGiving cover photo for the Foodbank Queensland page, in the game's own style. It is 1000×563 (16:9), the largest size JustGiving accepts; a 2× copy is next to it. To change it, edit `fundraiser/justgiving-cover.html` and screenshot its `.cover` element at 1000×563.
+**Fundraiser cover photo.** [`fundraiser/justgiving-cover.png`](fundraiser/justgiving-cover.png) is a JustGiving cover photo for the Foodbank Queensland page, in the game's own style. It is 1000×563 (16:9), the largest size JustGiving accepts; a 2× copy is next to it. To change it, edit `fundraiser/justgiving-cover.html` and screenshot its `.cover` element at 1000×563. [`fundraiser/smile-profile.png`](fundraiser/smile-profile.png) is a 1000×1000 profile photo for the Smile Train page (a smiling king, everything inside the middle circle so a round crop keeps it); its source is `fundraiser/smile-profile.html`.
 
 The panel also has the 🪙 **Penny Dropper**, a Plinko board that picks a charity at random for you. It's just for fun; no money is involved.
 
