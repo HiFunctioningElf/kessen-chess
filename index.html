@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029235752">
+<meta name="kessen-build" content="20261030002530">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -240,6 +240,9 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .movie{position:absolute;inset:0}
 .grain{position:absolute;inset:0;opacity:.55;mix-blend-mode:overlay;animation:grain .25s steps(4) infinite}
 @keyframes grain{0%{background-position:0 0}25%{background-position:-37px 21px}50%{background-position:52px -13px}75%{background-position:-11px -47px}100%{background-position:0 0}}
+body.cinema header.top,body.cinema .panel,body.cinema #goalBar,body.cinema .hint-orbit,body.cinema .clip-btn,body.cinema .style-meter,body.cinema .mghud{display:none!important}
+body.cinema main{display:block;padding:0}
+body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!important;border:0;box-shadow:none}
 .mv-skip{position:absolute;right:max(16px,3vw);top:calc(11vh + 12px);pointer-events:auto;background:rgba(0,0,0,.6);color:#fff;border:1px solid rgba(255,255,255,.5);padding:6px 12px;font:700 12px var(--body);letter-spacing:.2em;cursor:pointer}
 .mv-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding-inline:16px}
 .mv-title small{font-family:var(--display);color:var(--blood);font-size:clamp(18px,3vw,34px);letter-spacing:.5em;text-shadow:2px 2px 0 #000}
@@ -2574,6 +2577,7 @@ function epBonk(speed){
 }
 // INSTANT REPLAY: the hit again in slow motion from a low angle, then ULTRA slow motion on the victim's face
 // (ENHANCE. ENHANCE AGAIN.), then BAGUETTE CAM. Uncomfortably long on purpose. A tap skips to the end.
+var teaserCut = false;   // #teaser: the short cut of the en passant replays
 async function epReplays({g, fr, victim, ve, a, a2, v, d, perp, mid}){
   const rip = faceRipple(victim, ve.face.rotation.y), cvEl = renderer.domElement;
   const hud = document.createElement('div'); hud.className = 'ep-vhs';
@@ -2613,29 +2617,32 @@ async function epReplays({g, fr, victim, ve, a, a2, v, d, perp, mid}){
     mode('play', '❚❚ PAUSE', 0); filt('saturate(1.5) contrast(1.15)'); cap('FREEZE FRAME.', '#ffc83d'); A.sfx.glare();
     await stw(900);
     // REPLAY 1: slow motion ×0.25 from down low on the other side
+    if (!teaserCut){
     await rewind(900, 'INSTANT REPLAY');
     cut(mid.clone().addScaledVector(perp, -1.9).setY(.32), mid.clone().setY(.5));
     mode('play', '▶ ×0.25', .25); filt('sepia(.22) saturate(1.35) contrast(1.06)'); cap('SLOW MOTION ×0.25');
     await stw(700, k => swingAt(EP_HIT * easeIn(k)));
     epBonk(.25); crumbs(.25); confetti(30, 4);
     await stw(1900, k => { follow(k); rip.set(k * .5, .08); recoil(Math.min(1, k * 1.4) * .6); });
+    }
     // REPLAY 2: ULTRA slow motion, right on the face
-    await rewind(1000, 'AGAIN. CLOSER.');
+    await rewind(teaserCut ? 500 : 1000, 'AGAIN. CLOSER.');
     victim.updateMatrixWorld(true); const F = victim.localToWorld(rip.P.clone());
     // in front of the face, a little to the side, so the loaf comes in across the frame
     // in front of the face, a little to the side, so the loaf comes across the frame
     cut(F.clone().addScaledVector(d, -.62).addScaledVector(perp, .42).add(V3(0, .1, 0)), F);
     mode('play', '▶ ×0.03', .03); filt('sepia(.3) saturate(1.4) contrast(1.1)'); cap('ULTRA SLOW MOTION ×0.03', '#3fe0ff'); A.sfx.heartbeat();
-    await stw(4200, k => { swingAt(EP_HIT * easeIn(k)); if (k > .5 && !hud.dataset.h){ hud.dataset.h = 1; cap('here it comes…'); A.sfx.heartbeat(); } });
+    await stw(teaserCut ? 2000 : 4200, k => { swingAt(EP_HIT * easeIn(k)); if (k > .5 && !hud.dataset.h){ hud.dataset.h = 1; cap('here it comes…'); A.sfx.heartbeat(); } });
     epBonk(.03); crumbs(.08); confetti(70, 5); cap('CONTACT.', '#ef4135'); buzz(120);
     try { say('Noooooooon !', {rate: .1, pitch: .2}); } catch(e){}
     let z = 0;
-    await stw(5600, k => {
+    await stw(teaserCut ? 3000 : 5600, k => {
       follow(k * .5); rip.set(k * .65, .11); recoil(Math.min(1, k * 1.1) * .65);
       if (k > .3 && z === 0){ z = 1; cap('ENHANCE.', '#ffc83d'); A.sfx.glare(); cut(F.clone().addScaledVector(d, -.36).addScaledVector(perp, .24).add(V3(0, .06, 0)), F); }
       if (k > .64 && z === 1){ z = 2; cap('ENHANCE AGAIN.', '#ffc83d'); A.sfx.glare(); cut(F.clone().addScaledVector(d, -.21).addScaledVector(perp, .13).add(V3(0, .04, 0)), F.clone().add(V3(0, .02, 0))); }
     });
     // REPLAY 3: BAGUETTE CAM, riding the loaf all the way in
+    if (!teaserCut){
     await rewind(1100, 'ONE. MORE. TIME.');
     const c0 = a.clone().addScaledVector(d, -.55).addScaledVector(perp, .18).setY(1.05), c1 = F.clone().addScaledVector(d, -.2).addScaledVector(perp, .05).add(V3(0, .04, 0));
     cut(c0, F); mode('play', '▶ ×0.1', .1); filt('sepia(.25) saturate(1.5) contrast(1.12) hue-rotate(-8deg)'); cap('BAGUETTE CAM™', '#e9b25e');
@@ -2644,6 +2651,7 @@ async function epReplays({g, fr, victim, ve, a, a2, v, d, perp, mid}){
     await stw(2600, k => { follow(k * .7); rip.set(k * .55, .1); recoil(Math.min(1, k * 1.3) * .65); const j = (1 - k) * .02; camera.position.copy(c1).add(V3((Math.random() - .5) * j, (Math.random() - .5) * j, (Math.random() - .5) * j)); camera.lookAt(controls.target); });
     mode('play', '■ STOP', 0); cap('(the referee has left the building)', '#a99fc7');
     await stw(1500);
+    }
   } finally {
     removeEventListener('pointerdown', onSkip, true); removeEventListener('keydown', onSkip, true);
     clearInterval(tc); hud.remove(); filt(''); rip.undo(); controls.minDistance = .5;
@@ -6972,7 +6980,7 @@ function claimName(){
   box.remove();   // the same box is reused for end-of-game screens: the name question only belongs to the first one
   return true;
 }
-$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); loadEpVoice(); started = true; hideModal(); trailerOn = location.hash === '#trailer'; if (!trailerOn) forfeitSavedGame(); newGame(); if (location.hash === '#trailer') trailer(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
+$('#mGo').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); loadEpVoice(); started = true; hideModal(); trailerOn = location.hash === '#trailer' || location.hash === '#teaser'; if (!trailerOn) forfeitSavedGame(); newGame(); if (location.hash === '#trailer') trailer(); else if (location.hash === '#teaser') teaser(); else if (DEMOS[location.hash]) demo(...DEMOS[location.hash]); };
 // Straight into random-opponent matchmaking from the start screen
 $('#mMatch').onclick = () => { if (!claimName()) return; keepSaves(); A.init(); started = true; forfeitSavedGame(); hideModal(); $('#mOn').click(); quickMatch(); };
 // Showcases: open the page with #ep-demo or #castle-demo and press FIGHT! to watch that move on a same-screen board.
@@ -7058,6 +7066,43 @@ async function trailer(){
     await card('HIT BOTH GOALS', '目標', `$1,000 EACH FOR SMILE TRAIN & FOODBANK QLD → ${GOAL_PRIZE.toUpperCase()}`, {hold: 2600, size: .7, color: 'var(--blood)'});
     await card('KESSEN CHESS', '決戦', `100% FREE · 100% ONLINE · ${(location.host + location.pathname).replace(/\/(index\.html)?$/, '').toUpperCase()}`, {hold: 3400, size: .9});
   } finally { trailerOn = false; mode = 'pvp'; $('#goalBar').hidden = false; }
+}
+/* ---- #teaser: a ~30 s cut for social posts. Only the funniest moments, cut short, then the pitch. ---- */
+async function teaser(){
+  trailerOn = true; teaserCut = true; mode = 'pvp'; seg('modeSeg', 'mode', mode);
+  document.body.classList.add('cinema'); dispatchEvent(new Event('resize'));
+  $('#goalBar').hidden = true;
+  const card = (main, jp, sub, o = {}) => bigText(main, jp, Object.assign({hold: 1100, size: .75, color: 'var(--gold)', sub}, o));
+  const idle = async () => { while (busy) await sleep(150); };
+  const reset = () => { hideModal(); clearEndFx(); removeOfferFx(); if (surrenderObj){ scene.remove(surrenderObj); surrenderObj = null; } newGame(); };
+  const setUp = pos => {
+    if (pos.includes('/')) game.load(pos); else game.load_pgn(pos);
+    const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
+  };
+  // a move and its cut-in, skipped after `keep` half-seconds of any long movie
+  const gag = async (main, jp, sub, pos, move, keep = 9) => {
+    await idle(); reset(); setUp(pos);
+    await card(main, jp, sub);
+    const skipper = setInterval(() => { const b = document.querySelector('.mv-skip'); if (b && (b.dataset.t = +(b.dataset.t || 0) + 1) > keep) b.click(); }, 500);
+    try { await sleep(250); await commit(move); await idle(); } finally { clearInterval(skipper); }
+    await sleep(600);
+  };
+  try {
+    A.sfx.fight();
+    await card('CHESS.', '決戦', 'BUT EVERY MOVE IS A SEASON FINALE', {hold: 1500, size: .95});
+    await gag('EN PASSANT', '通過', 'IS A FACE-SLAP WITH A BAGUETTE. OBVIOUSLY.', '1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'}, 12);
+    await gag('CASTLING', '入城', 'THE ROOK HAS BEEN WORKING OUT', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'}, 8);
+    await gag('PROMOTION', '昇格', 'YOU COULD PICK A QUEEN. OR… A HORSE', 'k7/4P3/8/8/8/8/7p/K7 w - - 0 1', {from: 'e7', to: 'e8', promotion: 'n'}, 8);
+    // a draw offer, slapped out of the air
+    await idle(); reset(); setUp('1. e4 e5 2. Nf3 Nc6');
+    await card('OFFER A DRAW?', '和解', 'GET SLAPPED', {hold: 900});
+    await handIn('w'); await sleep(500); await slapFx(); await sleep(700);
+    await idle(); reset();
+    A.sfx.heroic();
+    await card('FREE. FOR CHARITY.', '無料', 'NO SUBSCRIPTION · NO ADS · JUST VIBES 😉', {hold: 2600, size: .5});
+    await card('KESSEN CHESS', '決戦', 'KESSENCHESS.COM · PLAY NOW IN YOUR BROWSER', {hold: 3200, size: .6, color: 'var(--volt)'});
+    await sleep(300);
+  } finally { trailerOn = false; teaserCut = false; mode = 'pvp'; $('#goalBar').hidden = false; document.body.classList.remove('cinema'); dispatchEvent(new Event('resize')); }
 }
 function demo(pos, move){
   if (move === 'oracle'){ mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame(); game.load_pgn(pos); render(true); powers.w = ['oracle', 'hint']; panel(); return; }
