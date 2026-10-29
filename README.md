@@ -68,6 +68,28 @@ The 🏝️ **Developer's holiday fund** links to the developer's Open Collectiv
 
 To set it all up, fill in the `CHARITIES` and `COFFEE` settings at the top of the donations code in `index.html`. Anything left as `TODO` stays hidden or shows "Coming soon".
 
+## Leaderboard and unique names
+
+The 🏆 **Leaderboard** shows the top 50 players by WeLo, and where you stand. Fighter names are unique: nobody can take a name someone else holds, capitals or not, and rude names are refused. It runs on Firebase's free plan. Until Firebase is set up, the button stays hidden and names stay per device.
+
+**How it stays fair.** The rules in [`firebase/firestore.rules`](firebase/firestore.rules) are checked by Firebase's servers, so no browser can get around them: one name per player, names refused by the same rude-word lists as the game, and nobody can change anyone else's entry. A leaderboard WeLo starts at 1000 with a player's first rated game, and each later update may add one game, move it by at most 64 and come at least a minute after the last. Results are still reported by each player's own browser, so like WeLo itself it's for fun.
+
+**Privacy.** Each device signs in to Firebase anonymously: no email, no password, nothing personal. The board shows your fighter name, crest, belt, WeLo and games played.
+
+### Setting up Firebase (about 10 minutes, free, no credit card)
+
+1. Go to [console.firebase.google.com](https://console.firebase.google.com) and **Create a project** (call it `kessen-chess`; you can turn Google Analytics off).
+2. **Build → Authentication → Get started → Sign-in method → Anonymous → Enable → Save.**
+3. **Build → Firestore Database → Create database.** Choose **Start in production mode** and a location near your players (for Australia, `australia-southeast1 (Sydney)`).
+4. In Firestore, open the **Rules** tab, replace everything with the contents of [`firebase/firestore.rules`](firebase/firestore.rules), and **Publish**.
+5. Click the **gear → Project settings → General**, scroll to **Your apps**, click the **`</>`** (web) icon, name it `Kessen Chess` (no Firebase Hosting) and **Register app**. Copy the `apiKey` and `projectId` it shows.
+6. In `index.html`, find `const FIREBASE = {apiKey: 'TODO', projectId: 'TODO'};` and paste them in.
+7. Recommended: lock the key to your site. In [Google Cloud console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials), open the **Browser key**, choose **Websites**, and add your site (for example `hifunctioningelf.github.io/*` and `kessenchess.com/*`).
+
+A Firebase web `apiKey` isn't a secret: it only says which project to talk to, and the rules decide what anyone may do. On the free (Spark) plan nothing can be charged: if the daily allowance (50,000 reads, 20,000 writes) ever runs out, the leaderboard simply pauses until the next day.
+
+To try changes locally, `firebase/firebase.json` runs the Firebase emulator (`firebase emulators:start --only auth,firestore` in that folder).
+
 ## Online play
 
 Online games connect the two browsers directly over WebRTC, using [PeerJS](https://peerjs.com/) and its free public matchmaking server. There's no game server and no account. If the host closes their tab, the game ends. Some strict networks, like some office or school Wi-Fi, block direct connections. If you can't connect, try a phone hotspot.

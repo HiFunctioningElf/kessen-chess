@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029205239">
+<meta name="kessen-build" content="20261029211711">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -551,9 +551,22 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .g-cta:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
 .donate-chip .amt{color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
-#donate,#hist{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
+#donate,#hist,#board{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
   padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.lb-note{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.lb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.lb-row{display:grid;grid-template-columns:2.4em 1.6em minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;background:var(--ink);border:1px solid var(--line);font-size:14px}
+.lb-row.me{border-color:var(--volt);box-shadow:0 0 0 1px var(--volt)}
+.lb-row .rk{font-family:var(--display);color:var(--muted);text-align:right}
+.lb-row:nth-child(1) .rk{color:var(--gold)}.lb-row:nth-child(2) .rk{color:#d9dce6}.lb-row:nth-child(3) .rk{color:#e3a36b}
+.lb-row .cr{font-family:var(--chess);font-size:20px;color:var(--c,var(--gold));text-align:center}
+.lb-row .nm{min-width:0;display:flex;flex-direction:column}
+.lb-row .nm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-row .nm > span{font-size:11px;color:var(--muted)}
+.lb-row .wl{font-family:var(--display);color:var(--gold);font-variant-numeric:tabular-nums;text-align:right}
+.lb-row .you{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--ink);background:var(--volt);padding:1px 6px;margin-left:6px;vertical-align:middle}
+.lb-me{font-size:13px;color:var(--text);border-top:1px dashed var(--line);padding-top:10px}
 .dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .dhead h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,5vw,34px);line-height:1.1;text-wrap:balance}
 .dhead h2 small{display:block;font-size:.5em;color:var(--blood);letter-spacing:.3em;margin-bottom:4px}
@@ -666,7 +679,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 
 <div id="app">
   <header class="top">
-    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><nav class="topnav" aria-label="Pages"><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Match history</button><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></nav></div>
+    <div class="logo"><span class="logo-jp">決戦</span><span class="logo-en">Kessen Chess</span><nav class="topnav" aria-label="Pages"><button class="chip" id="histBtn" type="button" aria-haspopup="dialog">📜 Match history</button><button class="chip" id="boardBtn" type="button" aria-haspopup="dialog" hidden>🏆 Leaderboard</button><button class="chip donate-chip" id="donBtn" type="button" aria-haspopup="dialog">💝 Donate<span class="amt" id="donChipAmt"></span></button><button class="chip donate-chip" id="fundBtn" type="button" aria-haspopup="dialog" hidden>🏝️ Dev's holiday fund</button></nav></div>
     <div class="toggles">
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
@@ -761,6 +774,12 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   <div class="m-actions"><button class="btn primary" id="pSave" type="button">Save</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
 </div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
+<div id="board" hidden role="dialog" aria-modal="true" aria-labelledby="boardTitle"><div class="dcard">
+  <div class="dhead"><h2 id="boardTitle"><small>番付</small>Leaderboard</h2><button class="chip" id="boardClose" type="button">Close</button></div>
+  <p class="lb-note" id="boardNote"></p>
+  <ol class="lb-list" id="boardList"></ol>
+  <div class="lb-me" id="boardMe" hidden></div>
+</div></div>
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="histTitle"><div class="dcard">
   <div class="dhead"><h2 id="histTitle"><small>棋譜</small>Match history</h2><button class="chip" id="histClose" type="button">Close</button></div>
   <div id="histBody"></div>
@@ -6490,6 +6509,8 @@ function weloRate(opp, score, cpu){
   const mine = profile.welo, expected = 1 / (1 + 10 ** ((opp - mine) / 400));
   profile.welo = Math.max(100, Math.round(mine + weloK(cpu) * (score - expected)));
   profile.weloGames++; profile.weloPeak = Math.max(profile.weloPeak || 0, profile.welo);
+  const delta = profile.welo - mine;
+  setTimeout(() => boardQueue(delta, score === 1), 0);   // after this frame: the leaderboard code is further down the script
   return {before: mine, after: profile.welo, opp, placement: profile.weloGames <= 15 ? profile.weloGames : 0};
 }
 // An online game in progress is noted on this device; if it never finishes (tab closed, Leave mid-game) it's a loss.
@@ -6527,17 +6548,30 @@ function drawFighter(){
   $('#fElo').textContent = profile.welo; $('#fElo').parentElement.title = `WeLo ${profile.welo} · ${beltOf(profile.welo)} (peak ${profile.weloPeak})${profile.weloGames < 15 ? ` · placement ${profile.weloGames}/15` : ''} · online: ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
 }
 // The name checker: length, characters, reserved names and a rude-word filter (also catching 0→o, 1→i style swaps).
-const RUDE = ['fuck', 'shit', 'cunt', 'bitch', 'dick', 'cock', 'pussy', 'nigg', 'fag', 'whore', 'slut', 'rape', 'nazi', 'hitler', 'penis', 'vagina', 'porn', 'retard', 'twat', 'wank', 'bastard', 'asshole', 'tits', 'kike', 'spic', 'chink'];
+// Rude names. The leaderboard's server rules (firebase/firestore.rules) apply exactly the same three lists, so a name
+// refused here can't be claimed by going around the game either. Keep the two in step.
+//   RUDE: refused anywhere in the name, even spaced out or in leetspeak ("f u c k", "sh1t").
+//   RUDE_WORD: refused as a whole word only, because they hide inside harmless words (grape, spicy, title).
+//   RUDE_START: refused at the start of a word (dickhead), but not inside one (peacock).
+const RUDE = ['fuck', 'shit', 'cunt', 'bitch', 'pussy', 'nigg', 'whore', 'slut', 'hitler', 'penis', 'vagina', 'porn', 'retard', 'twat', 'wank', 'bastard', 'asshole', 'kike', 'chink', 'faggot', 'nazi', 'rapist'];
+const RUDE_WORD = ['rape', 'spic', 'fag', 'fags', 'tits', 'tit', 'cum', 'jizz', 'sex', 'anal'];
+const RUDE_START = ['dick', 'cock'];
+const leet = t => t.toLowerCase().replace(/0/g, 'o').replace(/4/g, 'a').replace(/1/g, 'i').replace(/3/g, 'e').replace(/5/g, 's').replace(/7/g, 't');
+function rudeName(n){
+  const words = leet(n).split(/[ _.\-]+/).filter(Boolean), flat = words.join(''), once = t => t.replace(/(.)\1+/g, '$1');
+  // also with doubled letters squashed ("fuuuck"); the server rules can't do this part, so the game is the stricter one
+  return RUDE.some(w => flat.includes(w) || once(flat).includes(w)) || words.some(w => RUDE_WORD.includes(w) || RUDE_START.some(r => w.startsWith(r)));
+}
 function checkName(raw){
   const n = raw.trim().replace(/\s+/g, ' ');
   if (!n) return {ok: true, msg: 'Blank is fine: you\'ll be "Nameless Challenger".'};
   if (n.length < 2) return {ok: false, msg: 'At least 2 characters, please.'};
   if (!/^[\p{L}\p{N} _.\-]+$/u.test(n)) return {ok: false, msg: 'Letters, numbers, spaces and _ - . only.'};
   if (!/[\p{L}\p{N}]/u.test(n)) return {ok: false, msg: 'Needs at least one letter or number.'};
-  const flat = n.toLowerCase().replace(/[0@4]/g, m => ({0: 'o', '@': 'a', 4: 'a'})[m]).replace(/[1!]/g, 'i').replace(/3/g, 'e').replace(/[5$]/g, 's').replace(/7/g, 't').replace(/[^a-z]/g, '');
-  if (/admin|moderator|official|kessenstaff|support|system/.test(flat)) return {ok: false, msg: "That one's reserved. Try another."};
-  if (RUDE.some(w => flat.includes(w))) return {ok: false, msg: 'Keep it friendly: pick another name.'};
-  return {ok: true, msg: '✓ Looks good. (Names aren\'t unique yet: that arrives with the online leaderboard.)'};
+  if (/admin|moderator|official|kessenstaff|support|system/.test(leet(n).replace(/[^a-z]/g, ''))) return {ok: false, msg: "That one's reserved. Try another."};
+  if (rudeName(n)) return {ok: false, msg: 'Keep it friendly: pick another name.'};
+  if (/^__.*__$/.test(n)) return {ok: false, msg: "That one's reserved. Try another."};
+  return {ok: true, msg: FB_ON ? '✓ Looks good. Checking it’s free…' : '✓ Looks good.'};
 }
 // what your friend sees online
 const myCard = () => ({name: fighterName().slice(0, 20), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
@@ -6556,8 +6590,18 @@ $('#fEdit').onclick = () => {
     const r = checkName($('#pName').value), el = $('#pCheck');
     el.textContent = r.msg; el.className = `pcheck ${r.ok ? 'ok' : 'bad'}`; $('#pSave').disabled = !r.ok;
   };
-  $('#pName').oninput = check; check();
-  $('#pSave').onclick = () => { if (!checkName($('#pName').value).ok) return; profile.name = $('#pName').value.trim().replace(/\s+/g, ' ').slice(0, 16); profile.crest = crest; profile.color = color; saveProfile(); $('#prof').hidden = true; };
+  $('#pName').oninput = () => { check(); nameCheckLive($('#pName').value, $('#pCheck'), $('#pSave')); }; check(); if (FB_ON && $('#pName').value.trim()) nameCheckLive($('#pName').value, $('#pCheck'), $('#pSave'));
+  $('#pSave').onclick = async () => {
+    if (!checkName($('#pName').value).ok) return;
+    const name = $('#pName').value.trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (FB_ON && name){
+      $('#pSave').disabled = true; $('#pCheck').textContent = 'Reserving your name…'; $('#pCheck').className = 'pcheck';
+      const r = await fbClaim(name); $('#pSave').disabled = false;
+      if (r === 'taken'){ $('#pCheck').textContent = '✗ Someone already has that name. Try another.'; $('#pCheck').className = 'pcheck bad'; return; }
+      if (r === 'offline') toast("Saved. Couldn't reach the leaderboard: your name is reserved next time you're online.");
+    }
+    profile.name = name; profile.named = true; profile.crest = crest; profile.color = color; saveProfile(); boardProfile(); closeProfile();
+  };
   $('#pCancel').onclick = closeProfile;
   $('#prof').hidden = false; $('#pName').focus();
 };
@@ -6806,7 +6850,8 @@ const firstVisit = !profile.name && !profile.named;
 if (firstVisit){
   $('#mName').hidden = false;
   $('#mNameIn').oninput = () => { const v = $('#mNameIn').value, r = checkName(v), el = $('#mNameCheck');
-    el.textContent = v.trim() ? r.msg : 'Saved on this device with your WeLo and match history. You can change it any time.'; el.className = 'pcheck' + (v.trim() ? r.ok ? ' ok' : ' bad' : ''); };
+    el.textContent = v.trim() ? r.msg : 'Saved on this device with your WeLo and match history. You can change it any time.'; el.className = 'pcheck' + (v.trim() ? r.ok ? ' ok' : ' bad' : '');
+    if (v.trim() && r.ok) nameCheckLive(v, el, null); };
   $('#mNameIn').onkeydown = e => { if (e.key === 'Enter') $('#mGo').click(); };
 }
 // Ask the browser to keep this site's saved data (name, WeLo, match history) instead of clearing it to free space.
@@ -6814,8 +6859,9 @@ const keepSaves = () => { try { navigator.storage && navigator.storage.persist &
 function claimName(){
   const box = $('#mName'); if (!box || box.hidden) return true;
   const v = $('#mNameIn').value, r = checkName(v);
-  if (!r.ok){ $('#mNameIn').oninput(); $('#mNameIn').focus(); return false; }
+  if (!r.ok || $('#mNameCheck').dataset.taken === v.trim().toLowerCase()){ $('#mNameIn').focus(); return false; }   // known to be taken: pick another
   profile.name = v.trim().replace(/\s+/g, ' ').slice(0, 16); profile.named = true; saveProfile();
+  if (FB_ON && profile.name) fbClaim(profile.name).then(st => { if (st === 'taken') toast(`Someone already has "${profile.name}" on the leaderboard. Tap Edit to pick another.`); });
   box.remove();   // the same box is reused for end-of-game screens: the name question only belongs to the first one
   return true;
 }
@@ -7210,6 +7256,203 @@ $('#donate').addEventListener('click', e => { if (e.target === $('#donate')) clo
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#donate').hidden) closeDonate(); });
 $('#dropBtn').onclick = () => plinko.drop();
 loadCharityTotals();   // fills the header chip's total once real numbers are configured (no network calls until then)
+
+/* ================= ONLINE LEADERBOARD AND UNIQUE NAMES (Firebase) =================
+   Off (and invisible) until FIREBASE below is filled in: see "Leaderboard" in the README for the five-minute setup.
+   It talks to Firebase over its REST API, with no SDK to load. Each device gets an anonymous Firebase account (no
+   email, no personal details). names/{name} reserves a fighter name for one player, owners/{uid} records which name
+   that player holds, and players/{uid} is their public leaderboard entry. firebase/firestore.rules keeps it honest:
+   one name per player, nobody can touch anyone else's entry, and a leaderboard WeLo starts at 1000 and can only move
+   by one game's worth (at most 64) at most once a minute. Results are still reported by each player's own browser,
+   so the board is for fun, like WeLo itself. */
+const FIREBASE = {apiKey: 'TODO', projectId: 'TODO'};
+const FB_ON = isSet(FIREBASE.apiKey) && isSet(FIREBASE.projectId);
+const FBH = Object.assign({auth: 'https://identitytoolkit.googleapis.com', token: 'https://securetoken.googleapis.com', db: 'https://firestore.googleapis.com'}, FIREBASE.hosts || {});
+const fbDocs = () => `projects/${FIREBASE.projectId}/databases/(default)/documents`;
+const nameKey = n => n.trim().toLowerCase();
+async function fbFetch(url, opts = {}, ms = 10000){
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
+  try { const r = await fetch(url, Object.assign({}, opts, {signal: ctl.signal})); let j = null; try { j = await r.json(); } catch(e){} return {ok: r.ok, status: r.status, j}; }
+  catch(e){ return {ok: false, status: 0, j: null}; } finally { clearTimeout(timer); }
+}
+// this device's anonymous account, signed in once and refreshed as needed
+const FB_AUTH_KEY = 'kessen-fb-auth';
+let fbAuth = null, fbSigning = null;
+function fbUser(){ return fbSigning || (fbSigning = fbSignIn().finally(() => { fbSigning = null; })); }
+async function fbSignIn(){
+  if (!FB_ON) return null;
+  if (!fbAuth){ try { const a = JSON.parse(localStorage.getItem(FB_AUTH_KEY) || 'null'); if (a && typeof a.uid === 'string' && typeof a.refresh === 'string') fbAuth = a; } catch(e){} }
+  if (fbAuth && fbAuth.token && fbAuth.exp > Date.now() + 60000) return fbAuth;
+  const key = encodeURIComponent(FIREBASE.apiKey);
+  let a = null;
+  if (fbAuth){
+    const r = await fbFetch(`${FBH.token}/v1/token?key=${key}`, {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(fbAuth.refresh)});
+    if (r.ok && r.j && r.j.id_token) a = {uid: r.j.user_id, token: r.j.id_token, refresh: r.j.refresh_token, exp: Date.now() + (+r.j.expires_in || 3600) * 1000};
+    else if (r.status === 0 || r.status >= 500) return null;   // offline: keep the account and try again later
+  }
+  if (!a){
+    const r = await fbFetch(`${FBH.auth}/v1/accounts:signUp?key=${key}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({returnSecureToken: true})});
+    if (!(r.ok && r.j && r.j.idToken)) return null;
+    a = {uid: r.j.localId, token: r.j.idToken, refresh: r.j.refreshToken, exp: Date.now() + (+r.j.expiresIn || 3600) * 1000};
+  }
+  fbAuth = a; try { localStorage.setItem(FB_AUTH_KEY, JSON.stringify(a)); } catch(e){}
+  return a;
+}
+// Firestore's REST format, both ways
+const fbVal = v => typeof v === 'number' ? {integerValue: String(Math.round(v))} : {stringValue: String(v)};
+const fbFields = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, fbVal(v)]));
+const fbRead = f => { const o = {}; for (const [k, v] of Object.entries(f || {})) o[k] = v.integerValue != null ? Number(v.integerValue) : v.stringValue != null ? v.stringValue : v.timestampValue != null ? Date.parse(v.timestampValue) : null; return o; };
+const fbDoc = path => `${fbDocs()}/${path}`;
+const fbAuthHeader = () => fbAuth && fbAuth.token && fbAuth.exp > Date.now() ? {Authorization: 'Bearer ' + fbAuth.token} : {};
+// a document's fields; false when it doesn't exist; null when it couldn't be read
+async function fbGet(path){
+  const r = await fbFetch(`${FBH.db}/v1/${fbDoc(path.split('/').map(encodeURIComponent).join('/'))}`, {headers: fbAuthHeader()});
+  return r.ok && r.j ? fbRead(r.j.fields) : r.status === 404 ? false : null;
+}
+async function fbCommit(writes){
+  const u = await fbUser(); if (!u) return {ok: false, status: 0};
+  return fbFetch(`${FBH.db}/v1/${fbDocs()}:commit`, {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + u.token}, body: JSON.stringify({writes})});
+}
+const stamp = [{fieldPath: 'at', setToServerValue: 'REQUEST_TIME'}];
+const entryOf = (p, name) => ({name, key: nameKey(name), welo: p.welo, games: p.games, wins: p.wins, crest: profile.crest, color: profile.color});
+// 'free', 'mine', 'taken', or null when it can't be checked right now
+async function nameStatus(name){
+  if (!FB_ON) return null;
+  const d = await fbGet('names/' + nameKey(name));
+  if (d === null) return null;
+  if (d === false) return 'free';
+  return fbAuth && d.uid === fbAuth.uid ? 'mine' : 'taken';
+}
+// As you type: say whether the name is free (and hold the Save button while it's taken).
+let nameCheckJob = 0;
+function nameCheckLive(raw, el, btn){
+  if (!FB_ON) return;
+  const v = raw.trim().replace(/\s+/g, ' '), job = ++nameCheckJob;
+  if (!checkName(v).ok || !v) return;
+  setTimeout(async () => {
+    if (job !== nameCheckJob) return;
+    if (!fbAuth) await fbUser();
+    const st = await nameStatus(v); if (job !== nameCheckJob) return;
+    el.dataset.taken = st === 'taken' ? v.toLowerCase() : '';
+    if (st === 'taken'){ el.textContent = '✗ Someone already has that name. Try another.'; el.className = 'pcheck bad'; if (btn) btn.disabled = true; }
+    else if (st === 'free' || st === 'mine'){ el.textContent = st === 'mine' ? '✓ That name is yours.' : '✓ Looks good, and it’s free.'; el.className = 'pcheck ok'; if (btn) btn.disabled = false; }
+    else { el.textContent = '✓ Looks good. (Couldn’t check the leaderboard just now.)'; el.className = 'pcheck ok'; }
+  }, 350);
+}
+// Reserve a name for this player (freeing their old one): 'ok', 'taken' or 'offline'.
+async function fbClaim(name){
+  if (!FB_ON) return 'ok';
+  const u = await fbUser(); if (!u) return 'offline';
+  const key = nameKey(name), [own, p] = await Promise.all([fbGet('owners/' + u.uid), fbGet('players/' + u.uid)]);
+  if (own === null || p === null) return 'offline';
+  const writes = [];
+  if (!own || own.key !== key){
+    writes.push({update: {name: fbDoc('names/' + key), fields: fbFields({uid: u.uid, name})}, currentDocument: {exists: false}},
+      {update: {name: fbDoc('owners/' + u.uid), fields: fbFields({key})}});
+    if (own && own.key) writes.push({delete: fbDoc('names/' + own.key)});
+  }
+  if (p) writes.push({update: {name: fbDoc('players/' + u.uid), fields: fbFields(entryOf(p, name))}, updateTransforms: stamp});
+  if (!writes.length) return 'ok';
+  const r = await fbCommit(writes);
+  if (r.ok) return 'ok';
+  if (r.status === 0 || r.status >= 500) return 'offline';
+  return (await nameStatus(name)) === 'taken' ? 'taken' : 'offline';
+}
+// A new crest or colour shows on the board too.
+async function boardProfile(){
+  if (!FB_ON || !profile.name) return;
+  const u = await fbUser(); if (!u) return;
+  const p = await fbGet('players/' + u.uid); if (!p) return;
+  if (p.crest === profile.crest && p.color === profile.color && p.name === profile.name) return;
+  fbCommit([{update: {name: fbDoc('players/' + u.uid), fields: fbFields(entryOf(p, profile.name))}, updateTransforms: stamp}]);
+}
+// Rated games wait in a queue on this device until they reach the leaderboard (offline, or less than a minute apart).
+const BOARD_Q = 'kessen-board-queue';
+const boardQ = () => { try { const q = JSON.parse(localStorage.getItem(BOARD_Q) || '[]'); return Array.isArray(q) ? q.filter(g => g && Number.isFinite(g.d)).slice(-50) : []; } catch(e){ return []; } };
+const saveBoardQ = q => { try { localStorage.setItem(BOARD_Q, JSON.stringify(q.slice(-50))); } catch(e){} };
+function boardQueue(delta, won){
+  if (!FB_ON || trailerOn) return;
+  saveBoardQ(boardQ().concat({d: Math.max(-64, Math.min(64, Math.round(delta))), w: won ? 1 : 0, tries: 0}));
+  boardFlush();
+}
+let boardFlushing = false, boardRetry = 0;
+async function boardFlush(){
+  if (!FB_ON || boardFlushing) return;
+  boardFlushing = true;
+  try {
+    for (let q = boardQ(); q.length && profile.name; q = boardQ()){
+      const u = await fbUser(); if (!u) return;
+      const own = await fbGet('owners/' + u.uid); if (own === null) return;
+      if (!own || own.key !== nameKey(profile.name)){ if (await fbClaim(profile.name) !== 'ok') return; }
+      const p = await fbGet('players/' + u.uid); if (p === null) return;
+      const g = q[0];
+      const next = p ? {welo: Math.max(100, Math.min(4000, p.welo + g.d)), games: p.games + 1, wins: p.wins + g.w} : {welo: 1000 + g.d, games: 1, wins: g.w};
+      const r = await fbCommit([{update: {name: fbDoc('players/' + u.uid), fields: fbFields(entryOf(next, profile.name))}, currentDocument: {exists: !!p}, updateTransforms: stamp}]);
+      if (r.ok){ q.shift(); saveBoardQ(q); boardCache = null; continue; }
+      if (r.status === 0 || r.status >= 500) return;
+      // refused: most likely two games less than a minute apart. Try again in a minute; give up on it after three tries.
+      g.tries = (g.tries || 0) + 1; if (g.tries >= 3) q.shift(); saveBoardQ(q);
+      clearTimeout(boardRetry); boardRetry = setTimeout(boardFlush, 65000);
+      return;
+    }
+  } finally { boardFlushing = false; }
+}
+// The leaderboard: the top 50 by WeLo, and where you stand.
+let boardCache = null;
+async function openBoard(){
+  A.init(); $('#board').hidden = false; $('#boardClose').focus();
+  const list = $('#boardList'), note = $('#boardNote'), meBox = $('#boardMe');
+  list.innerHTML = ''; meBox.hidden = true; note.textContent = 'Loading…';
+  if (!fbAuth) await fbUser();
+  // Firebase's free plan counts every entry read: keep the board for a minute rather than re-reading 50 entries each time
+  let r = boardCache && Date.now() - boardCache.t < 60000 ? boardCache.r : null;
+  if (!r){
+    r = await fbFetch(`${FBH.db}/v1/${fbDocs()}:runQuery`, {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({structuredQuery: {from: [{collectionId: 'players'}], orderBy: [{field: {fieldPath: 'welo'}, direction: 'DESCENDING'}], limit: 50}})});
+    if (r.ok) boardCache = {t: Date.now(), r};
+  }
+  if (!r.ok || !Array.isArray(r.j)){ note.textContent = "Couldn't load the leaderboard. Check your connection and try again."; return; }
+  const rows = r.j.filter(x => x.document).map(x => Object.assign(fbRead(x.document.fields), {uid: x.document.name.split('/').pop()}));
+  const mine = fbAuth && fbAuth.uid;
+  note.textContent = rows.length
+    ? 'Every player starts at 1000 with their first rated game. Each game moves it like your WeLo: CPU games half as much, placement games more.'
+    : 'Nobody on the board yet. Finish a rated game to be the first!';
+  rows.forEach((x, i) => {
+    const li = document.createElement('li'); li.className = 'lb-row' + (x.uid === mine ? ' me' : '');
+    li.innerHTML = '<span class="rk"></span><span class="cr" aria-hidden="true"></span><span class="nm"><b></b><span></span></span><span class="wl"></span>';
+    li.querySelector('.rk').textContent = i + 1;
+    const cr = li.querySelector('.cr'); cr.textContent = GLYPH[CRESTS.includes(x.crest) ? x.crest : 'n'] + VS; cr.style.setProperty('--c', CREST_COLORS.includes(x.color) ? x.color : CREST_COLORS[0]);
+    li.querySelector('.nm b').textContent = typeof x.name === 'string' ? x.name.slice(0, 16) : '?';
+    if (x.uid === mine){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; li.querySelector('.nm b').appendChild(y); }
+    const welo = Number.isFinite(x.welo) ? x.welo : 1000, games = Number.isFinite(x.games) ? x.games : 0;
+    li.querySelector('.nm > span').textContent = `${beltOf(welo)} · ${games} game${games === 1 ? '' : 's'}`;
+    li.querySelector('.wl').textContent = welo;
+    list.appendChild(li);
+  });
+  // you, if you're not in the top 50
+  if (!mine || rows.some(x => x.uid === mine)) return;
+  const me = await fbGet('players/' + mine);
+  if (!me){ meBox.hidden = false; meBox.textContent = profile.name ? 'Finish a rated game to join the board.' : 'Pick a fighter name (Edit, top right of the board) and finish a rated game to join the board.'; return; }
+  const c = await fbFetch(`${FBH.db}/v1/${fbDocs()}:runAggregationQuery`, {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({structuredAggregationQuery: {structuredQuery: {from: [{collectionId: 'players'}], where: {fieldFilter: {field: {fieldPath: 'welo'}, op: 'GREATER_THAN', value: {integerValue: String(me.welo)}}}}, aggregations: [{alias: 'n', count: {}}]}})});
+  const above = c.ok && Array.isArray(c.j) && c.j[0] && c.j[0].result ? Number(c.j[0].result.aggregateFields.n.integerValue) : null;
+  meBox.hidden = false; meBox.textContent = `You: ${me.name} · WeLo ${me.welo} · ${me.games} game${me.games === 1 ? '' : 's'}${above != null ? ` · rank ${above + 1}` : ''}`;
+}
+function closeBoard(){ $('#board').hidden = true; $('#boardBtn').focus(); }
+$('#boardBtn').hidden = !FB_ON;
+$('#boardBtn').onclick = openBoard;
+$('#boardClose').onclick = closeBoard;
+$('#board').addEventListener('click', e => { if (e.target === $('#board')) closeBoard(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#board').hidden) closeBoard(); });
+// On load: make sure this player's name is reserved (names chosen before the leaderboard existed), then send any games
+// still waiting.
+if (FB_ON) setTimeout(async () => {
+  if (profile.name){
+    const st = await fbClaim(profile.name);
+    if (st === 'taken') toast(`Someone already has "${profile.name}" on the leaderboard. Tap Edit to pick another name.`);
+  }
+  boardFlush();
+}, 3000);
 
 setCamSide('w');
 function start(data){
