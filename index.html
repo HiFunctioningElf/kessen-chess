@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029182302">
+<meta name="kessen-build" content="20261029182529">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -603,19 +603,23 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .rv-acts{display:flex;gap:6px;margin-top:4px}
 .rg{display:inline-grid;place-items:center;min-width:1.7em;padding:0 3px;height:1.5em;border-radius:4px;background:var(--gc);color:#111;font:700 11px/1 var(--body,sans-serif);border:1.5px solid #000;flex:none}
 .rv-right{display:flex;flex-direction:column;gap:10px;min-width:0}
-.rv-head .rv-res{font-family:var(--display);font-size:18px}
+.rv-head .rv-res{font-family:var(--display);font-size:16px;line-height:1.25}
 .rv-head .rv-open{font-size:13px;color:var(--gold)}
 .rv-prog{font-size:12px;color:var(--gold)}
 .rv-prog:empty{display:none}
-.rv-graph{width:100%;height:84px;border:2px solid #000;cursor:pointer;display:block}
+.rv-graph{position:relative;height:84px;border:2px solid #000;cursor:pointer;background:#0c0a17}
+.rv-graph svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.rv-dots{position:absolute;inset:0;pointer-events:none}
+.rv-dots i{position:absolute;width:8px;height:8px;border-radius:50%;border:1.5px solid #000;transform:translate(-50%,-50%)}
 .rv-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
 .rv-card{border:2px solid var(--line);padding:6px 8px;background:var(--ink);line-height:1.5}
 .rv-card .t{font-weight:700}.rv-card .t span{font-family:var(--chess);font-size:16px}
 .rv-card .acc{font-family:var(--display);font-size:24px;line-height:1.1}
-.rv-card .acc small{font-family:var(--body,sans-serif);font-size:11px;color:var(--muted);margin-left:6px}
+.rv-card .acc{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.rv-card .acc small{font-family:var(--body,sans-serif);font-size:11px;color:var(--muted)}
 .rv-card .cpl{color:var(--muted)}
-.rv-card .cnt{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:4px}
-.rv-card .cnt span{display:inline-flex;gap:2px;align-items:center}
+.rv-card .cnt{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:5px 6px;margin-top:6px}
+.rv-card .cnt span{display:flex;gap:4px;align-items:center;font-variant-numeric:tabular-nums}
 .rv-keys{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .rv-keys .lab{font-size:12px;color:var(--muted);width:100%}
 .rv-keys .chip{display:inline-flex;gap:6px;align-items:center;text-transform:none}
@@ -5144,7 +5148,7 @@ function openReview(g){
     <div class="rv-right">
       <div class="rv-head" id="rvHead"></div>
       <div class="rv-prog" id="rvProg"></div>
-      <svg class="rv-graph" id="rvGraph" viewBox="0 0 400 80" preserveAspectRatio="none" role="img" aria-label="Advantage graph: tap to jump to a move"></svg>
+      <div class="rv-graph" id="rvGraph" role="img" aria-label="Advantage graph: tap to jump to a move"><svg viewBox="0 0 400 80" preserveAspectRatio="none"></svg><div class="rv-dots"></div></div>
       <div class="rv-sum" id="rvSum"></div>
       <div class="rv-keys" id="rvKeys"></div>
       <div class="rv-moves" id="rvMoves"></div>
@@ -5282,12 +5286,13 @@ function drawReview(){
   const bads = grades.map((gk, i) => ({gk, i})).filter(x => ['blunder', 'mistake', 'miss'].includes(x.gk)).slice(0, 8);
   keys.innerHTML = bads.length ? '<span class="lab">Key moments</span>' + bads.map(x => { const m = r.moves[x.i]; return `<button class="chip" type="button" data-i="${x.i + 1}">${gradeBadge(x.gk)} ${Math.ceil((x.i + 1) / 2)}${m.color === 'w' ? '.' : '…'}${m.san}</button>`; }).join('') : '';
   // the advantage graph (White's winning chances), mistakes marked, the current move as a line
-  const svg = $('#rvGraph'), n = r.moves.length || 1;
+  const svg = $('#rvGraph svg'), n = r.moves.length || 1;
   const pts = r.evals.map((e, i) => e ? [i / n * 400, 80 - winPct((r.fens[i].split(' ')[1] === 'w' ? 1 : -1) * clampEval(e.score)) / 100 * 80] : null), line = pts.filter(Boolean);
   svg.innerHTML = `<rect width="400" height="80" fill="#0c0a17"/><line x1="0" y1="40" x2="400" y2="40" stroke="#3a2f63" stroke-dasharray="4 4"/>` +
-    (line.length > 1 ? `<path d="M0 80 ${line.map(p => `L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')} L${line[line.length - 1][0].toFixed(1)} 80 Z" fill="#fffaf0" opacity=".85"/>` : '') +
-    grades.map((gk, i) => ['inacc', 'mistake', 'blunder', 'miss'].includes(gk) && pts[i + 1] ? `<circle cx="${pts[i + 1][0].toFixed(1)}" cy="${pts[i + 1][1].toFixed(1)}" r="3.2" fill="${GRADES[gk][3]}" stroke="#000" stroke-width="1"/>` : '').join('') +
-    `<line x1="${k / n * 400}" y1="0" x2="${k / n * 400}" y2="80" stroke="#ffc83d" stroke-width="2"/>`;
+    (line.length > 1 ? `<path d="M${line[0][0].toFixed(1)} 80 ${line.map(p => `L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')} L${line[line.length - 1][0].toFixed(1)} 80 Z" fill="#fffaf0" opacity=".85"/>` : '') +
+    `<line x1="${k / n * 400}" y1="0" x2="${k / n * 400}" y2="80" stroke="#ffc83d" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  $('#rvGraph .rv-dots').innerHTML = grades.map((gk, i) => ['inacc', 'mistake', 'blunder', 'miss'].includes(gk) && pts[i + 1]
+    ? `<i style="left:${(pts[i + 1][0] / 4).toFixed(2)}%;top:${(pts[i + 1][1] / .8).toFixed(2)}%;background:${GRADES[gk][3]}"></i>` : '').join('');
   // move list, two columns, each with its badge
   const list = $('#rvMoves'); list.innerHTML = '';
   const startBlack = r.fens[0].split(' ')[1] === 'b', cells = startBlack ? [null, ...r.moves] : r.moves;
