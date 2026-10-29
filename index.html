@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029193707">
+<meta name="kessen-build" content="20261029202125">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -537,6 +537,22 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .mghud .pow{background:rgba(12,10,23,.92);font-size:13px;padding:5px 10px;box-shadow:0 0 12px rgba(255,200,61,.3)}
 /* ---- Donations panel, Penny Dropper and the coffee jar ---- */
 .donate-chip{color:#ffb3d6;border-color:#ff8ac4}
+/* fundraising goal banner, under the header */
+.goalbar{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin:6px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));
+  padding:10px 14px;background:linear-gradient(90deg,rgba(255,46,77,.16),rgba(255,200,61,.12));border:2px solid var(--gold);box-shadow:4px 4px 0 #000;cursor:pointer}
+.goalbar:hover{border-color:#fff}
+.g-head{display:flex;flex-direction:column;gap:2px;min-width:0}
+.g-head b{font-family:var(--display);font-weight:400;font-size:15px;letter-spacing:.04em;color:var(--gold)}
+.g-head span{font-size:13px;font-weight:700}
+.g-rows{display:flex;gap:8px 18px;flex-wrap:wrap;flex:1 1 320px}
+.g-row{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"name amt" "bar bar";gap:4px 10px;flex:1 1 200px;min-width:0;font-size:12px}
+.g-name{grid-area:name;white-space:nowrap}
+.g-amt{grid-area:amt;justify-self:end;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.g-bar{grid-area:bar;height:8px;background:var(--ink);border:1px solid var(--line);overflow:hidden}
+.g-bar i{display:block;height:100%;background:var(--gold)}
+.g-row.met .g-bar i{background:#3ddc84}
+.g-cta{font-family:var(--display);font-size:13px;color:var(--ink);background:var(--gold);border:0;padding:8px 14px;box-shadow:3px 3px 0 #000;white-space:nowrap;cursor:pointer}
+.g-cta:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
 .donate-chip .amt{color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
 #donate,#hist{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
@@ -662,6 +678,11 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
+  <section class="goalbar" id="goalBar" aria-labelledby="goalTitle">
+    <div class="g-head"><b id="goalTitle">🎯 Fundraising goals</b><span id="goalPitch"></span></div>
+    <div class="g-rows" id="goalRows"></div>
+    <button class="g-cta" id="goalBtn" type="button" aria-haspopup="dialog">Donate</button>
+  </section>
   <main>
     <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
     <aside class="panel">
@@ -6880,18 +6901,20 @@ function demo(pos, move){
 // until it exists, the button goes to the charity's own official donation page (`donate`), which has no public total.
 // `reg` = where to check the charity is real; `id` = its registration number (an Australian ABN, or a US EIN).
 // `abn` is only set for Australian charities: it matches receipts in the ledger.
+// `goal` is each fundraiser page's target, in that page's own currency (`cur`); it shows in the goal banner.
 const CHARITIES = [
-  {name: 'Smile Train', cause: 'Cleft surgery for kids', emoji: '😁', abn: null, id: 'US EIN 13-3661416',
+  {name: 'Smile Train', short: 'Smile Train', cause: 'Cleft surgery for kids', emoji: '😁', abn: null, id: 'US EIN 13-3661416',
    reg: {label: 'US registered charity ↗', url: 'https://projects.propublica.org/nonprofits/organizations/133661416'},
    note: "A US charity: donations aren't tax-deductible in Australia.",
-   donate: 'https://www.smiletrain.org/?form=givenow', page: 'TODO', total: null},
-  {name: 'The Fred Hollows Foundation', cause: 'Restoring sight', emoji: '👓', abn: '46 070 556 642', id: 'ABN 46 070 556 642',
-   reg: {label: 'ACNC registered ↗', url: 'https://www.acnc.gov.au/charity/charities/b4a55fbf-38af-e811-a95e-000d3ad24c60/profile'},
-   donate: 'https://www.hollows.org/au/donate', page: 'TODO', total: null},
-  {name: 'Foodbank Queensland', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209', id: 'ABN 89 067 251 209',
+   donate: 'https://www.smiletrain.org/?form=givenow', page: 'https://www.mysmiletrain.org/campaigns/Kessen-Chess--Checkmate-for-Smiles',
+   goal: 1000, cur: 'USD', total: null},   // TODO: {type: 'donordrive', host: 'www.mysmiletrain.org', participant: <the page's participant ID>}
+  {name: 'Foodbank Queensland', short: 'Foodbank QLD', cause: 'Hunger', emoji: '🍎', abn: '89 067 251 209', id: 'ABN 89 067 251 209',
    reg: {label: 'ACNC registered ↗', url: 'https://www.acnc.gov.au/charity/charities/8800d743-39af-e811-a962-000d3ad24a0d/profile'},
-   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'TODO', total: null}
+   donate: 'https://www.foodbank.org.au/qld/support-us/make-a-donation/', page: 'https://www.justgiving.com/page/kessen-chess',
+   goal: 1000, cur: 'AUD', total: {type: 'justgiving', page: 'kessen-chess'}}   // live once JUSTGIVING_APP_ID is set
 ];
+// The goal banner's promise: reach every charity's goal and the game comes to Android.
+const GOAL_PRIZE = 'Kessen Chess comes to Android';
 // `total` says where a page's live total can be read, or null for no number:
 //   {type: 'justgiving', page: '<page short name>'}  needs JUSTGIVING_APP_ID (a free key from developer.justgiving.com)
 //   {type: 'opencollective', slug: '<collective slug>'}
@@ -6985,7 +7008,25 @@ function drawDonationTotals(){
   $('#donBtn').title = sum != null ? 'Donated to the charities through Kessen Chess fundraiser pages (the developer\'s holiday fund isn\'t included)' : '';
   const el = $('#donRaised'); el.hidden = sum == null;
   if (!el.hidden) el.textContent = `💝 ${fmtMoney(sum, 'AUD')} raised by ${donors != null ? `${donors.toLocaleString()} Kessen player${donors === 1 ? '' : 's'}` : 'Kessen players'}`;
+  drawGoals();
   CHARITIES.forEach((c, i) => { const t = donTotals.per[i], r = document.querySelector(`#donGrid [data-i="${i}"] .raised`); if (r) { r.hidden = !t; r.textContent = t ? `${fmtMoney(t.amount, t.currency)} raised` : ''; r.title = t && t.receipts ? `Includes ${fmtMoney(t.receipts, 'AUD')} from receipts in the public ledger` : ''; } });
+}
+function drawGoals(){
+  const rows = $('#goalRows'); if (!rows) return;
+  let allMet = true; rows.innerHTML = '';
+  CHARITIES.forEach((c, i) => {
+    const t = donTotals.per[i], got = t && t.currency === c.cur ? t.amount : null, frac = got == null ? 0 : Math.min(1, got / c.goal);
+    if (got == null || got < c.goal) allMet = false;
+    const row = document.createElement('div'); row.className = 'g-row' + (frac >= 1 ? ' met' : '');
+    row.innerHTML = '<span class="g-name"><span aria-hidden="true"></span> <b></b></span><span class="g-bar"><i></i></span><span class="g-amt"></span>';
+    row.querySelector('.g-name span').textContent = c.emoji; row.querySelector('.g-name b').textContent = c.short;
+    row.querySelector('.g-bar i').style.width = `${Math.round(frac * 100)}%`;
+    // only a real total fills the bar: until a page's total can be read, it shows just the goal
+    const money = n => fmtMoney(n, c.cur).replace(/^USD\s?/, 'US$');   // en-AU writes US dollars as "USD 420"
+    row.querySelector('.g-amt').textContent = got == null ? `Goal ${money(c.goal)}` : `${money(got)} of ${money(c.goal)}${frac >= 1 ? ' ✓' : ''}`;
+    rows.appendChild(row);
+  });
+  $('#goalPitch').textContent = allMet ? `Both goals reached! ${GOAL_PRIZE}. Thank you! 🎉` : `Reach both goals and ${GOAL_PRIZE}! 🤖`;
 }
 function charityLink(c, label){
   const url = isSet(c.page) ? c.page : c.donate;
@@ -7138,6 +7179,8 @@ async function openDonate(toFund){
 }
 function closeDonate(){ plinko.stop(); $('#donate').hidden = true; $('#donBtn').focus(); }
 $('#donBtn').onclick = () => openDonate();
+$('#goalBar').onclick = () => openDonate();   // the whole banner opens it; the button is there for keyboards and screen readers
+drawGoals();
 // The holiday-fund chip only appears once the dev's Open Collective link is filled in.
 $('#fundBtn').hidden = !(isSet(COFFEE.url) && isSet(COFFEE.slug));
 $('#fundBtn').onclick = () => openDonate(true);
