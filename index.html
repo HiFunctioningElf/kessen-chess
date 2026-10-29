@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029180016">
+<meta name="kessen-build" content="20261029180553">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -616,7 +616,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
-        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b> · Elo <b id="fElo"></b></div></div>
+        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · 戦闘力 <b id="fPower"></b> · WeLo <b id="fElo"></b></div></div>
         <button class="chip" id="fEdit" type="button">Edit</button>
       </section>
       <section class="card powers" id="powersCard" hidden><div class="label">Power-ups</div><div id="powRows"></div></section>
@@ -3141,7 +3141,7 @@ async function commit(input, remote, remoteClock){
     if (mv && tcOn() && !isOver()) clockStart(game.turn());
   }
   if (!mv) return;
-  saveGame(); oracleTick();
+  saveGame(); oracleTick(); markPending();
   if (mode === 'pvp' && autoFlip && !isOver() && orientation !== game.turn()){ orientation = game.turn(); swingTo(orientation); }
   if (shouldMinigame()){
     busy = true; busySince = Date.now(); clockPause(); clearPremove(); render();
@@ -3166,7 +3166,7 @@ async function commit(input, remote, remoteClock){
    Seats: vs the CPU (Ronin) and online, you're at the bottom and your opponent at the top. On a shared screen the
    players pick how they sit: face to face (screen flat between them, White at the bottom edge, Black's half turned
    round to face them) or pass the phone (one at a time: White plays the whole game full screen, then hands the phone to Black,
-   who gets the very same challenge; the better result wins). */
+   who gets an equal challenge of their own; the better result wins). */
 // Minigames come round less often as pieces come off the board, and stop in the endgame:
 // 20+ pieces (not counting kings) every 8 moves, 12–19 every 12, 7–11 every 18, 6 or fewer none at all.
 // ?mgEvery=N (testing only) uses a fixed gap of N plies instead.
@@ -3196,7 +3196,7 @@ let seatAsked = false;
 const matchLive = () => started && !isOver() && (mode === 'online' ? !!net.code : game.history().length > 0);
 const SEAT_NOTE = {
   face: 'Screen flat between you: White sits at the bottom edge, Black across the table. Each half of the screen turns to face its player.',
-  pass: 'One at a time: White plays first, then passes the phone to Black, who gets the very same challenge. The better result wins.'
+  pass: 'One at a time: White plays first, then passes the phone to Black, who gets an equal challenge. The better result wins.'
 };
 function drawGameMode(){
   const kessen = mgEnabled(), locked = matchLive() || (mode === 'online' && !!net.code);
@@ -3570,12 +3570,12 @@ async function quickDraw(){
     await F.wait(700); await godspeedFilm(F, c, ms);
     F.big('GODSPEED VICTORY!!', 'THE WHOLE MINIGAME, IN ONE DRAW', {color: 'var(--gold)'}); mgSfx.gong(); await F.wait(1600);
   };
-  // Pass the phone: White takes three draws, then Black gets the very same three. The best single draw wins.
+  // Pass the phone: White takes three draws, then Black gets three of their own. The best single draw wins.
   if (passing()){
     const best = {w: null, b: null};
     const show = () => ['w', 'b'].forEach(c => F.pts(c, best[c] == null ? '—' : `best ${qdMs(best[c])}`));
     for (const c of ['w', 'b']){
-      mgTurn(F, c); rnd = seededRandom(id * 7919 + 101);
+      mgTurn(F, c); rnd = seededRandom(id * 7919 + 101 + (c === 'b' ? 50021 : 0));   // their own signal times (no memorising)
       scenes.length = 0; F.mid.innerHTML = ''; const sc = qdScene(c); F.mid.appendChild(sc); scenes.push(sc);
       for (const x of ['w', 'b']) if (pads[x]){ pads[x].remove(); delete pads[x]; }
       pads[c] = document.createElement('div'); F.P[c].area.appendChild(pads[c]); pad(c, 'GET READY', 'idle'); show();
@@ -3864,7 +3864,7 @@ async function bladeTiming(){
   const tot = {w: 0, b: 0}, showPts = () => ['w', 'b'].forEach(c => F.pts(c, `${tot[c]} pts`));
   showPts();
   const rules = c => ({
-    how: `A marker sweeps across ${seat === 'face' ? 'your' : 'the'} bar. Tap${seat === 'face' ? ' your half' : ''} to stop it: <b>gold = perfect +3</b>, pale = clean +1. ${passing() ? 'Five cuts each, in the very same spots, each one faster.' : 'Both blades swing at the same time. Five cuts, each one faster.'} Most points wins.`,
+    how: `A marker sweeps across ${seat === 'face' ? 'your' : 'the'} bar. Tap${seat === 'face' ? ' your half' : ''} to stop it: <b>gold = perfect +3</b>, pale = clean +1. ${passing() ? 'Five cuts each, each one faster.' : 'Both blades swing at the same time. Five cuts, each one faster.'} Most points wins.`,
     keys: seat === 'face' ? `Keyboard: ${c === 'w' ? 'A' : 'L'}` : 'Keyboard: Space'
   });
 
@@ -3939,10 +3939,10 @@ async function bladeTiming(){
     const z = i === 5 ? {speed: 2.3, good: 12, perf: 4} : {speed: Math.min(2.2, .75 + .3 * i), good: Math.max(11, 26 - 3.5 * i), perf: Math.max(3.4, 7.5 - .9 * i)};
     z.center = z.good / 2 + 5 + rnd() * (100 - z.good - 10); return z;
   };
-  // Pass the phone: White takes five cuts, then Black takes the very same five
+  // Pass the phone: White takes five cuts, then Black takes five of their own at the same speeds
   if (passing()){
     for (const c of ['w', 'b']){
-      mgTurn(F, c); rnd = seededRandom(id * 7919 + 202);
+      mgTurn(F, c); rnd = seededRandom(id * 7919 + 202 + (c === 'b' ? 50021 : 0));   // their own zones, same speeds
       scenes.length = 0; F.mid.innerHTML = ''; scene(F.mid, [c]);
       for (const x of ['w', 'b']) M[x].el.hidden = x !== c;
       if (!await mgGate(F, rules)) return mgEnd(F, null, 'CALLED OFF');
@@ -4221,17 +4221,17 @@ async function kunaiStorm(){
     const edge = {bot: 'bottom', top: 'top'}[mgPos(c)];
     return {
       how: passing()
-        ? `Tap to throw ${c === 'w' ? 'white' : 'black'} kunai through the gaps in the iron ring. Land them all as fast as you can. Hit a block or a stuck kunai and the stage is lost. An onigiri saves you a kunai. Three stages each, the very same ones: most cleared wins, then the fastest total time.`
+        ? `Tap to throw ${c === 'w' ? 'white' : 'black'} kunai through the gaps in the iron ring. Land them all as fast as you can. Hit a block or a stuck kunai and the stage is lost. An onigiri saves you a kunai. Three stages each, getting harder: most cleared wins, then the fastest total time.`
         : `Tap${F.seat === 'face' ? ' your half' : ''} to throw ${c === 'w' ? 'white' : 'black'} kunai from the ${edge}, through the gaps in the iron ring. Land all of yours first to win the stage. Hit a block or a stuck kunai and you lose it. An onigiri saves you a kunai. Best of 3.`,
       keys: F.seat === 'face' ? `Keyboard: ${c === 'w' ? 'A' : 'L'}` : 'Keyboard: Space'
     };
   };
   const STAGE_TAG = ['THROW THROUGH THE GAPS', 'THE RING FIGHTS BACK', 'EVERYTHING SPINS. BOTH WAYS.'];
-  // Pass the phone: White runs the three stages against the clock, then Black runs the very same three
+  // Pass the phone: White runs the three stages against the clock, then Black runs three of their own, just as hard
   if (passing()){
     const solo = () => { const o = OTHER(passTurn); K.left[o] = 0; K.frozen[o] = true; };
     for (const c of ['w', 'b']){
-      mgTurn(F, c); rnd = seededRandom(id * 7919 + 303); TH.w = KS_THETA[mgPos('w')]; TH.b = KS_THETA[mgPos('b')];
+      mgTurn(F, c); rnd = seededRandom(id * 7919 + 303 + (c === 'b' ? 50021 : 0)); TH.w = KS_THETA[mgPos('w')]; TH.b = KS_THETA[mgPos('b')];
       setup(0); solo(); hud();
       if (!await mgGate(F, rules)){ live = false; return mgEnd(F, null, 'CALLED OFF'); }
       for (stage = 0; stage < 3 && !isOver(); stage++){
@@ -4317,8 +4317,10 @@ const DN_KEYCAPS = {w: 'ASDF', b: 'JKL;'};
 async function magicalDance(){
   const F = mgFrame('dn', 'Magical Dance', '☆'), id = F.id, rnd = seededRandom(id * 7919 + 404), me = mgMe();
   A.music.duck(240000, 0);
-  // this round's song and chart: the same for both players
+  // this round's song and chart: the same for both players at once (online, face to face, vs CPU); passing the phone,
+  // the second dancer gets a fresh chart for the same song, so they can't learn the arrows by watching
   const S = DN_SONGS[Math.floor(rnd() * DN_SONGS.length)], BEAT = 60 / S.bpm;
+  const makeChart = rnd => {
   const chart = [];
   let lastL = -1, same = 0;
   const lane = () => { let l; do { l = Math.floor(rnd() * 4); } while (l === lastL && same >= 1 && rnd() < .85); same = l === lastL ? same + 1 : 0; lastL = l; return l; };
@@ -4332,6 +4334,9 @@ async function magicalDance(){
     }
     if (S.offb[b] === '1' && sec !== 1) chart.push({b: b + .5, l: lane()});   // the song's own off-beat stabs
   }
+  return chart;
+  };
+  let chart = makeChart(rnd);
   // clocks: the song's time is the audio clock minus the output delay, so what you see lines up with what you hear
   const audio = SY.ok();
   const clock = audio ? () => SY.t() - SY.lat() : () => performance.now() / 1000;
@@ -4369,7 +4374,7 @@ async function magicalDance(){
   const judge = (p, l, at) => {
     let best = null, bd = 1;
     for (const n of p.notes){ if (n.l !== l || n.done) continue; const d = Math.abs(beatT(n.b) - at); if (d < bd){ bd = d; best = n; } }
-    if (!best || bd > DN_WIN[2]) return;
+    if (!best || bd > DN_WIN[2]){ ghost(p, at); return; }
     best.done = true; hit(p, l, bd < DN_WIN[0] ? 3 : bd < DN_WIN[1] ? 2 : 1, at);
   };
   const hit = (p, l, j, at) => {
@@ -4382,6 +4387,8 @@ async function magicalDance(){
     else if (p.combo % 25 === 0) F.say(p.c, mgPick(DN.hit));
     hud();
   };
+  // a press with no arrow anywhere near it: mashing every key would otherwise hit everything, so it costs you
+  const ghost = (p, at) => { p.combo = 0; p.fever = false; p.score = Math.max(0, p.score - 50); p.judge = {j: 0, t: at}; p.missT = at; hud(); };
   const miss = (p, n, at) => { n.done = true; p.combo = 0; p.fever = false; p.judge = {j: 0, t: at}; p.missT = at; if (p.full && audio) SY.osc('sawtooth', 160, SY.t() + .005, .16, .05, {lp: 900}); hud(); };
   const press = (c, l, ts) => {
     const p = P[c]; if (!p || !p.full) return;
@@ -4583,13 +4590,13 @@ async function magicalDance(){
   };
   // play
   const rules = c => ({
-    how: `HENSHIN!! Then a 30-second song at ${Math.round(S.bpm)} BPM. Hit the arrow${F.seat === 'face' ? ' on your side' : ''} as each one reaches the line: <b>PERFECT, GREAT, GOOD</b>. ${passing() ? 'Then pass the phone: the other dancer gets the very same arrows.' : 'Same arrows for both of you.'} A 20 combo starts <b>FEVER</b> (×1.5). Highest score wins. Sound on ♡`,
+    how: `HENSHIN!! Then a 30-second song at ${Math.round(S.bpm)} BPM. Hit the arrow${F.seat === 'face' ? ' on your side' : ''} as each one reaches the line: <b>PERFECT, GREAT, GOOD</b>. ${passing() ? 'Then pass the phone: the other dancer gets the same song.' : 'Same arrows for both of you.'} A 20 combo starts <b>FEVER</b> (×1.5). Highest score wins. Sound on ♡`,
     keys: (F.seat === 'face' ? (c === 'w' ? 'Keyboard: A S D F' : 'Keyboard: J K L ;') : 'Keyboard: A S D F (or J K L ; or the arrow keys). Press two at once for the double arrows.') + `<br>♪ ${S.credit}`
   });
-  // Pass the phone: White dances the song, then Black dances the very same chart with White's score to beat
+  // Pass the phone: White dances the song, then Black dances a fresh chart for the same song with White's score to beat
   if (passing()){
     for (const c of ['w', 'b']){
-      mgTurn(F, c); build(); hud();
+      mgTurn(F, c); if (c === 'b') chart = makeChart(seededRandom(id * 7919 + 404 + 50021)); build(); hud();
       if (!await mgGate(F, rules, {count: false})) return mgEnd(F, null, 'CALLED OFF');
       fit(); await perform(); scoreOf[c] = P[c].score; phase = 'end';
       F.big('FINISH ☆', `${SIDE(c)}: ${P[c].score.toLocaleString()} pts`, {color: '#ff6fb5'}); await F.wait(2200); F.big('');
@@ -4688,6 +4695,7 @@ async function givePower(winner){
   const pool = ['hint', 'takeback'].concat(mode === 'pvp' ? [] : ['oracle'], tcOn() ? ['heist'] : []), p = pool[Math.floor(Math.random() * pool.length)];
   if (powers[winner].length >= 3){ toast('Power-up slots full (3)'); return; }
   powers[winner] = powers[winner].concat(p);
+  if (style) style[winner].hadPow = true;
   if (mode === 'online' && net.ref) net.ref.update({pow: powers}).catch(() => {});
   A.sfx.promote(); panel();
   await bigText(`${powIcon(p, 'big')}${POWERS[p][1].toUpperCase()}`, '力', {hold: 1100, size: .5, color: 'var(--gold)', sub: `${SIDE(winner).toUpperCase()} GETS A POWER-UP`});
@@ -4699,6 +4707,7 @@ async function usePower(c, p){
   if (p === 'takeback' && game.history().length < 2){ toast('Nothing to take back yet'); return; }
   if (p === 'heist' && !(tcOn() && remaining(OTHER(c)) > 15000)){ toast('Time Heist needs clocks, and over 15 s on your opponent'); return; }
   if (!spendPower(c, p)) return;
+  if (style) style[c].usedPow = true;
   if (p === 'hint'){
     toast('Sensei is thinking…');
     const m = await engineMove(Object.assign({fen: game.fen(), seen: seenKeys()}, {depth: 8, ms: 1500, noise: 0, quiet: true}));
@@ -5673,7 +5682,7 @@ function wireConn(conn){
     const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
     const wb = v => (v === 'w' || v === 'b' ? v : null);
     const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, elo: num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1200, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
+    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
     const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
     const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
     const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
@@ -5770,6 +5779,7 @@ function attach(code, ref){
 }
 function leaveGame(){
   friendWait = null;
+  if (net.my && !isOver()) settleAbandoned('You left a game in progress: it counts as a loss.');
   if (net.unsub) net.unsub();
   if (net.kind === 'p2p') dropPeer();
   Object.assign(net, {code: null, ref: null, unsub: null, my: null, data: null});
@@ -5791,7 +5801,7 @@ async function drawPlayers(){
     const card = d['p' + c];
     nm.textContent = id ? ((card && card.name) || (ps[id] && ps[id].name) || (id === net.myId ? 'You' : 'Your friend')) : 'Waiting for a player…';
     row.appendChild(nm);
-    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `${rankOf(card.power)} · ${Number(card.power).toLocaleString()}`; row.appendChild(pw); }
+    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `WeLo ${card.welo} · ${beltOf(card.welo)}`; row.appendChild(pw); }
     if (id && id === net.myId){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; row.appendChild(y); }
     else if (card && card.pid && card.pid !== MY_PID){
       const fav = document.createElement('button'); fav.type = 'button'; fav.className = 'fav' + (isFriend(card.pid) ? ' on' : '');
@@ -6020,6 +6030,7 @@ $('#flipSeg').addEventListener('click', e => {
 $('#undoBtn').onclick = () => {
   if (busy || mode === 'online' || flagged || ended || !game.history().length) return;
   game.undo(); if (mode === 'cpu' && game.turn() !== playerColor) game.undo();
+  if (mode === 'cpu' && !practice){ practice = true; toast("Undo used: this game is practice now (no 戦闘力 or WeLo)."); }
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; clearEndFx();
   A.music.intensity(game.in_check() ? 1 : 0); A.music.start(); render(true);
@@ -6099,15 +6110,46 @@ const RANKS = [[0, 'Background Extra'], [300, 'Comic Relief'], [600, 'Side Chara
   [1550, 'Tournament Arc Contender'], [1800, 'Main Character'], [2100, 'Protagonist With a Tragic Backstory'], [2500, 'Final Boss'], [3200, 'Secret Final Form'],
   [4000, 'Plot Armor'], [6000, 'Sequel Bait'], [9001, "IT'S OVER 9000!!"]];
 const rankOf = p => RANKS.filter(([min]) => p >= min).pop()[1];
+/* ---- WeLo: Kessen's own rating (it replaced Elo). Everyone has one: online games rate you against your opponent's WeLo,
+   CPU games against the CPU's fixed WeLo (Rookie 800, Rival 1200, Final Boss 1700) and move it half as much.
+   The first 15 games are placement (big swings), then it settles (smaller still above 1600). Dojo belts mark the way.
+   A game you used Undo in is practice, and an online game you walk out of counts as a loss. ---- */
+const WELO_CPU = [800, 1200, 1700];
+const BELTS = [[0, 'White Belt'], [700, 'Yellow Belt'], [850, 'Green Belt'], [1000, 'Blue Belt'], [1150, 'Red Belt'], [1300, 'Black Belt'], [1500, '2nd Dan'], [1700, '3rd Dan'], [1950, 'Sensei'], [2250, 'Grand Sensei']];
+const beltOf = w => BELTS.filter(([min]) => w >= min).pop()[1];
+const weloK = cpu => (profile.weloGames < 15 ? 48 : profile.welo >= 1600 ? 24 : 32) * (cpu ? .5 : 1);
+function weloRate(opp, score, cpu){
+  const mine = profile.welo, expected = 1 / (1 + 10 ** ((opp - mine) / 400));
+  profile.welo = Math.max(100, Math.round(mine + weloK(cpu) * (score - expected)));
+  profile.weloGames++; profile.weloPeak = Math.max(profile.weloPeak || 0, profile.welo);
+  return {before: mine, after: profile.welo, opp, placement: profile.weloGames <= 15 ? profile.weloGames : 0};
+}
+// An online game in progress is noted on this device; if it never finishes (tab closed, Leave mid-game) it's a loss.
+const PENDING_KEY = 'kessen-pending';
+function markPending(){
+  if (mode !== 'online' || !net.my || !(net.data && net.data.w && net.data.b) || isOver() || game.history().length < 2) return;
+  const theirs = net.data['p' + OTHER(net.my)];
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify({code: net.code, opp: theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000})); } catch(e){}
+}
+const clearPending = () => { try { localStorage.removeItem(PENDING_KEY); } catch(e){} };
+function settleAbandoned(why){
+  let p = null; try { p = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch(e){}
+  if (!p) return; clearPending();
+  const r = weloRate(Number.isFinite(p.opp) ? p.opp : 1000, 0);
+  profile.losses++; profile.onlineGames++; saveProfile();
+  toast(`${why} WeLo ${r.before} → ${r.after}`);
+}
 const PROFILE_KEY = 'kessen-profile';
-let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0};
+let profile = {name: '', crest: 'n', color: CREST_COLORS[0], power: 500, wins: 0, losses: 0, draws: 0, elo: 1200, onlineGames: 0, onlineWins: 0, welo: null, weloGames: 0, weloPeak: 0};
 try { profile = Object.assign(profile, JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')); } catch(e){}
+// WeLo replaced Elo: anyone who played online keeps their number, everyone else starts at 1000
+if (!Number.isFinite(profile.welo)){ profile.welo = profile.onlineGames > 0 ? profile.elo : 1000; profile.weloGames = profile.onlineGames || 0; profile.weloPeak = profile.welo; }
 const fighterName = () => profile.name || 'Nameless Challenger';
 function saveProfile(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch(e){} drawFighter(); shareProfile(); }
 function drawFighter(){
   $('#fCrest').textContent = GLYPH[profile.crest] + VS; $('#fCrest').style.setProperty('--c', profile.color);
   $('#fName').textContent = fighterName(); $('#fRank').textContent = rankOf(profile.power); $('#fPower').textContent = profile.power.toLocaleString();
-  $('#fElo').textContent = profile.elo; $('#fElo').parentElement.title = `Online: Elo ${profile.elo} · ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
+  $('#fElo').textContent = profile.welo; $('#fElo').parentElement.title = `WeLo ${profile.welo} · ${beltOf(profile.welo)} (peak ${profile.weloPeak})${profile.weloGames < 15 ? ` · placement ${profile.weloGames}/15` : ''} · online: ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
 }
 // The name checker: length, characters, reserved names and a rude-word filter (also catching 0→o, 1→i style swaps).
 const RUDE = ['fuck', 'shit', 'cunt', 'bitch', 'dick', 'cock', 'pussy', 'nigg', 'fag', 'whore', 'slut', 'rape', 'nazi', 'hitler', 'penis', 'vagina', 'porn', 'retard', 'twat', 'wank', 'bastard', 'asshole', 'tits', 'kike', 'spic', 'chink'];
@@ -6123,7 +6165,7 @@ function checkName(raw){
   return {ok: true, msg: '✓ Looks good. (Names aren\'t unique yet: that arrives with the online leaderboard.)'};
 }
 // what your friend sees online
-const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, elo: profile.elo, pid: MY_PID});
+const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
 function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
 $('#fEdit').onclick = () => {
   let crest = profile.crest, color = profile.color;
@@ -6142,14 +6184,16 @@ $('#fEdit').onclick = () => {
   $('#prof').hidden = false; $('#pName').focus();
 };
 drawFighter();
+setTimeout(() => settleAbandoned('Your unfinished online game counted as a loss.'), 1500);
 // Style: every move can earn style for whoever played it (you, your friend, the CPU), shown on each player's style
 // meter during the game. In a rated game (vs CPU or online) your style also goes into your Power Level.
 // Each bonus pays once per player per game (so a Takeback can't farm it). A few cheeky taxes too.
-const STYLE0 = () => ({lines: [], seen: {}, checks: 0, worst: 0, promos: 0, castled: false, lostAny: false});
+const STYLE0 = () => ({lines: [], seen: {}, checks: 0, worst: 0, promos: 0, castled: false, lostAny: false, hadPow: false, usedPow: false});
 var style = null;   // (var, so the panel can ask before this line has run)
 style = {w: STYLE0(), b: STYLE0()};
 let ratedDone = false, lastRating = null;
-const resetStyle = () => { style = {w: STYLE0(), b: STYLE0()}; ratedDone = false; drawStyle(); };
+var practice = false;   // Undo was used vs the CPU: nothing is rated
+const resetStyle = () => { style = {w: STYLE0(), b: STYLE0()}; ratedDone = false; practice = false; drawStyle(); };
 const styleTotal = c => style ? style[c].lines.reduce((a, l) => a + l[1], 0) : 0;
 const STYLE_VAL = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
 const sideMaterial = c => game.board().flat().reduce((a, p) => a + (p && p.color === c ? STYLE_VAL[p.type] : 0), 0);
@@ -6294,49 +6338,53 @@ function noteStyle(mv){
 function rateGame(){
   const me = myColor();
   if (ratedDone || !me || !isOver()) return null;
-  ratedDone = true;
+  ratedDone = true; clearPending();
+  if (practice) return lastRating = {practice: true, before: profile.power, after: profile.power, lines: []};
   let winner = null;
   if (ended) winner = ended.winner;
   else if (flagged) winner = timeoutDraw ? null : (flagged === 'w' ? 'b' : 'w');
   else if (game.in_checkmate()) winner = game.turn() === 'w' ? 'b' : 'w';
   const out = winner === null ? 'draw' : winner === me ? 'win' : 'loss';
   const table = mode === 'cpu' ? {win: [40, 90, 200][level], loss: [-60, -40, -20][level], draw: [10, 25, 60][level]} : {win: 150, loss: -60, draw: 20};
-  const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]], ...style[me].lines];
+  // Style counts in full online and against the Final Boss, less against easier CPUs, and not at all in a game under
+  // 10 moves (so you can't Bongcloud, resign and repeat to farm it). Taxes always count.
+  const moves = Math.ceil(game.history().length / 2), st = style[me];
+  const counts = moves >= 10, mult = mode === 'cpu' ? [.5, .75, 1][level] : 1, styled = (t, p) => [t, p > 0 ? Math.round(p * mult) : p];
+  const lines = [[out === 'win' ? 'Victory' : out === 'loss' ? 'Defeat' : 'Draw', table[out]]];
+  if (counts) lines.push(...st.lines.map(([t, p]) => styled(t, p)));
+  else if (st.lines.some(l => l[1] > 0)) lines.push(['Style (only counts in games of 10+ moves)', 0]);
+  if (counts && mult < 1 && st.lines.some(l => l[1] > 0)) lines.push([`(style ×${mult} against the ${['Rookie', 'Rival'][level]} CPU)`, 0]);
   if (ended && ended.type === 'resign' && winner !== me) lines.push(['White Flag Tax', -10]);
   if (out === 'draw' && game.in_stalemate()) lines.push(['Tea Party (stalemate)', 20]);
   if (out === 'draw' && game.in_threefold_repetition()) lines.push(['Déjà Vu Tax', -5]);
   // the whole game's story
-  const moves = Math.ceil(game.history().length / 2), st = style[me];
-  if (out === 'win'){
-    if (st.worst <= -9) lines.push(['Anime Comeback (won from a queen down)', 150]);
-    else if (st.worst <= -5) lines.push(['Plot Armor Comeback (won from 5+ down)', 80]);
-    if (!st.lostAny && moves >= 10) lines.push(['Flawless Victory (lost nothing)', 60]);
-    if (flagged) lines.push(['Clock Bully (won on time)', 15]);
-    else if (tcOn() && clock[me] <= 5000) lines.push([`Clutch (won with ${Math.max(0, clock[me] / 1000).toFixed(1)} s left)`, 40]);
-    if (!st.castled && moves >= 20) lines.push(['Never Castled, Never Scared', 10]);
+  if (out === 'win' && counts){
+    if (st.worst <= -9) lines.push(styled('Anime Comeback (won from a queen down)', 150));
+    else if (st.worst <= -5) lines.push(styled('Plot Armor Comeback (won from 5+ down)', 80));
+    if (!st.lostAny) lines.push(styled('Flawless Victory (lost nothing)', 60));
+    if (flagged) lines.push(styled('Clock Bully (won on time)', 15));
+    else if (tcOn() && clock[me] <= 5000) lines.push(styled(`Clutch (won with ${Math.max(0, clock[me] / 1000).toFixed(1)} s left)`, 40));
+    if (!st.castled && moves >= 20) lines.push(styled('Never Castled, Never Scared', 10));
+    if (st.hadPow && !st.usedPow) lines.push(styled('Purist (won without power-ups)', 40));
   }
-  if (moves >= 80) lines.push(['Marathon (80+ moves)', 20]);
+  if (moves >= 80) lines.push(styled('Marathon (80+ moves)', 20));
   const before = profile.power, delta = lines.reduce((a, l) => a + l[1], 0);
   profile.power = Math.max(0, before + delta); profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
-  // Elo (online games only), against the rating your opponent's screen shared; new players move faster (K 40, then 24)
-  let elo = null;
-  if (mode === 'online'){
-    const theirs = net.data && net.data["p" + OTHER(me)], opp = theirs && Number.isFinite(theirs.elo) ? theirs.elo : 1200, mine = profile.elo;
-    const expected = 1 / (1 + 10 ** ((opp - mine) / 400)), score = out === 'win' ? 1 : out === 'draw' ? .5 : 0;
-    profile.elo = Math.max(100, Math.round(mine + (profile.onlineGames < 20 ? 40 : 24) * (score - expected)));
-    profile.onlineGames++; if (out === 'win') profile.onlineWins++;
-    elo = {before: mine, after: profile.elo};
-  }
+  // WeLo: against your online opponent's (as their screen shared it) or the CPU's fixed rating
+  const theirs = mode === 'online' && net.data && net.data['p' + OTHER(me)];
+  const welo = weloRate(mode === 'cpu' ? WELO_CPU[level] : theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, out === 'win' ? 1 : out === 'draw' ? .5 : 0, mode === 'cpu');
+  if (mode === 'online'){ profile.onlineGames++; if (out === 'win') profile.onlineWins++; }
   saveProfile();
-  return lastRating = {before, after: profile.power, elo, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
+  return lastRating = {before, after: profile.power, welo, lines, rankUp: rankOf(profile.power) !== rankOf(before) && profile.power > before, over9000: before < 9001 && profile.power >= 9001};
 }
 // The scouter readout on the end screen: lists the bonuses and counts the number up.
 function showScouter(r){
   const el = $('#mScouter'); if (!r){ el.hidden = true; return; }
+  if (r.practice){ el.innerHTML = 'PRACTICE GAME<br>You used Undo, so this one doesn\'t count for 戦闘力 or WeLo.'; el.hidden = false; return; }
   const sign = n => (n >= 0 ? '+' : '') + n;
   el.innerHTML = `戦闘力 POWER LEVEL<span class="big" id="scN">${r.before.toLocaleString()}</span>` + r.lines.map(([t, n]) => `${t} ${sign(n)}`).join('<br>') +
     (r.rankUp ? `<br><span class="rk">RANK UP! ${rankOf(r.after).toUpperCase()}</span>` : '') +
-    (r.elo ? `<br>Elo ${r.elo.before} → <b>${r.elo.after}</b> (${(r.elo.after >= r.elo.before ? '+' : '') + (r.elo.after - r.elo.before)})` : '');
+    (r.welo ? `<br>WeLo ${r.welo.before} → <b>${r.welo.after}</b> (${(r.welo.after >= r.welo.before ? '+' : '') + (r.welo.after - r.welo.before)}) · ${beltOf(r.welo.after)}${beltOf(r.welo.after) !== beltOf(r.welo.before) ? (r.welo.after > r.welo.before ? ' · NEW BELT!' : '') : ''}${r.welo.placement ? ` · placement ${r.welo.placement}/15` : ''}` : '');
   el.hidden = false; A.sfx.beep();
   const t0 = performance.now(), n = $('#scN');
   const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1200); n.textContent = Math.round(r.before + (r.after - r.before) * k).toLocaleString(); if (k < 1) requestAnimationFrame(tick); else { n.textContent = r.after.toLocaleString(); if (r.rankUp) A.sfx.promote(); } };
