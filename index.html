@@ -6324,7 +6324,7 @@ function drawFriends(){
 }
 async function playFriend(f){
   if (qmBusy) return;
-  if (!net.ready || net.kind !== 'p2p'){ note('Playing friends works on the GitHub Pages version of the game.', true); return; }
+  if (!net.ready || net.kind !== 'p2p'){ note('Playing friends works at kessenchess.com.', true); return; }
   qmBusy = true;
   try {
     const code = friendCode(f.pid);
@@ -6369,7 +6369,7 @@ async function tryJoinQM(peer, code){
 }
 async function quickMatch(){
   if (qmBusy) return;
-  if (!net.ready || net.kind !== 'p2p'){ note('Random opponents work on the GitHub Pages version of the game.', true); return; }
+  if (!net.ready || net.kind !== 'p2p'){ note('Random opponents work at kessenchess.com.', true); return; }
   qmBusy = true; $('#qmBtn').disabled = true;
   try {
     note(`Looking for a ${qmWhat()} opponent…`);
