@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029211711">
+<meta name="kessen-build" content="20261029212126">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -551,9 +551,16 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .g-cta:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
 .donate-chip .amt{color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
-#donate,#hist,#board{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
+#donate,#hist,#board,#clipSheet{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
   padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.clip-btn{position:absolute;right:10px;top:10px;z-index:3;background:rgba(12,10,23,.8);border:2px solid var(--gold);color:var(--gold);font:400 13px var(--display);padding:6px 10px;box-shadow:2px 2px 0 #000;cursor:pointer}
+.clip-btn[hidden]{display:none}
+.clip-btn:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+.clip-btn.rec::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blood);margin-right:6px;vertical-align:1px;animation:clipdot 1.2s steps(2) infinite}
+@keyframes clipdot{50%{opacity:.2}}
+.clipcard video{width:100%;max-height:60vh;background:#000;border:2px solid var(--line)}
+.clipcard .m-actions a.btn{color:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .lb-note{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
 .lb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .lb-row{display:grid;grid-template-columns:2.4em 1.6em minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;background:var(--ink);border:1px solid var(--line);font-size:14px}
@@ -693,7 +700,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
     <button class="g-cta" id="goalBtn" type="button" aria-haspopup="dialog">Donate</button>
   </section>
   <main>
-    <div class="stage" id="stage"><div id="hangar"></div><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Save the last few seconds as a video to share">🎬 Clip</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="mghud" id="mgHud" hidden></div><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
@@ -774,6 +781,12 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   <div class="m-actions"><button class="btn primary" id="pSave" type="button">Save</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
 </div></div>
 <div id="promo" hidden><div class="pcard"><div class="label">Promote to</div><div class="opts" id="promoOpts"></div></div></div>
+<div id="clipSheet" hidden role="dialog" aria-modal="true" aria-labelledby="clipTitle"><div class="dcard clipcard">
+  <div class="dhead"><h2 id="clipTitle"><small>名場面</small>Your clip</h2><button class="chip" id="clipClose" type="button">Close</button></div>
+  <video id="clipVideo" controls playsinline loop></video>
+  <div class="m-actions"><button class="btn primary" id="clipShare" type="button">Share</button><a class="btn" id="clipSave" download>Save video</a><button class="btn" id="clipCopy" type="button">Copy caption</button></div>
+  <p class="lb-note" id="clipNote">Saved on this device only. Nothing is uploaded until you share it.</p>
+</div></div>
 <div id="board" hidden role="dialog" aria-modal="true" aria-labelledby="boardTitle"><div class="dcard">
   <div class="dhead"><h2 id="boardTitle"><small>番付</small>Leaderboard</h2><button class="chip" id="boardClose" type="button">Close</button></div>
   <p class="lb-note" id="boardNote"></p>
@@ -854,7 +867,7 @@ const stageEl = $('#stage'), appEl = $('#app'), fxEl = $('#fx');
 
 /* ================= AUDIO (all synthesized, original) ================= */
 const A = (() => {
-  let ctx, master, musicBus, sfxBus, noiseBuf, verbIn, outroBus = null;
+  let ctx, master, musicBus, sfxBus, noiseBuf, verbIn, outroBus = null, outNode = null, recDest = null;
   let musicOn = true, sfxOn = true, playing = false, timer = null, step = 0, nextT = 0, intensity = 0;
   const MUSIC_VOL = 0.42;
   const mtof = m => 440 * 2 ** ((m - 69) / 12);
@@ -862,7 +875,7 @@ const A = (() => {
     if (ctx) { ctx.resume(); return; }
     try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return; }
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
-    master = ctx.createGain(); master.gain.value = .85; master.connect(comp); comp.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = .85; master.connect(comp); comp.connect(ctx.destination); outNode = comp;
     const len = ctx.sampleRate * 2.6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let c = 0; c < 2; c++){ const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.6); }
     const verb = ctx.createConvolver(); verb.buffer = ir; const vg = ctx.createGain(); vg.gain.value = .32;
@@ -1069,7 +1082,9 @@ const A = (() => {
   // raw voices on the effects bus, for the minigames' own sounds and the Magical Dance song
   const syn = {ok: () => !!(ok() && sfxBus), t: () => ctx.currentTime, lat: () => (ctx.outputLatency || ctx.baseLatency || 0),
     osc: (type, f, t, dur, vol, o) => osc(type, f, t, dur, vol, sfxBus, o), nz: (t, dur, vol, o) => nz(t, dur, vol, sfxBus, o),
-    ctx: () => ctx, bus: () => sfxBus};
+    ctx: () => ctx, bus: () => sfxBus,
+    // everything the speakers get, as a stream a clip recording can take
+    rec: () => { if (!ctx || !outNode) return null; if (!recDest){ recDest = ctx.createMediaStreamDestination(); outNode.connect(recDest); } return recDest.stream; }};
   return {init, music, sfx, syn};
 })();
 
@@ -1351,6 +1366,7 @@ function frameLoop(now){
   _o.set(0, 0, 0);
   if (camShake > .002 && !RM){ _o.set((Math.random()-.5)*camShake, (Math.random()-.5)*camShake, (Math.random()-.5)*camShake); camShake *= .9; }
   camera.position.add(_o); renderer.render(scene, camera); camera.position.sub(_o);
+  if (clip.on) clipFrame();   // straight after rendering, while the 3D frame is still there to copy
 }
 requestAnimationFrame(frameLoop);
 
@@ -7444,6 +7460,137 @@ $('#boardBtn').onclick = openBoard;
 $('#boardClose').onclick = closeBoard;
 $('#board').addEventListener('click', e => { if (e.target === $('#board')) closeBoard(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#board').hidden) closeBoard(); });
+/* ================= CLIPS: an instant replay you can share =================
+   While a game is on, the last 12 to 24 seconds are kept on this device: the 3D board, the particles, the board's own
+   HUD, the big anime captions and the sound, with a small Kessen Chess tag in the corner. 🎬 Clip turns them into a
+   video: Share opens the phone's share sheet (TikTok, Instagram, Messages…), Save video downloads it. Nothing is
+   uploaded by the game. Two recorders take turns, each starting 12 s after the other, so one always holds the
+   moment that just happened. (The captions are redrawn from the page, so they're close to the real thing, not exact.) */
+const CLIP = {W: 960, FPS: 30, SEG: 24000, BPS: 3000000};
+const clip = {on: false, cv: null, cx: null, stream: null, recs: [], timer: 0, saving: false, url: null, file: null};
+// MP4 with AAC sound first: it's what Instagram, TikTok and phones' galleries take most happily
+const clipType = () => ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+  .find(t => { try { return MediaRecorder.isTypeSupported(t); } catch(e){ return false; } });
+const clipOk = () => !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && clipType());
+function clipRecorder(){
+  const type = clipType(), rec = new MediaRecorder(clip.stream, {mimeType: type, videoBitsPerSecond: CLIP.BPS});
+  const r = {rec, t0: Date.now(), chunks: [], type};
+  rec.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
+  rec.start(); return r;
+}
+function clipStart(){
+  if (clip.on || !clipOk() || trailerOn || document.hidden) return;
+  try {
+    const rect = stageEl.getBoundingClientRect(); if (rect.width < 50) return;
+    const w = Math.min(CLIP.W, Math.round(rect.width * (devicePixelRatio || 1))) & ~1, h = Math.round(w * rect.height / rect.width) & ~1;
+    clip.cv = Object.assign(document.createElement('canvas'), {width: w, height: h}); clip.cx = clip.cv.getContext('2d');
+    clip.stream = clip.cv.captureStream(CLIP.FPS);
+    const audio = A.syn.rec(); if (audio) audio.getAudioTracks().forEach(t => clip.stream.addTrack(t));
+    clip.on = true; clipFrame();
+    clip.recs = [clipRecorder()];
+    // every 12 s the older recorder is let go and a fresh one starts
+    clip.timer = setInterval(() => {
+      if (clip.saving) return;
+      if (clip.recs.length >= 2){ const old = clip.recs.shift(); old.rec.ondataavailable = null; try { old.rec.stop(); } catch(e){} }
+      clip.recs.push(clipRecorder());
+    }, CLIP.SEG / 2);
+    $('#clipBtn').classList.add('rec');
+  } catch(e){ clipStop(); }
+}
+function clipStop(){
+  clearInterval(clip.timer); clip.on = false;
+  for (const r of clip.recs){ r.rec.ondataavailable = null; try { r.rec.stop(); } catch(e){} }
+  clip.recs = []; if (clip.stream) clip.stream.getVideoTracks().forEach(t => t.stop()); clip.stream = null;
+  $('#clipBtn').classList.remove('rec');
+}
+// one frame of the clip: the board, the particles, then the page's captions and HUD drawn on top
+function clipFrame(){
+  const view = stageEl.getBoundingClientRect(), c = clip.cx, k = clip.cv.width / view.width;
+  if (!view.width) return;
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0c0a17'; c.fillRect(0, 0, clip.cv.width, clip.cv.height);
+  const gl = renderer.domElement, g = gl.getBoundingClientRect();
+  c.drawImage(gl, (g.left - view.left) * k, (g.top - view.top) * k, g.width * k, g.height * k);
+  const d = cv.width / innerWidth;   // the particle overlay covers the whole window
+  c.drawImage(cv, view.left * d, view.top * d, view.width * d, view.height * d, 0, 0, clip.cv.width, clip.cv.height);
+  c.setTransform(k, 0, 0, k, -view.left * k, -view.top * k);
+  for (const root of [stageEl, fxEl]) clipDraw(root, view, 1);
+  // the tag, so a shared clip says where it's from
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = .85;
+  const fs = Math.round(clip.cv.width / 42); c.font = `400 ${fs}px "Dela Gothic One", sans-serif`; c.textBaseline = 'bottom'; c.textAlign = 'right';
+  c.lineWidth = Math.max(2, fs / 6); c.strokeStyle = '#000'; c.fillStyle = '#ff6fb5';
+  const tag = `決戦 KESSEN CHESS · ${location.host || 'free in your browser'}`;
+  c.strokeText(tag, clip.cv.width - fs * .6, clip.cv.height - fs * .5); c.fillText(tag, clip.cv.width - fs * .6, clip.cv.height - fs * .5);
+}
+const clipRange = document.createRange();
+function clipDraw(el, view, alpha){
+  for (const ch of el.children){
+    if (ch === renderer.domElement || ch.id === 'hangar' || ch.id === 'clipBtn' || ch.classList.contains('hint-orbit') || /^(CANVAS|VIDEO|IFRAME|svg)$/i.test(ch.tagName)) continue;
+    const cs = getComputedStyle(ch);
+    if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+    const a = alpha * (+cs.opacity || 0); if (a < .02) continue;
+    const r = ch.getBoundingClientRect();
+    const onScreen = r.width && r.height && r.right > view.left && r.left < view.right && r.bottom > view.top && r.top < view.bottom;
+    const c = clip.cx; c.save(); c.globalAlpha = a;
+    // the element's own rotation (most anime captions are tilted)
+    const m = /^matrix\(([^)]+)\)/.exec(cs.transform);
+    if (m){ const [ma, mb] = m[1].split(',').map(Number), cx2 = r.left + r.width / 2, cy2 = r.top + r.height / 2; c.translate(cx2, cy2); c.rotate(Math.atan2(mb, ma)); c.translate(-cx2, -cy2); }
+    if (onScreen){
+      const bg = cs.backgroundColor;
+      if (bg && !/rgba\(.*,\s*0\)$|transparent/.test(bg)){ c.fillStyle = bg; c.fillRect(r.left, r.top, r.width, r.height); }
+      const bw = parseFloat(cs.borderTopWidth);
+      if (bw >= 2 && cs.borderTopStyle !== 'none'){ c.lineWidth = bw; c.strokeStyle = cs.borderTopColor; c.strokeRect(r.left + bw / 2, r.top + bw / 2, r.width - bw, r.height - bw); }
+      for (const n of ch.childNodes){
+        if (n.nodeType !== 3 || !n.data.trim()) continue;
+        clipRange.selectNodeContents(n); const tr = clipRange.getBoundingClientRect(); if (!tr.width) continue;
+        let text = n.data.trim().replace(/\s+/g, ' '); if (cs.textTransform === 'uppercase') text = text.toUpperCase();
+        c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        if ('letterSpacing' in c) c.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing;
+        c.textBaseline = 'middle'; c.textAlign = 'center';
+        const x = tr.left + tr.width / 2, y = tr.top + tr.height / 2, sw = parseFloat(cs.webkitTextStrokeWidth) || 0;
+        if (sw){ c.lineWidth = sw * 2; c.strokeStyle = cs.webkitTextStrokeColor || '#000'; c.lineJoin = 'round'; c.strokeText(text, x, y); }
+        c.fillStyle = cs.color; c.fillText(text, x, y);
+      }
+    }
+    c.restore();
+    if (ch.children.length) clipDraw(ch, view, a);
+  }
+}
+async function clipSave(){
+  if (clip.saving) return;
+  if (!clip.on || !clip.recs.length){ toast(clipOk() ? 'Play a few moves first: clips keep the last few seconds' : "This browser can't record clips. Try Chrome, Edge, Firefox or Safari"); return; }
+  clip.saving = true; $('#clipBtn').textContent = '🎬 Saving…';
+  const r = clip.recs.shift();   // the older one: it holds the last 12 to 24 seconds
+  const blob = await new Promise(res => { r.rec.onstop = () => res(new Blob(r.chunks, {type: r.type.split(';')[0]})); try { r.rec.requestData(); r.rec.stop(); } catch(e){ res(null); } });
+  if (clip.on) clip.recs.push(clipRecorder());
+  clip.saving = false; $('#clipBtn').textContent = '🎬 Clip';
+  if (!blob || blob.size < 1000){ toast("Couldn't save that clip. Try again in a moment"); return; }
+  const ext = /mp4/.test(blob.type) ? 'mp4' : 'webm', when = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  clip.file = new File([blob], `kessen-chess-${when}.${ext}`, {type: blob.type});
+  if (clip.url) URL.revokeObjectURL(clip.url); clip.url = URL.createObjectURL(blob);
+  $('#clipVideo').src = clip.url; $('#clipSave').href = clip.url; $('#clipSave').download = clip.file.name;
+  const canShare = !!(navigator.canShare && navigator.canShare({files: [clip.file]}));
+  $('#clipShare').hidden = !canShare;
+  $('#clipNote').textContent = canShare ? 'Saved on this device only. Nothing is uploaded until you share it.' : 'Save the video, then post it anywhere. Nothing is uploaded until you do.';
+  $('#clipSheet').hidden = false; $('#clipClose').focus();
+}
+const clipCaption = () => `Caught this in Kessen Chess 😂 Free chess with way too much anime, in your browser: ${location.origin}${location.pathname}`;
+function clipClose(){ $('#clipSheet').hidden = true; try { $('#clipVideo').pause(); } catch(e){} $('#clipBtn').focus(); }
+$('#clipBtn').onclick = clipSave;
+$('#clipClose').onclick = clipClose;
+$('#clipSheet').addEventListener('click', e => { if (e.target === $('#clipSheet')) clipClose(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#clipSheet').hidden) clipClose(); });
+$('#clipShare').onclick = async () => { try { await navigator.share({files: [clip.file], title: 'Kessen Chess', text: clipCaption()}); } catch(e){ /* closed the share sheet */ } };
+$('#clipCopy').onclick = async () => { try { await navigator.clipboard.writeText(clipCaption()); toast('Caption copied'); } catch(e){ toast(clipCaption()); } };
+// recording runs while a game is on and the tab is visible
+function clipWatch(){
+  const want = started && !trailerOn && !document.hidden && clipOk();
+  $('#clipBtn').hidden = !(started && !trailerOn && clipOk());
+  if (want && !clip.on) clipStart(); else if (!want && clip.on && !clip.saving) clipStop();
+}
+document.addEventListener('visibilitychange', clipWatch);
+setInterval(clipWatch, 1000);
+addEventListener('resize', () => { if (clip.on && !clip.saving){ clipStop(); clipWatch(); } });
+
 // On load: make sure this player's name is reserved (names chosen before the leaderboard existed), then send any games
 // still waiting.
 if (FB_ON) setTimeout(async () => {
