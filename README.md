@@ -43,6 +43,8 @@ The 💝 **Donate** button links to three charities. **Your donation goes straig
 
 **Kessen Chess is not affiliated with or endorsed by these charities.**
 
+**Fundraiser cover photo.** [`fundraiser/justgiving-cover.png`](fundraiser/justgiving-cover.png) is a JustGiving cover photo for the Foodbank Queensland page, in the game's own style. It is 1000×563 (16:9), the largest size JustGiving accepts; a 2× copy is next to it. To change it, edit `fundraiser/justgiving-cover.html` and screenshot its `.cover` element at 1000×563.
+
 The panel also has the 🪙 **Penny Dropper**, a Plinko board that picks a charity at random for you. It's just for fun; no money is involved.
 
 ### Live totals: only real numbers
