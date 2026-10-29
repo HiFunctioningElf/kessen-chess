@@ -2,7 +2,7 @@
 
 3D chess with over-the-top anime flair. Every capture gets a cut-in banner, the captured piece shatters into shards, check sets off an alarm, and checkmate swoops the camera onto the king before it explodes. An original battle track plays the whole time.
 
-**Play:** open `index.html` in a browser, or visit the GitHub Pages site for this repository.
+**Play:** [kessenchess.com](https://kessenchess.com), or open `index.html` in a browser.
 
 ## Modes
 
@@ -85,7 +85,7 @@ The 🏆 **Leaderboard** shows the top 50 players by WeLo, and where you stand. 
 4. In Firestore, open the **Rules** tab, replace everything with the contents of [`firebase/firestore.rules`](firebase/firestore.rules), and **Publish**.
 5. Click the **gear → Project settings → General**, scroll to **Your apps**, click the **`</>`** (web) icon, name it `Kessen Chess` (no Firebase Hosting) and **Register app**. Copy the `apiKey` and `projectId` it shows.
 6. In `index.html`, find `const FIREBASE = {apiKey: 'TODO', projectId: 'TODO'};` and paste them in.
-7. Recommended: lock the key to your site. In [Google Cloud console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials), open the **Browser key**, choose **Websites**, and add your site (for example `hifunctioningelf.github.io/*` and `kessenchess.com/*`).
+7. Recommended: lock the key to your site. In [Google Cloud console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials), open the **Browser key**, choose **Websites**, and add `kessenchess.com/*` and `www.kessenchess.com/*`.
 
 A Firebase web `apiKey` isn't a secret: it only says which project to talk to, and the rules decide what anyone may do. On the free (Spark) plan nothing can be charged: if the daily allowance (50,000 reads, 20,000 writes) ever runs out, the leaderboard simply pauses until the next day.
 
