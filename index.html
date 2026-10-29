@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029180553">
+<meta name="kessen-build" content="20261029180745">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -291,6 +291,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .pcard .opts button > span{display:block;line-height:1;transform:translateY(.15em)}
 .tricolor{position:absolute;inset:0;background:linear-gradient(90deg,#0055a4 0 33.4%,#fff 33.4% 66.6%,#ef4135 66.6%);mix-blend-mode:screen;opacity:0}
 .pastry{position:absolute;top:0;font-size:clamp(26px,4vw,44px);line-height:1;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.5))}
+.tactic-svg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .confetto{position:absolute;top:0;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 /* en passant action replays: a VHS frame */
 .ep-vhs{position:fixed;inset:0;pointer-events:none;color:#fff;font:700 clamp(13px,2.2vw,20px)/1 ui-monospace,Consolas,monospace;text-shadow:2px 2px 0 #000}
@@ -2656,6 +2657,43 @@ async function enPassantFx(mv){
   }
   lastMove = {from: mv.from, to: mv.to}; render();
 }
+/* ---- Tactic replays: a short cut-in the first time each player pulls off a fork, skewer, pin or discovered check.
+   The camera swoops low onto the attacker, glowing lines draw the tactic, the targets shake, the name stamps in. ---- */
+const TACTIC_FX = {
+  fork: ['FORK!!', '両取り', '#3fe0ff', 'shing'], skewer: ['SKEWER!!', '串刺し', '#ff2e4d', 'clang'],
+  pin: ['PINNED!!', '釘付け', '#ffc83d', 'clank'], disc: ['DISCOVERED CHECK!!', '開き王手', '#b06cff', 'zap']
+};
+async function tacticFx(t){
+  const [title, jp, col, snd] = TACTIC_FX[t.type];
+  if (RM){ await bigText(title, jp, {hold: 700, size: .7, color: col}); return; }
+  A.music.duck(3200); camSave();
+  try {
+    const a = sqPos(t.from), far = sqPos(t.targets[t.targets.length - 1]), shot = sideShot(a, far, .95, .2);
+    await camMove(shot.p, shot.t, 420);
+    A.sfx[snd](); flash(col, 220, .3);
+    // lines from the attacker: one per target (fork), or straight through both (skewer, pin), or the revealed piece to the king
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'tactic-svg');
+    svg.innerHTML = `<defs><filter id="tglow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+    fxEl.appendChild(svg);
+    const up = v => v.clone().setY(.55), A0 = screenOf(up(a));
+    const ends = t.type === 'fork' ? t.targets : [t.targets[t.targets.length - 1]];
+    for (const sq of ends){
+      const B = screenOf(up(sqPos(sq))), len = Math.hypot(B.x - A0.x, B.y - A0.y);
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      Object.entries({x1: A0.x, y1: A0.y, x2: B.x, y2: B.y, stroke: col, 'stroke-width': 7, 'stroke-linecap': 'round', filter: 'url(#tglow)', 'stroke-dasharray': len, 'stroke-dashoffset': len}).forEach(([k, v]) => ln.setAttribute(k, v));
+      svg.appendChild(ln);
+      await ln.animate([{strokeDashoffset: len}, {strokeDashoffset: 0}], {duration: 260, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'forwards'}).finished;
+    }
+    // the targets get hit: rings, sparks and a wobble
+    for (const sq of t.targets){
+      const c = screenOf(up(sqPos(sq))); ring(c.x, c.y, 70, col, 6, 26); burst(c.x, c.y, {n: 16, kind: 'spark', colors: [col, '#fff'], speed: 9, life: 22});
+      const p = pieceAt[sq]; if (p){ const r0 = p.rotation.z; tween(520, k => { p.rotation.z = r0 + Math.sin(k * 26) * .1 * (1 - k); }); }
+    }
+    A.sfx.impact(.5); shake(.5, 300);
+    await bigText(title, jp, {hold: 650, size: t.type === 'disc' ? .55 : .75, color: col, rot: -5});
+    svg.animate([{opacity: 1}, {opacity: 0}], {duration: 220, fill: 'forwards'}).finished.then(() => svg.remove());
+  } finally { await camRestore(420); }
+}
 async function captureFx(mv){
   if (mv.captured === 'q' && cutins && pieceAt[mv.from] && pieceAt[mv.to] && SP[mv.piece]) return special(mv);
   if (mv.flags.includes('e') && cutins && pieceAt[mv.from] && pieceAt[mv.to[0] + mv.from[1]]) return enPassantFx(mv);
@@ -3124,11 +3162,17 @@ async function commit(input, remote, remoteClock){
       else if (cutins && game.in_threefold_repetition()) await dejavuFx();
       await (cutins ? outroMovie(false) : drawFx());
     }
-    else if (game.in_check()){ const atk = checkers(); await (cutins && atk.length > 1 ? doubleCheckFx(atk) : checkFx()); }
+    else if (game.in_check()){
+      const atk = checkers();
+      if (cutins && atk.length > 1) await doubleCheckFx(atk);
+      else if (cutins && pendingTactic && pendingTactic.type === 'disc'){ A.sfx.check(); A.music.intensity(1); await tacticFx(pendingTactic); }
+      else await checkFx();
+    }
     else {
       A.music.intensity(0);
       if (cutins && mv.piece === 'p' && mv.to[1] === (mv.color === 'w' ? '7' : '2')) await seventhFx(mv);
     }
+    if (cutins && pendingTactic && pendingTactic.type !== 'disc' && !isOver()) await tacticFx(pendingTactic);
   } catch (err){
     // An effect failed: never leave the board frozen. Restore the camera and redraw from the real game state.
     console.error(err);
@@ -3136,6 +3180,7 @@ async function commit(input, remote, remoteClock){
     controls.enabled = !orbit; camera.fov = baseFov; camera.updateProjectionMatrix();
     promoHold = null; render(true);
   } finally {
+    pendingTactic = null;
     if (promoHold){ promoHold = null; render(true); }
     busy = false; panel();
     if (mv && tcOn() && !isOver()) clockStart(game.turn());
@@ -6198,11 +6243,13 @@ const styleTotal = c => style ? style[c].lines.reduce((a, l) => a + l[1], 0) : 0
 const STYLE_VAL = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
 const sideMaterial = c => game.board().flat().reduce((a, p) => a + (p && p.color === c ? STYLE_VAL[p.type] : 0), 0);
 function award(c, key, label, pts){
-  const S = style[c]; if (S.seen[key]) return; S.seen[key] = 1; S.lines.push([label, pts]);
+  const S = style[c]; if (S.seen[key]) return false; S.seen[key] = 1; S.lines.push([label, pts]);
   const who = mode === 'pvp' ? `${SIDE(c)}: ` : c === myColor() ? '' : mode === 'cpu' ? 'CPU: ' : 'Opponent: ';
   toast(`${who}${pts >= 0 ? '✨' : '💸'} ${label} ${pts >= 0 ? '+' : ''}${pts} style`);
-  drawStyle(c);
+  drawStyle(c); return true;
 }
+// A tactic spotted on this move, for its short replay after the move's own effects (once per kind per player per game).
+let pendingTactic = null;
 // The style meter: a rank from D to SSS for each player, your end of the board at the bottom right.
 const STYLE_RANKS = [[-Infinity, 'D', 'Dull'], [60, 'C', 'Cool'], [150, 'B', 'Bold'], [280, 'A', 'Awesome'], [450, 'S', 'Stylish!'], [650, 'SS', 'Super Stylish!!'], [900, 'SSS', 'SSSensational!!!']];
 const styleRank = n => { let i = 0; while (i + 1 < STYLE_RANKS.length && n >= STYLE_RANKS[i + 1][0]) i++; return i; };
@@ -6292,13 +6339,14 @@ function noteStyle(mv){
   if (mv.piece === 'k' && mv.captured) a('kbrawl', 'The King Joins the Brawl', 10);
   // checks: double, discovered (the piece that moved isn't the one giving check), and check spam
   if (atk.length > 1) a('dbl', 'Double Trouble (double check)', 40);
-  else if (check && !castle && !atk.includes(mv.to)) a('disc', mate ? 'Now You See Me (discovered checkmate)' : 'Surprise! (discovered check)', mate ? 120 : 40);
+  else if (check && !castle && !atk.includes(mv.to) && a('disc', mate ? 'Now You See Me (discovered checkmate)' : 'Surprise! (discovered check)', mate ? 120 : 40) && !mate)
+    pendingTactic = {type: 'disc', from: atk[0], targets: [kingSq(them)], moved: mv.to};
   if (check){ if (++S.checks >= 5) a('spam', 'Annoying Little Brother (5 checks in a row)', 10); } else S.checks = 0;
   // knight forks
   if (mv.piece === 'n' && !mate){
-    const hit = knightHops(mv.to).map(q => game.get(q)).filter(p => p && p.color === them && 'rqk'.includes(p.type)).map(p => p.type);
-    if (hit.includes('k') && hit.includes('q')) a('famfork', 'Family Fork (king and queen)', 35);
-    else if (hit.length >= 2) a('fork', 'Forkful (knight fork)', 15);
+    const sqs = knightHops(mv.to).filter(q => { const p = game.get(q); return p && p.color === them && 'rqk'.includes(p.type); }), hit = sqs.map(q => game.get(q).type);
+    const fork = hit.includes('k') && hit.includes('q') ? a('famfork', 'Family Fork (king and queen)', 35) : hit.length >= 2 ? a('fork', 'Forkful (knight fork)', 15) : false;
+    if (fork) pendingTactic = {type: 'fork', from: mv.to, targets: sqs};
   }
   // pins and skewers: along each line from the piece that moved, the first two enemy pieces in a row
   const lineT = mv.promotion || mv.piece;
@@ -6306,12 +6354,12 @@ function noteStyle(mv){
     const dirs = [...(lineT !== 'b' ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : []), ...(lineT !== 'r' ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : [])];
     const f0 = mv.to.charCodeAt(0) - 97, r0 = +mv.to[1];
     for (const [df, dr] of dirs){
-      let x = f0 + df, y = r0 + dr, first = null, second = null;
-      while (ON_BOARD(x, y)){ const p = game.get(SQN(x, y)); if (p){ if (p.color === c) break; if (!first) first = p; else { second = p; break; } } x += df; y += dr; }
+      let x = f0 + df, y = r0 + dr, first = null, second = null, s1 = null, s2 = null;
+      while (ON_BOARD(x, y)){ const p = game.get(SQN(x, y)); if (p){ if (p.color === c) break; if (!first){ first = p; s1 = SQN(x, y); } else { second = p; s2 = SQN(x, y); break; } } x += df; y += dr; }
       if (!first || !second) continue;
       const v1 = TACTIC_VAL[first.type], v2 = TACTIC_VAL[second.type];
-      if ('kq'.includes(first.type) && v1 > v2 && v2 >= 3) a('skewer', first.type === 'k' ? 'Shish Kebab (skewered the king)' : 'Skewered (skewer)', first.type === 'k' ? 40 : 25);
-      else if (v2 > v1 && v1 >= 3 && 'kqr'.includes(second.type)) a('pin', second.type === 'k' ? 'Pinned to the Wall (pinned to the king)' : 'Pinned Down (pin)', second.type === 'k' ? 20 : 15);
+      if ('kq'.includes(first.type) && v1 > v2 && v2 >= 3){ if (a('skewer', first.type === 'k' ? 'Shish Kebab (skewered the king)' : 'Skewered (skewer)', first.type === 'k' ? 40 : 25)) pendingTactic = {type: 'skewer', from: mv.to, targets: [s1, s2]}; }
+      else if (v2 > v1 && v1 >= 3 && 'kqr'.includes(second.type)){ if (a('pin', second.type === 'k' ? 'Pinned to the Wall (pinned to the king)' : 'Pinned Down (pin)', second.type === 'k' ? 20 : 15)) pendingTactic = {type: 'pin', from: mv.to, targets: [s1, s2]}; }
     }
   }
   if (mv.piece === 'k' && (c === 'w' ? +mv.to[1] >= 5 : +mv.to[1] <= 4) && game.board().flat().some(p => p && p.type === 'q')) a('kwalk', 'Main Character Walk (king strolls into enemy land)', 30);
