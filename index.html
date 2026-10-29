@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029183357">
+<meta name="kessen-build" content="20261029193707">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
-<meta charset="utf-8">
 <title>Kessen Chess</title>
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -733,8 +735,8 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 
 <canvas id="particles"></canvas>
 <div id="fx"><div id="dim"></div><div id="vignette"></div><div id="scope"><div class="ring"></div><div class="dot"></div><div class="lock">LOCK ON</div></div><div class="lb" id="lbTop"></div><div class="lb" id="lbBot"></div><div class="hazard" id="hzTop"><span>WARNING</span></div><div class="hazard" id="hzBot"><span>WARNING</span></div><div id="flash"></div></div>
-<div id="prof" hidden><div class="pcard profcard">
-  <div class="label">Your fighter</div>
+<div id="prof" hidden role="dialog" aria-modal="true" aria-labelledby="pTitle"><div class="pcard profcard">
+  <div class="label" id="pTitle">Your fighter</div>
   <input id="pName" maxlength="16" placeholder="Nameless Challenger" aria-label="Fighter name" autocomplete="off" aria-describedby="pCheck">
   <div class="pcheck" id="pCheck" aria-live="polite"></div>
   <div class="label">Crest</div><div class="opts" id="pCrests"></div>
@@ -781,10 +783,11 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- Each library is pinned to one exact file: the browser refuses it if a single byte differs (integrity). -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js" integrity="sha384-2D/YG6ZVRMpAIE2PL+zjrxBjvzCSytPKkNUB1Ut84ncxjOuTSrkoO66SGAKjsec3" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <script>
 (() => {
 const $ = s => document.querySelector(s);
@@ -3227,7 +3230,7 @@ async function commit(input, remote, remoteClock){
 // ?mgEvery=N (testing only) uses a fixed gap of N plies instead.
 const MG_TEST = +new URLSearchParams(location.search).get('mgEvery') || 0;
 const MG_GAPS = [[20, 16], [12, 24], [7, 36]];   // [at least this many pieces, plies between minigames]
-const mgGap = pieces => MG_TEST ? Math.max(2, MG_TEST) : (MG_GAPS.find(([min]) => pieces >= min) || [0, Infinity])[1];
+const mgGap = pieces => MG_TEST && mode !== 'online' ? Math.max(2, MG_TEST) : (MG_GAPS.find(([min]) => pieces >= min) || [0, Infinity])[1];
 const piecesOn = g => g.board().flat().filter(p => p && p.type !== 'k').length;
 // When each minigame fell, worked out by replaying the moves (the gap is checked against the pieces on the board
 // after every move, so a big trade pushes the next one further away at once). The same on both screens online,
@@ -5812,7 +5815,6 @@ function seenKeys(){
   const keys = []; do { keys.push(posKey(r)); } while (r.undo());
   return keys;
 }
-const CHESS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
 let cpuWorker = null, workerBroken = false, jobId = 0;
 const workerJobs = new Map();
 let mainThink = null;
@@ -5820,7 +5822,7 @@ const thinkHere = job => { try { return (mainThink = mainThink || kessenEngine()
 function getWorker(){
   if (cpuWorker || workerBroken) return cpuWorker;
   try {
-    const src = `importScripts('${CHESS_URL}');\n${kessenEngine.toString()}\nconst think = kessenEngine();\n` +
+    const src = `var Chess = ${Chess.toString()};\n${kessenEngine.toString()}\nconst think = kessenEngine();\n` +
       'onmessage = e => { let r = null; try { r = think(e.data.job); } catch(err){} postMessage({id: e.data.id, r}); };';
     cpuWorker = new Worker(URL.createObjectURL(new Blob([src], {type: 'text/javascript'})));
     cpuWorker.onmessage = e => { const j = workerJobs.get(e.data.id); if (j){ workerJobs.delete(e.data.id); j(e.data.r); } };
@@ -5854,9 +5856,9 @@ const IDLE_NOTE = () => net.kind === 'p2p'
 const inviteLink = code => location.origin + location.pathname + '#g' + code;
 // A QR code of the invite link, so a friend in the same room can scan it instead of being sent the link.
 // Only for invite links (PeerJS): the code box (and with it the QR) hides once both players are in, and for random matches.
-const QR_URL = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+const QR_URL = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', QR_SRI = 'sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k';
 let qrLib = null;
-const loadQr = () => qrLib || (qrLib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = QR_URL; s.onload = () => res(window.qrcode); s.onerror = () => { qrLib = null; rej(); }; document.head.appendChild(s); }));
+const loadQr = () => qrLib || (qrLib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = QR_URL; s.integrity = QR_SRI; s.crossOrigin = 'anonymous'; s.onload = () => res(window.qrcode); s.onerror = () => { qrLib = null; rej(); }; document.head.appendChild(s); }));
 async function drawInviteQr(code){
   const box = $('#codeQr'); box.hidden = true; box.classList.remove('big');
   if (net.kind !== 'p2p' || !code || isQM(code)) return;
@@ -5905,7 +5907,10 @@ function p2pRef(){
       const d = Object.assign({}, net.data || {}, patch, {v: ((net.data && net.data.v) || 0) + 1}); emit(d); p2pSend(); return Promise.resolve();
     },
     receive(d){
-      if (net.myId !== 'guest'){ if (net.data && (d.v || 0) <= (net.data.v || 0)) return; emit(d); return; }   // (an older friend's page still sends whole states)
+      if (net.myId !== 'guest'){   // an older friend's page still sends whole states: they get the same checks as patches
+        if (!net.data || (d.v || 0) <= (net.data.v || 0) || !guestChangeOk(net.data, d)) return;
+        emit(d); return;
+      }
       if (base && (d.v || 0) <= (base.v || 0)) return;
       base = d; pending = pending.filter(x => x.s > (d.ack || 0)); emit(view());
     },
@@ -5922,15 +5927,67 @@ function applyPatches(m){
   if (net.myId !== 'host' || !net.ref || !net.data || typeof m.rid !== 'string' || !Array.isArray(m.list)) return;
   if (m.rid !== guestPatches.rid) guestPatches = {rid: m.rid, last: 0};
   let d = net.data, n = 0;
-  for (const x of m.list){
-    if (!x || x.s !== guestPatches.last + 1 || !x.p || typeof x.p !== 'object') continue;
+  for (const x of m.list.slice(0, 200)){
+    if (!x || x.s !== guestPatches.last + 1 || !x.p || typeof x.p !== 'object' || Array.isArray(x.p)) continue;
     guestPatches.last = x.s;
     const next = cleanState(Object.assign({}, d, x.p));
-    if (next){ d = next; n++; }
+    if (next && guestChangeOk(d, next)){ d = next; n++; }
   }
   if (n) net.ref.update(Object.assign(d, {ack: guestPatches.last}));
   else if (guestPatches.last > (net.data.ack || 0)) net.ref.update({ack: guestPatches.last});   // only bad patches: still confirm them so they aren't re-sent
   else p2pSend();   // all of them were already applied: the friend missed our state, so send it again
+}
+// The host checks every change from the friend against what the friend could really do from their own screen.
+// Moves, takebacks, results and seats that break the rules are refused outright. For the host's own things (its clock,
+// power-ups, profile and tab-out count) it keeps its own values: the friend's patch may carry an older copy of them.
+// (Minigame wins are still reported by each screen. No two-browser game can check those, so ratings are for fun.)
+function guestChangeOk(prev, next){
+  const g = prev.w === 'guest' ? 'w' : prev.b === 'guest' ? 'b' : null, h = g && OTHER(g);
+  if (!g || !(prev.w && prev.b)) return false;   // only a seated friend changes anything
+  if (!((next.w === 'host' && next.b === 'guest') || (next.w === 'guest' && next.b === 'host'))) return false;   // seats can be swapped (a rematch), never taken
+  // a rematch starts everything over, and starts it clean: no result, clock or power-ups can ride along with it.
+  // (Profile cards aren't moved when seats swap: each screen re-shares its own card when it sees the wrong one.)
+  if (next.pgn === '' && (prev.pgn !== '' || prev.result || prev.flag || next.w !== prev.w))
+    return !next.result && !next.flag && !next.clock && !next.tb && !next.heist && !next.drawOffer && !(next.pow && (next.pow.w.length || next.pow.b.length));
+  if (next.w !== prev.w || next.tc && prev.tc && (next.tc.base !== prev.tc.base || next.tc.inc !== prev.tc.inc) || (next.mg === false) !== (prev.mg === false)) return false;
+  const a = new Chess(); if (prev.pgn) a.load_pgn(prev.pgn);
+  const b = new Chess(); if (next.pgn) b.load_pgn(next.pgn);
+  const ha = a.history(), hb = b.history(), over = !!(prev.result || prev.flag);
+  const prefix = (x, y) => x.every((mv, i) => y[i] === mv);
+  const pp = prev.pow || {w: [], b: []}, np = next.pow || {w: [], b: []};
+  let tookBack = false, moved = false;
+  if (hb.length === ha.length + 1 && prefix(ha, hb)){ if (over || a.turn() !== g) return false; moved = true; }   // one move, with their own pieces, on their turn
+  else if (hb.length === ha.length - 2 && prefix(hb, ha) && next.tb === (prev.tb || 0) + 1){       // a Takeback they really had
+    if (over || a.turn() !== g || !(pp[g] || []).includes('takeback')) return false;
+    tookBack = true;
+  }
+  else if (hb.length !== ha.length || !prefix(ha, hb)) return false;
+  if (!tookBack && (next.tb || 0) !== (prev.tb || 0)) return false;
+  // results: they can resign, accept the host's draw offer, or claim the win once the host has been gone a while
+  const sameRes = (x, y) => (!x && !y) || (x && y && x.type === y.type && x.winner === y.winner && x.by === y.by);
+  if (!sameRes(prev.result, next.result)){
+    const r = next.result;
+    if (prev.result || !r) return false;
+    if (r.type === 'resign' && r.winner !== h) return false;
+    if (r.type === 'draw' && !(prev.drawOffer === h && r.by === h)) return false;
+    if (r.type === 'abandon' && !(r.winner === g && hostSawOutage())) return false;
+  }
+  if (next.flag !== prev.flag && !(prev.flag == null && (next.flag === g || (next.flag === h && remaining(h) <= 1500)))) return false;
+  if (next.drawOffer && next.drawOffer !== prev.drawOffer && next.drawOffer !== g) return false;   // they can't offer a draw for the host
+  // the host's own things (profile, tab-out count, power-ups, clock) stay as the host has them
+  next['p' + h] = prev['p' + h]; next['fp' + h] = prev['fp' + h];
+  const mine = pp[h] || [], theirs = np[h] || [];
+  // White's screen hands both players a power-up after a tied minigame: the host may gain one, but never lose one
+  const gained = theirs.length === mine.length + 1 && prefix(mine, theirs);
+  next.pow = {[g]: (np[g] || []).slice(0, 3), [h]: gained ? theirs.slice(0, 3) : mine.slice()};
+  const heist = (next.heist || 0) === (prev.heist || 0) + 1 && (pp[g] || []).includes('heist');
+  if ((next.heist || 0) !== (prev.heist || 0) && !heist) return false;
+  if (next.clock){
+    const pc = prev.clock || {w: (prev.tc && prev.tc.base) || 0, b: (prev.tc && prev.tc.base) || 0}, inc = (prev.tc && prev.tc.inc) || 0;
+    next.clock = {[h]: heist ? Math.max(0, pc[h] - 30000) : next.flag === h ? 0 : pc[h],
+      [g]: Math.min(next.clock[g], pc[g] + (moved ? inc : 0) + (heist ? 30000 : 0))};   // time is only ever gained from the increment or a heist
+  }
+  return true;
 }
 // Signal strength: each side pings the other over the data channel and times the reply.
 const sig = {rtt: 0, pongAt: 0};
@@ -5951,7 +6008,10 @@ function drawSignal(){
   el.querySelector('.sig-ms').textContent = label;
   el.title = el.ariaLabel = `Connection to your friend: ${['lost', 'weak', 'fair', 'good', 'excellent'][bars]}` + (sig.pongAt && bars ? ` (${Math.round(sig.rtt)} ms round trip)` : '');
 }
-let lastHeard = 0, reconnecting = false, linkOk = null, lostSince = 0;
+let lastHeard = 0, reconnecting = false, linkOk = null, lostSince = 0, lastOutage = null;
+// The friend may claim the win after the host's side went quiet for a while. Their claim travels once the link is
+// back, so a long outage that only just ended counts too.
+const hostSawOutage = () => (lostSince && Date.now() - lostSince > 30000) || (lastOutage && lastOutage.len > 30000 && Date.now() - lastOutage.end < 120000);
 setInterval(() => {
   if (net.kind !== 'p2p' || !net.code){ drawSignal(); return; }
   p2pSend();
@@ -5960,7 +6020,8 @@ setInterval(() => {
   if (net.myId === 'guest' && (!open || quiet)) reconnectGuest();
   if (net.data && net.data.w && net.data.b){
     const ok = open && !quiet;
-    if (!ok && !lostSince) lostSince = Date.now(); if (ok) lostSince = 0;
+    if (!ok && !lostSince) lostSince = Date.now();
+    if (ok && lostSince){ lastOutage = {len: Date.now() - lostSince, end: Date.now()}; lostSince = 0; }
     drawSignal();
     $('#claimBtn').hidden = !(lostSince && Date.now() - lostSince > 45000 && net.my && !isOver());
     if (ok !== linkOk){ linkOk = ok; note(ok ? 'Connected to your friend. Keep this tab open while you play.' : net.myId === 'host' ? 'Connection lost. Waiting for your friend to reconnect…' : 'Connection lost. Reconnecting to your friend…', !ok); }
@@ -5984,19 +6045,21 @@ async function reconnectGuest(){
 const seatOk = v => v === null || v === 'host' || v === 'guest';
 // Checks a game state from the other screen and keeps only known fields with sane values (null if it isn't valid).
 function cleanState(d){
-  if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return null;
+  if (!d || typeof d !== 'object' || typeof d.pgn !== 'string' || d.pgn.length > 20000 || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return null;
+  if (d.w && d.w === d.b) return null;   // one player can't hold both seats
   const tmp = new Chess(); if (d.pgn && !tmp.load_pgn(d.pgn)) return null;
+  if (tmp.history().length !== d.n) return null;
   const num = v => typeof v === 'number' && isFinite(v) && v >= 0;
   const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
   const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
   const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
   const wb = v => (v === 'w' || v === 'b' ? v : null);
   const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-  const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 20), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
+  const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.replace(/[^\p{L}\p{N} _.\-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
   const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
   const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
   const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
-  return {fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0, ack: num(d.ack) ? d.ack : 0};
+  return {fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: num(d.at) ? d.at : Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0, ack: num(d.ack) ? d.ack : 0};
 }
 function wireConn(conn){
   net.conn = conn;
@@ -6491,11 +6554,14 @@ function checkName(raw){
 // what your friend sees online
 const myCard = () => ({name: fighterName().slice(0, 20), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
 function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
+// closing the editor hands focus back to the Edit button it came from
+function closeProfile(){ if ($('#prof').hidden) return; $('#prof').hidden = true; $('#fEdit').focus(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProfile(); });
 $('#fEdit').onclick = () => {
   let crest = profile.crest, color = profile.color;
   $('#pName').value = profile.name;
   $('#pCrests').innerHTML = CRESTS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === crest}" aria-label="${NAME[c]}"><span class="gw">${GLYPH[c]}${VS}</span></button>`).join('');
-  $('#pColors').innerHTML = CREST_COLORS.map(c => `<button type="button" data-c="${c}" aria-pressed="${c === color}" style="background:${c}" aria-label="Colour"></button>`).join('');
+  $('#pColors').innerHTML = CREST_COLORS.map((c, i) => `<button type="button" data-c="${c}" aria-pressed="${c === color}" style="background:${c}" aria-label="Colour ${i + 1}"></button>`).join('');
   $('#pCrests').onclick = e => { const b = e.target.closest('button'); if (!b) return; crest = b.dataset.c; $('#pCrests').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
   $('#pColors').onclick = e => { const b = e.target.closest('button'); if (!b) return; color = b.dataset.c; $('#pColors').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); };
   const check = () => {
@@ -6504,7 +6570,7 @@ $('#fEdit').onclick = () => {
   };
   $('#pName').oninput = check; check();
   $('#pSave').onclick = () => { if (!checkName($('#pName').value).ok) return; profile.name = $('#pName').value.trim().replace(/\s+/g, ' ').slice(0, 16); profile.crest = crest; profile.color = color; saveProfile(); $('#prof').hidden = true; };
-  $('#pCancel').onclick = () => { $('#prof').hidden = true; };
+  $('#pCancel').onclick = closeProfile;
   $('#prof').hidden = false; $('#pName').focus();
 };
 drawFighter();
