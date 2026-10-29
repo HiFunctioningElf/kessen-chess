@@ -72,6 +72,10 @@ To set it all up, fill in the `CHARITIES` and `COFFEE` settings at the top of th
 
 Online games connect the two browsers directly over WebRTC, using [PeerJS](https://peerjs.com/) and its free public matchmaking server. There's no game server and no account. If the host closes their tab, the game ends. Some strict networks, like some office or school Wi-Fi, block direct connections. If you can't connect, try a phone hotspot.
 
+The bars next to the move counter show your connection to your friend, from the round trip time of a ping sent every few seconds: 4 bars under 150 ms, 3 under 300 ms, 2 under 600 ms, 1 above that, and *Offline* when nothing has arrived for 12 seconds.
+
+The host's tab holds the real copy of the game. The friend's moves and other changes go to the host as numbered patches, and the host applies each one once, in order, and confirms it. Until then the friend's screen shows them on top of the host's last state. Both sides re-send every few seconds, so nothing sent during a hiccup is lost.
+
 ## Built with
 
 - [three.js](https://threejs.org/) r128 (MIT): 3D rendering

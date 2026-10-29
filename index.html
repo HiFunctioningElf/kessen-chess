@@ -74,6 +74,15 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .panel{display:flex;flex-direction:column;gap:14px;width:100%;max-width:520px;min-width:0}
 .card{background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0}
 .status{display:flex;gap:12px;align-items:center;border-left:6px solid var(--blood)}
+.sig{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;--on:#3ddc84}
+.sig[hidden]{display:none}
+.sig-bars{display:flex;align-items:flex-end;gap:2px;height:16px}
+.sig-bars i{width:4px;background:var(--line)}
+.sig-bars i:nth-child(1){height:25%}.sig-bars i:nth-child(2){height:50%}.sig-bars i:nth-child(3){height:75%}.sig-bars i:nth-child(4){height:100%}
+.sig[data-bars="2"]{--on:var(--gold)}.sig[data-bars="1"],.sig[data-bars="0"]{--on:var(--blood)}
+.sig[data-bars="1"] i:nth-child(-n+1),.sig[data-bars="2"] i:nth-child(-n+2),.sig[data-bars="3"] i:nth-child(-n+3),.sig[data-bars="4"] i{background:var(--on)}
+.sig-ms{font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sig[data-bars="0"] .sig-ms{color:var(--blood)}
 .turn-chip{width:38px;height:38px;flex:none;display:grid;place-items:center;font-family:var(--chess);font-size:30px;background:var(--night);border:2px solid var(--gold);line-height:1}
 .turn-chip > span{display:block;transform:translateY(.15em)}
 .eyebrow,.label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -663,6 +672,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
       <section class="card status" aria-live="polite">
         <div class="turn-chip" id="turnChip"></div>
         <div><div class="eyebrow">Move <span id="moveNo">1</span></div><div class="status-text" id="statusText">White to move</div></div>
+        <div class="sig" id="sig" role="img" hidden><span class="sig-bars"><i></i><i></i><i></i><i></i></span><span class="sig-ms"></span></div>
       </section>
       <section class="card ctrl">
         <div class="field"><span class="label">Opponent</span>
@@ -5876,28 +5886,82 @@ $('#codeQr').onclick = e => e.currentTarget.classList.toggle('big');
   if (m){ mode = 'online'; seg('modeSeg', 'mode', mode); joinGame(m[1]); }
 })();
 // PeerJS: a ref that looks like a db document (update / onSnapshot), mirrored to the friend over the data channel.
-// Every change bumps a version number `v`; a side only accepts states newer than its own. Both sides re-send
-// their state every few seconds, so a move sent during a connection hiccup still arrives once the link is back,
-// and an old or repeated message can never roll the game back.
+// The host's copy is the real one. Every host change bumps a version number `v`, and the friend only accepts
+// states newer than the last one it saw. The friend never bumps `v` itself: it sends its changes to the host as
+// numbered patches and shows them straight away on top of the host's last state. The host applies each patch
+// once, in order, and says in `ack` which patches it has applied. (When both sides bumped `v`, two changes made
+// at the same moment got the same number and each side ignored the other's for good: the game froze.)
+// Both sides re-send every few seconds (the host its state, the friend any unconfirmed patches), so a change
+// sent during a connection hiccup still arrives once the link is back, and nothing is ever applied twice.
 function p2pRef(){
-  let listener = null;
+  let listener = null, base = null, seq = 0, pending = [];
+  const rid = Math.random().toString(36).slice(2, 10);   // tells the host when a new friend's patch numbers start over
   const emit = d => { if (listener) listener({exists: true, data: () => d}); };
+  const view = () => Object.assign({}, base || {}, ...pending.map(x => x.p));
   return {
     onSnapshot(fn){ listener = fn; return () => { listener = null; }; },
-    update(patch){ const d = Object.assign({}, net.data || {}, patch, {v: ((net.data && net.data.v) || 0) + 1}); emit(d); p2pSend(); return Promise.resolve(); },
-    receive(d){ if (net.data && (d.v || 0) <= (net.data.v || 0)) return; emit(d); }
+    update(patch){
+      if (net.myId === 'guest'){ pending.push({s: ++seq, p: patch}); emit(view()); this.flush(); return Promise.resolve(); }
+      const d = Object.assign({}, net.data || {}, patch, {v: ((net.data && net.data.v) || 0) + 1}); emit(d); p2pSend(); return Promise.resolve();
+    },
+    receive(d){
+      if (net.myId !== 'guest'){ if (net.data && (d.v || 0) <= (net.data.v || 0)) return; emit(d); return; }   // (an older friend's page still sends whole states)
+      if (base && (d.v || 0) <= (base.v || 0)) return;
+      base = d; pending = pending.filter(x => x.s > (d.ack || 0)); emit(view());
+    },
+    flush(){ if (pending.length && net.conn && net.conn.open){ try { net.conn.send({t: 'patch', rid, list: pending}); } catch(e){} } }
   };
 }
-const p2pSend = () => { if (net.conn && net.conn.open && net.data){ try { net.conn.send({t: 'state', d: net.data}); } catch(e){} } };
+const p2pSend = () => {
+  if (net.myId === 'guest'){ if (net.ref && net.ref.flush) net.ref.flush(); return; }
+  if (net.conn && net.conn.open && net.data){ try { net.conn.send({t: 'state', d: net.data}); } catch(e){} }
+};
+// The host applies the friend's patches in order, each one once.
+let guestPatches = {rid: null, last: 0};
+function applyPatches(m){
+  if (net.myId !== 'host' || !net.ref || !net.data || typeof m.rid !== 'string' || !Array.isArray(m.list)) return;
+  if (m.rid !== guestPatches.rid) guestPatches = {rid: m.rid, last: 0};
+  let d = net.data, n = 0;
+  for (const x of m.list){
+    if (!x || x.s !== guestPatches.last + 1 || !x.p || typeof x.p !== 'object') continue;
+    guestPatches.last = x.s;
+    const next = cleanState(Object.assign({}, d, x.p));
+    if (next){ d = next; n++; }
+  }
+  if (n) net.ref.update(Object.assign(d, {ack: guestPatches.last}));
+  else if (guestPatches.last > (net.data.ack || 0)) net.ref.update({ack: guestPatches.last});   // only bad patches: still confirm them so they aren't re-sent
+  else p2pSend();   // all of them were already applied: the friend missed our state, so send it again
+}
+// Signal strength: each side pings the other over the data channel and times the reply.
+const sig = {rtt: 0, pongAt: 0};
+function drawSignal(){
+  const el = $('#sig'); if (!el) return;
+  const live = net.kind === 'p2p' && net.code && net.data && net.data.w && net.data.b;
+  el.hidden = !live; if (!live) return;
+  const open = !!(net.conn && net.conn.open), quiet = Date.now() - lastHeard;
+  let bars, label;
+  if (!open || quiet > 12000){ bars = 0; label = 'Offline'; }
+  else if (!sig.pongAt){ bars = quiet > 6000 ? 1 : 3; label = quiet > 6000 ? 'Weak' : 'Connected'; }   // a friend on an older page doesn't answer pings
+  else {
+    const r = Date.now() - sig.pongAt > 7000 ? Infinity : sig.rtt;
+    bars = r < 150 ? 4 : r < 300 ? 3 : r < 600 ? 2 : 1;
+    label = r === Infinity ? 'Weak' : Math.round(r) + ' ms';
+  }
+  el.dataset.bars = bars;
+  el.querySelector('.sig-ms').textContent = label;
+  el.title = el.ariaLabel = `Connection to your friend: ${['lost', 'weak', 'fair', 'good', 'excellent'][bars]}` + (sig.pongAt && bars ? ` (${Math.round(sig.rtt)} ms round trip)` : '');
+}
 let lastHeard = 0, reconnecting = false, linkOk = null, lostSince = 0;
 setInterval(() => {
-  if (net.kind !== 'p2p' || !net.code) return;
+  if (net.kind !== 'p2p' || !net.code){ drawSignal(); return; }
   p2pSend();
+  if (net.conn && net.conn.open){ try { net.conn.send({t: 'ping', ts: Date.now()}); } catch(e){} }
   const open = !!(net.conn && net.conn.open), quiet = Date.now() - lastHeard > 20000;
   if (net.myId === 'guest' && (!open || quiet)) reconnectGuest();
   if (net.data && net.data.w && net.data.b){
     const ok = open && !quiet;
     if (!ok && !lostSince) lostSince = Date.now(); if (ok) lostSince = 0;
+    drawSignal();
     $('#claimBtn').hidden = !(lostSince && Date.now() - lostSince > 45000 && net.my && !isOver());
     if (ok !== linkOk){ linkOk = ok; note(ok ? 'Connected to your friend. Keep this tab open while you play.' : net.myId === 'host' ? 'Connection lost. Waiting for your friend to reconnect…' : 'Connection lost. Reconnecting to your friend…', !ok); }
   }
@@ -5918,6 +5982,22 @@ async function reconnectGuest(){
   finally { reconnecting = false; }
 }
 const seatOk = v => v === null || v === 'host' || v === 'guest';
+// Checks a game state from the other screen and keeps only known fields with sane values (null if it isn't valid).
+function cleanState(d){
+  if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return null;
+  const tmp = new Chess(); if (d.pgn && !tmp.load_pgn(d.pgn)) return null;
+  const num = v => typeof v === 'number' && isFinite(v) && v >= 0;
+  const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
+  const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
+  const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
+  const wb = v => (v === 'w' || v === 'b' ? v : null);
+  const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
+  const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 20), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
+  const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
+  const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
+  const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
+  return {fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0, ack: num(d.ack) ? d.ack : 0};
+}
 function wireConn(conn){
   net.conn = conn;
   conn.on('data', m => {
@@ -5925,21 +6005,12 @@ function wireConn(conn){
     if (m && m.t === 'hello' && net.myId === 'host' && net.ref){ p2pSend(); return; }
     if (m && m.t === 'full'){ note('That game already has two players.', true); leaveGame(); return; }
     if (m && m.t === 'mg'){ mgRecv(m.m); return; }
+    if (m && m.t === 'ping'){ try { conn.send({t: 'pong', ts: m.ts}); } catch(e){} return; }
+    if (m && m.t === 'pong'){ const r = Date.now() - m.ts; if (typeof m.ts === 'number' && r >= 0 && r < 6e4){ sig.rtt = sig.pongAt ? sig.rtt * .6 + r * .4 : r; sig.pongAt = Date.now(); drawSignal(); } return; }
+    if (m && m.t === 'patch'){ applyPatches(m); return; }
     if (!m || m.t !== 'state' || !m.d || typeof m.d !== 'object') return;
-    const d = m.d;
-    if (typeof d.pgn !== 'string' || typeof d.n !== 'number' || !seatOk(d.w ?? null) || !seatOk(d.b ?? null)) return;
-    const tmp = new Chess(); if (d.pgn && !tmp.load_pgn(d.pgn)) return;
-    const num = v => typeof v === 'number' && isFinite(v) && v >= 0;
-    const tc = d.tc && num(d.tc.base) && num(d.tc.inc) ? {base: d.tc.base, inc: d.tc.inc} : null;
-    const ck = d.clock && num(d.clock.w) && num(d.clock.b) ? {w: d.clock.w, b: d.clock.b} : null;
-    const flag = d.flag === 'w' || d.flag === 'b' ? d.flag : null;
-    const wb = v => (v === 'w' || v === 'b' ? v : null);
-    const result = d.result && ['resign', 'draw', 'abandon'].includes(d.result.type) ? {type: d.result.type, winner: wb(d.result.winner), by: wb(d.result.by)} : null;
-    const card = c => c && typeof c === 'object' && typeof c.name === 'string' ? {name: c.name.slice(0, 16), crest: CRESTS.includes(c.crest) ? c.crest : 'n', color: CREST_COLORS.includes(c.color) ? c.color : CREST_COLORS[0], power: num(c.power) ? Math.min(Math.round(c.power), 1e7) : 0, welo: num(c.welo) ? Math.max(100, Math.min(Math.round(c.welo), 4000)) : num(c.elo) ? Math.max(100, Math.min(Math.round(c.elo), 4000)) : 1000, pid: /^[a-z0-9]{10}$/.test(c.pid || '') ? c.pid : null} : null;
-    const POW = Object.keys(POWERS), mg = d.mg === false ? false : null;
-    const pow = d.pow && typeof d.pow === 'object' ? {w: (Array.isArray(d.pow.w) ? d.pow.w : []).filter(p => POW.includes(p)).slice(0, 3), b: (Array.isArray(d.pow.b) ? d.pow.b : []).filter(p => POW.includes(p)).slice(0, 3)} : null;
-    const fpc = x => x && typeof x === 'object' && num(x.tabouts) && num(x.awayMs) ? {tabouts: Math.min(999, Math.round(x.tabouts)), awayMs: Math.min(36e5, x.awayMs)} : null;
-    if (net.ref) net.ref.receive({fpw: fpc(d.fpw), fpb: fpc(d.fpb), mg, pow, tb: num(d.tb) ? d.tb : 0, heist: num(d.heist) ? d.heist : 0, pw: card(d.pw), pb: card(d.pb), pgn: d.pgn, n: d.n, w: d.w ?? null, b: d.b ?? null, at: d.at || Date.now(), tc, clock: ck, flag, result, drawOffer: wb(d.drawOffer), slap: num(d.slap) ? d.slap : 0, v: num(d.v) ? d.v : 0});
+    const d = cleanState(m.d);
+    if (d && net.ref) net.ref.receive(d);
   });
   conn.on('close', () => { if (net.conn === conn) net.conn = null; });
 }
@@ -5957,22 +6028,21 @@ async function createGame(fixedCode, quiet){
     net.peer = peer; net.myId = 'host'; linkOk = null;
     net.guestToken = null;
     peer.on('connection', conn => {
-      conn.on('open', () => {
-        // wait for the guest's hello: it carries the token that proves a reconnect is the same friend
-        const bail = setTimeout(() => { try { conn.close(); } catch(e){} }, 8000);
-        const first = m => {
-          if (!m || m.t !== 'hello') return;
-          conn.off('data', first); clearTimeout(bail);
-          if (net.guestToken && m.token !== net.guestToken){ try { conn.send({t: 'full'}); setTimeout(() => conn.close(), 300); } catch(e){} return; }
-          net.guestToken = m.token || 'anon';
-          const old = net.conn; wireConn(conn); lastHeard = Date.now();
-          if (old && old !== conn){ try { old.close(); } catch(e){} }
-          const d = net.data || {};
-          if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
-          else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
-        };
-        conn.on('data', first);
-      });
+      // wait for the guest's hello: it carries the token that proves a reconnect is the same friend.
+      // (Listen from the start, not from 'open': a hello that arrives first would be missed and the friend dropped.)
+      const bail = setTimeout(() => { try { conn.close(); } catch(e){} }, 10000);
+      const first = m => {
+        if (!m || m.t !== 'hello') return;
+        conn.off('data', first); clearTimeout(bail);
+        if (net.guestToken && m.token !== net.guestToken){ try { conn.send({t: 'full'}); setTimeout(() => conn.close(), 300); } catch(e){} return; }
+        net.guestToken = m.token || 'anon';
+        const old = net.conn; wireConn(conn); lastHeard = Date.now();
+        if (old && old !== conn){ try { old.close(); } catch(e){} }
+        const d = net.data || {};
+        if (d.w === 'guest' || d.b === 'guest') p2pSend();   // a reconnect: just resend, never bump the version
+        else net.ref.update({[d.w === 'host' ? 'b' : 'w']: 'guest'});
+      };
+      conn.on('data', first);
     });
     peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
     const ref = p2pRef();
@@ -6021,7 +6091,7 @@ async function joinGame(code){
 }
 function attach(code, ref){
   if (net.unsub) net.unsub();
-  net.code = code; net.ref = ref; net.data = null; net.my = null;
+  net.code = code; net.ref = ref; net.data = null; net.my = null; sig.rtt = sig.pongAt = 0;
   game.reset(); lastMove = null; selected = null; legal = []; clearEndFx(); syncPieces(true);
   clockReset({base: 0, inc: 0});   // the game document says which time control applies
   $('#onIdle').hidden = true; $('#onActive').hidden = false; $('#codeBox').hidden = false; $('#codeOut').textContent = code; drawInviteQr(code);
@@ -6036,7 +6106,7 @@ function leaveGame(){
   if (net.unsub) net.unsub();
   if (net.kind === 'p2p') dropPeer();
   Object.assign(net, {code: null, ref: null, unsub: null, my: null, data: null});
-  $('#onIdle').hidden = false; $('#onActive').hidden = true;
+  $('#onIdle').hidden = false; $('#onActive').hidden = true; drawSignal();
   note(IDLE_NOTE());
   game.reset(); lastMove = null; clearEndFx(); clockReset({base: 0, inc: 0}); render(true);
 }
@@ -6093,8 +6163,9 @@ function onRemote(snap){
     bigText(en, jp, {hold: 1600, size: .55, color: 'var(--gold)', sub: side ? `YOU PLAY ${side} · ${side === 'WHITE' ? 'YOU MOVE FIRST' : 'WHITE MOVES FIRST'}` : 'YOU ARE WATCHING'});
     note(net.kind === 'p2p' ? 'Your friend is here! Keep this tab open while you play.' : 'Your friend is here!');
   }
-  if (net.my && (!d['p' + net.my] || d['p' + net.my].power !== profile.power || d['p' + net.my].name !== fighterName())) shareProfile();
-  drawPlayers();
+  // compare with the card as the other screen stores it (rounded power, name cut to 20), or this re-shares on every update
+  if (net.my && (!d['p' + net.my] || d['p' + net.my].power !== Math.min(Math.round(profile.power), 1e7) || d['p' + net.my].name !== myCard().name)) shareProfile();
+  drawPlayers(); drawSignal();
   const tc = d.tc || {base: 0, inc: 0};
   if (tc.base !== clock.base || tc.inc !== clock.inc){ clockReset(tc); if (d.clock){ clock.w = d.clock.w; clock.b = d.clock.b; } }
   if (busy){ pendingRemote = d; return; }   // finish the current animation first; nothing (not even a timeout) is dropped
@@ -6352,7 +6423,7 @@ function showEnd(title, sub, jp){
   $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>${isOver() && gameLog()[0] ? '<button class="btn" id="mReview">Review</button>' : ''}`;
   if ($('#mReview')) $('#mReview').onclick = () => { hideModal(); openReview(gameLog()[0]); };
   if ($('#mRules')) $('#mRules').onclick = showRules;
-  $('#mRe').onclick = () => { hideModal(); newGame(); };
+  $('#mRe').onclick = () => { hideModal(); if (mode === 'online' && net.code) rematchOnline(); else newGame(); };   // online, newGame() only opens this box again
   $('#mLook').onclick = () => { hideModal(); clearEndFx(); };
   $('#mRe').disabled = mode === 'online' && !net.my;
   $('#modal').hidden = false; $('#mRe').focus();
@@ -6418,7 +6489,7 @@ function checkName(raw){
   return {ok: true, msg: '✓ Looks good. (Names aren\'t unique yet: that arrives with the online leaderboard.)'};
 }
 // what your friend sees online
-const myCard = () => ({name: fighterName(), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
+const myCard = () => ({name: fighterName().slice(0, 20), crest: profile.crest, color: profile.color, power: profile.power, welo: profile.welo, elo: profile.welo, pid: MY_PID});
 function shareProfile(){ if (mode === 'online' && net.ref && net.my) net.ref.update({['p' + net.my]: myCard()}).catch(() => {}); }
 $('#fEdit').onclick = () => {
   let crest = profile.crest, color = profile.color;
