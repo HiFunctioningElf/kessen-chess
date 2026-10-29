@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029180917">
+<meta name="kessen-build" content="20261029182302">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <meta charset="utf-8">
@@ -112,22 +112,24 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .clock{position:absolute;right:10px;z-index:2;display:flex;align-items:center;gap:8px;background:rgba(12,10,23,.88);border:2px solid var(--line);padding:4px 12px;
   font:700 clamp(18px,3vw,28px)/1.2 ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums;pointer-events:none}
 .clock.top{top:10px} .clock.bot{bottom:10px}
-/* style meters: a D–SSS rank for each player; yours at the bottom right, theirs at the top right */
-.style-meter{position:absolute;right:10px;z-index:2;display:flex;align-items:center;gap:8px;min-width:150px;background:rgba(12,10,23,.86);border:2px solid var(--line);padding:4px 10px 4px 6px;box-shadow:3px 3px 0 #000;pointer-events:none}
-.style-meter.top{top:52px} .style-meter.bot{bottom:52px}
-.style-meter.sw{border-left:4px solid #fffaf0} .style-meter.sb{border-left:4px solid var(--gold)}
-.style-meter .g{font:400 26px/1 var(--display);min-width:1.4em;text-align:center;color:var(--muted);-webkit-text-stroke:1px #000;text-shadow:2px 2px 0 #000}
-.style-meter .mid{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+/* style meters: a small D–SSS chip for each player at the right edge (yours at the bottom, theirs at the top);
+   it opens up to show the word and the bar for a moment whenever that player earns style */
+.style-meter{position:absolute;right:6px;z-index:2;display:flex;align-items:center;gap:6px;background:rgba(12,10,23,.72);border:2px solid var(--line);padding:2px 8px 2px 4px;box-shadow:2px 2px 0 #000;pointer-events:none;transition:background .2s}
+.style-meter.top{top:50px} .style-meter.bot{bottom:50px}
+.style-meter.sw{border-left:3px solid #fffaf0} .style-meter.sb{border-left:3px solid var(--gold)}
+.style-meter .g{font:400 18px/1 var(--display);min-width:1.3em;text-align:center;color:var(--muted);-webkit-text-stroke:1px #000;text-shadow:2px 2px 0 #000}
+.style-meter .mid{display:none;flex-direction:column;gap:2px;min-width:92px}
+.style-meter.pop .mid{display:flex}.style-meter.pop{background:rgba(12,10,23,.92)}
 .style-meter .lab{font:700 9px var(--body);letter-spacing:.16em;color:var(--muted)}
 .style-meter .lab span{font-family:var(--chess);font-size:11px;letter-spacing:0}
 .style-meter .word{font:400 12px var(--display);color:var(--text);white-space:nowrap}
 .style-meter .bar{display:block;height:4px;background:rgba(255,255,255,.12)}
 .style-meter .bar i{display:block;height:100%;background:var(--gold);transition:width .4s}
-.style-meter .n{font:700 12px ui-monospace,Consolas,monospace;color:var(--gold);font-variant-numeric:tabular-nums}
+.style-meter .n{font:700 11px ui-monospace,Consolas,monospace;color:var(--gold);font-variant-numeric:tabular-nums}
 .style-meter[data-g=C] .g{color:#3fe0ff}.style-meter[data-g=B] .g{color:#7dff8a}.style-meter[data-g=A] .g{color:var(--gold)}
 .style-meter[data-g=S] .g,.style-meter[data-g=SS] .g,.style-meter[data-g=SSS] .g{color:var(--blood)}
-.style-meter[data-g=SS],.style-meter[data-g=SSS]{border-color:var(--blood);box-shadow:3px 3px 0 #000,0 0 18px rgba(255,46,77,.45)}
-@media (max-width:600px){.style-meter{min-width:0;padding:3px 7px 3px 5px}.style-meter .g{font-size:20px}.style-meter .lab,.style-meter .bar{display:none}.style-meter .word{font-size:10px}.style-meter.top{top:44px}.style-meter.bot{bottom:44px}}
+.style-meter[data-g=SS],.style-meter[data-g=SSS]{border-color:var(--blood);box-shadow:2px 2px 0 #000,0 0 14px rgba(255,46,77,.4)}
+@media (max-width:600px){.style-meter{right:4px;padding:1px 6px 1px 3px}.style-meter .g{font-size:15px}.style-meter.top{top:42px}.style-meter.bot{bottom:42px}}
 .clock .g{font-family:var(--chess);font-size:.85em}
 .clock.on{border-color:var(--gold);color:var(--gold);box-shadow:0 0 18px rgba(255,200,61,.35)}
 .clock.low{border-color:var(--blood);color:var(--blood);animation:lowtime .5s ease-in-out infinite alternate}
@@ -573,30 +575,55 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .hl-meta{font-size:12px;color:var(--muted)}
 .hl-empty{color:var(--muted);margin:0}
 .rv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
-@media (max-width:680px){.rv{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:720px){.rv{grid-template-columns:minmax(0,1fr)}}
 .rv-left{display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0}
 .rv-boardwrap{display:flex;gap:6px}
-.rv-eval{width:12px;background:#111;border:2px solid #000;display:flex;flex-direction:column-reverse}
+.rv-eval{position:relative;width:16px;background:#1a1530;border:2px solid #000;display:flex;flex-direction:column-reverse;overflow:hidden}
 .rv-eval.flip{flex-direction:column}
-.rv-eval i{display:block;background:#fff;height:50%;transition:height .3s}
-.rv-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(360px,calc(100vw - 92px));aspect-ratio:1;border:3px solid #000}
-.rv-sq{display:grid;place-items:center;font-family:var(--chess);font-size:min(34px,8.4vw);line-height:1}
+.rv-eval i{display:block;background:#fffaf0;height:50%;transition:height .3s}
+.rv-eval span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-90deg);font-size:10px;font-weight:700;color:#ff3fa4;white-space:nowrap;text-shadow:0 0 2px #000,0 0 2px #000}
+.rv-board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(400px,calc(100vw - 72px));aspect-ratio:1;border:3px solid #000;user-select:none}
+.rv-sq{position:relative;display:grid;place-items:center;font-family:var(--chess);font-size:min(38px,8.6vw);line-height:1;min-width:0;min-height:0;overflow:hidden}
 .rv-sq.l{background:#a86a84}.rv-sq.d{background:#4a1d3e}
 .rv-sq.mv{box-shadow:inset 0 0 0 100px rgba(255,200,61,.38)}
-.rv-sq > span{display:block;transform:translateY(.15em)}
+.rv-sq.sel{box-shadow:inset 0 0 0 100px rgba(63,224,255,.45)}
+.rv-sq.dot::after{content:'';position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(63,224,255,.75)}
+.rv-board.retry .rv-sq{cursor:pointer}
+.rv-sq > span{display:block;transform:translateY(.12em)}
+.rv-sq i{position:absolute;font:700 10px/1 var(--body,sans-serif);font-style:normal;opacity:.75;pointer-events:none}
+.rv-sq .rk{left:2px;top:2px}.rv-sq .fl{right:2px;bottom:2px}
+.rv-sq.l i{color:#4a1d3e}.rv-sq.d i{color:#d9a3b9}
+.rv-arrow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .rv-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .rv-nav .chip{min-width:44px;min-height:36px}
-.rv-now{min-height:3.6em;text-align:center;font-size:13px;color:var(--muted);max-width:380px}
-.rv-now b{font-family:var(--display);font-weight:400;font-size:18px;display:block;color:var(--text)}
+.rv-nav .chip[aria-pressed="true"]{background:var(--gold);color:#111}
+.rv-now{min-height:5.4em;text-align:center;font-size:13px;color:var(--muted);width:min(420px,100%);display:flex;flex-direction:column;gap:3px;align-items:center}
+.rv-now b{font-family:var(--display);font-weight:400;font-size:19px;color:var(--text);display:flex;gap:8px;align-items:center}
+.rv-now .what{color:var(--text);font-weight:700}
+.rv-acts{display:flex;gap:6px;margin-top:4px}
+.rg{display:inline-grid;place-items:center;min-width:1.7em;padding:0 3px;height:1.5em;border-radius:4px;background:var(--gc);color:#111;font:700 11px/1 var(--body,sans-serif);border:1.5px solid #000;flex:none}
 .rv-right{display:flex;flex-direction:column;gap:10px;min-width:0}
-.rv-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
-.rv-sum > div{border:2px solid var(--line);padding:6px 8px;background:var(--ink);line-height:1.6}
-.rv-sum .g{font-family:var(--chess);font-size:16px}
+.rv-head .rv-res{font-family:var(--display);font-size:18px}
+.rv-head .rv-open{font-size:13px;color:var(--gold)}
 .rv-prog{font-size:12px;color:var(--gold)}
-.rv-moves{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:2px 6px;align-content:start;max-height:min(420px,46vh);overflow-y:auto;font-size:14px;font-variant-numeric:tabular-nums}
+.rv-prog:empty{display:none}
+.rv-graph{width:100%;height:84px;border:2px solid #000;cursor:pointer;display:block}
+.rv-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.rv-card{border:2px solid var(--line);padding:6px 8px;background:var(--ink);line-height:1.5}
+.rv-card .t{font-weight:700}.rv-card .t span{font-family:var(--chess);font-size:16px}
+.rv-card .acc{font-family:var(--display);font-size:24px;line-height:1.1}
+.rv-card .acc small{font-family:var(--body,sans-serif);font-size:11px;color:var(--muted);margin-left:6px}
+.rv-card .cpl{color:var(--muted)}
+.rv-card .cnt{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:4px}
+.rv-card .cnt span{display:inline-flex;gap:2px;align-items:center}
+.rv-keys{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rv-keys .lab{font-size:12px;color:var(--muted);width:100%}
+.rv-keys .chip{display:inline-flex;gap:6px;align-items:center;text-transform:none}
+.rv-moves{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:2px 6px;align-content:start;max-height:min(340px,40vh);overflow-y:auto;font-size:14px;font-variant-numeric:tabular-nums}
 .rv-moves .n{color:var(--muted);padding:4px 0}
-.rv-moves button{background:none;border:0;color:var(--text);text-align:left;padding:4px 6px;cursor:pointer;font:inherit;display:flex;gap:4px;justify-content:space-between;min-width:0}
+.rv-moves button{background:none;border:0;color:var(--text);text-align:left;padding:4px 6px;cursor:pointer;font:inherit;display:flex;gap:4px;justify-content:space-between;align-items:center;min-width:0}
 .rv-moves button.on{background:var(--gold);color:#111}
+.rv-tools{display:flex;gap:6px;flex-wrap:wrap}
 .dfoot{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
 @media (prefers-reduced-motion:reduce){.cut-lines,.sunburst,#hangar::before,.grain{animation:none}}
 </style>
@@ -4785,14 +4812,15 @@ function sfSearch(fen, ms){
     const w = getStockfish();
     const viaEngine = () => engineMove({fen, seen: [], depth: 2, ms: Math.max(300, ms), noise: 0, quiet: true}).then(r => res(r ? {score: r.score, best: r.from + r.to + (r.promotion || ''), src: 'kessen'} : null));
     if (!w) return viaEngine();
-    let score = null, settled = false;
+    let score = null, pv = [], settled = false;
     const done = v => { if (settled) return; settled = true; sfOnLine = null; clearTimeout(t); v ? res(v) : viaEngine(); };
-    const t = setTimeout(() => done(score === null ? null : {score, best: null, src: 'sf'}), ms + 2500);
+    const t = setTimeout(() => done(score === null ? null : {score, best: pv[0] || null, pv, src: 'sf'}), ms + 2500);
     sfOnLine = line => {
       const m = / score (cp|mate) (-?\d+)/.exec(line);
       if (m) score = m[1] === 'cp' ? +m[2] : (+m[2] > 0 ? 10000 - +m[2] : -10000 - +m[2]);
+      const l = / pv (.+)$/.exec(line); if (l) pv = l[1].trim().split(/\s+/);   // the line it expects
       const b = /^bestmove (\S+)/.exec(line);
-      if (b) done(score === null ? null : {score, best: b[1] === '(none)' ? null : b[1], src: 'sf'});
+      if (b) done(score === null ? null : {score, best: b[1] === '(none)' ? null : b[1], pv, src: 'sf'});
     };
     w.postMessage('position fen ' + fen); w.postMessage('go movetime ' + ms);
   }));
@@ -4918,8 +4946,7 @@ async function showFairPlay(){
   if (job === fairJob) draw(acc);
 }
 /* ---- Game history (this device) and move-by-move review ----
-   Every finished game is saved here (newest first, up to 100). The review steps through the moves on a flat board, and
-   Rude Fishy (Stockfish) grades each move. The grades get silly names; the usual chess term is in each one's tooltip. */
+   Every finished game is saved here (newest first, up to 100), and Rude Fishy (Stockfish) starts grading it right away. */
 const HIST_KEY = 'kessen-history', HIST_MAX = 100;
 const gameLog = () => { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch(e){ return []; } };
 const saveLog = a => { try { localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, HIST_MAX))); } catch(e){} };
@@ -4946,8 +4973,9 @@ function recordGame(){
   const card = mode === 'online' && net.data && me ? net.data['p' + OTHER(me)] : null;
   const opp = mode === 'cpu' ? `CPU · ${['Rookie', 'Rival', 'Final Boss'][level]}` : mode === 'online' ? ((card && card.name) || 'Online opponent') : 'Same screen';
   const log = gameLog();
-  log.unshift({at: Date.now(), mode, me, opp, winner, reason: gameReason(), pgn, plies});
-  saveLog(log);
+  const entry = {at: Date.now(), mode, me, opp, winner, reason: gameReason(), pgn, plies};
+  log.unshift(entry); saveLog(log);
+  setTimeout(() => gradeEntry(entry, isOver), 2500);   // grade it in the background (it stops if a new game starts)
   if (wakeLock) wakeLock.release().catch(() => {});   // the duel is over: the screen may sleep again
 }
 const resultOf = g => g.winner == null ? 'draw' : g.me ? (g.winner === g.me ? 'win' : 'loss') : 'draw';
@@ -4973,128 +5001,318 @@ function closeHistory(){ revJob++; rev = null; $('#hist').hidden = true; }
 $('#histBtn').onclick = openHistory;
 $('#histClose').onclick = () => (rev ? openHistory() : closeHistory());
 $('#hist').addEventListener('click', e => { if (e.target.id === 'hist') closeHistory(); });
-// The grades. [emoji, silly name, the usual chess term]
+// The grades: [badge, name, the usual chess term, colour]. The badges are the standard chess symbols, so a glance tells
+// you what happened; the names are a dry twist on the usual ones (the usual term shows beside them).
 const GRADES = {
-  book: ['📖', 'Textbook', 'opening move'], only: ['🤷', 'No Choice', 'only legal move'], mate: ['💥', 'Finishing Move', 'checkmate'],
-  best: ['🌌', 'Galaxy Brain', 'best move'], great: ['👨‍🍳', "Chef's Kiss", 'excellent'], good: ['🍙', 'Solid Snack', 'good'],
-  inacc: ['🍜', 'Wobbly Noodle', 'inaccuracy'], mistake: ['🌼', 'Oopsie Daisy', 'mistake'], blunder: ['🍌', 'Banana Peel', 'blunder']
+  brill: ['!!', 'Brilliancy', 'brilliant', '#3fe0ff'], best: ['★', "Fishy's Pick", 'best move', '#7dff8a'],
+  great: ['!', 'Sharp', 'excellent', '#a6e88a'], good: ['✓', 'Decent', 'good', '#c9d6a3'],
+  book: ['Bk', 'By the Book', 'book move', '#c9a86a'], only: ['□', 'Forced', 'only move', '#a99fc7'],
+  mate: ['#', 'Checkmate', 'checkmate', '#ff2e4d'], inacc: ['?!', 'Sloppy', 'inaccuracy', '#ffc83d'],
+  miss: ['✗', 'Missed Chance', 'missed win', '#ff9a3d'], mistake: ['?', 'Slip-up', 'mistake', '#ff9a3d'],
+  blunder: ['??', 'Howler', 'blunder', '#ff2e4d']
 };
-const GRADE_ORDER = ['mate', 'best', 'great', 'good', 'book', 'only', 'inacc', 'mistake', 'blunder'];
+const GRADE_ORDER = ['brill', 'best', 'great', 'good', 'book', 'only', 'mate', 'inacc', 'miss', 'mistake', 'blunder'];
+const GRADE_NAG = {brill: '!!', great: '!', inacc: '?!', miss: '?', mistake: '?', blunder: '??'};
+const gradeBadge = k => { const G = GRADES[k]; return G ? `<span class="rg" style="--gc:${G[3]}" title="${G[1]} (${G[2]})">${G[0]}</span>` : ''; };
+/* ---- Game review ----
+   Built after the open-source reviews (Lichess's analysis board, WintrCat's freechess) but our own code: an advantage
+   graph, accuracy per player (Lichess's published win-chance and accuracy formulas), move grades, the opening's name,
+   key moments, Rude Fishy's best move as an arrow with its whole line, a "try again" drill on your own mistakes, and an
+   annotated PGN. Games are graded in the background as soon as they end, and saved as they go. */
+const winPct = cp => 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);   // centipawns → chance of winning, %
+const moveAcc = drop => Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * drop) - 3.1669));
+const clampEval = s => Math.max(-1500, Math.min(1500, s));   // mates squashed, so "still winning" never reads as a blunder
+// Well-known openings by their first moves (the longest match names the game; its moves count as book).
+const OPENINGS_MAIN = [
+  ['Italian Game', 'e4 e5 Nf3 Nc6 Bc4'], ['Giuoco Piano', 'e4 e5 Nf3 Nc6 Bc4 Bc5'], ['Two Knights Defence', 'e4 e5 Nf3 Nc6 Bc4 Nf6'],
+  ['Ruy Lopez', 'e4 e5 Nf3 Nc6 Bb5'], ['Ruy Lopez, Berlin Defence', 'e4 e5 Nf3 Nc6 Bb5 Nf6'], ['Ruy Lopez, Morphy Defence', 'e4 e5 Nf3 Nc6 Bb5 a6'],
+  ['Scotch Game', 'e4 e5 Nf3 Nc6 d4'], ['Four Knights Game', 'e4 e5 Nf3 Nc6 Nc3 Nf6'], ['Petrov Defence', 'e4 e5 Nf3 Nf6'],
+  ['Philidor Defence', 'e4 e5 Nf3 d6'], ["King's Gambit", 'e4 e5 f4'], ['Vienna Game', 'e4 e5 Nc3'], ["King's Pawn Game", 'e4 e5'],
+  ['Sicilian Defence', 'e4 c5'], ['Sicilian, Najdorf', 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6'], ['Sicilian, Dragon', 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6'],
+  ['Sicilian, Alapin', 'e4 c5 c3'], ['Closed Sicilian', 'e4 c5 Nc3'], ['Smith-Morra Gambit', 'e4 c5 d4 cxd4 c3'],
+  ['French Defence', 'e4 e6'], ['French, Advance', 'e4 e6 d4 d5 e5'], ['French, Winawer', 'e4 e6 d4 d5 Nc3 Bb4'],
+  ['Caro-Kann Defence', 'e4 c6'], ['Caro-Kann, Advance', 'e4 c6 d4 d5 e5'], ['Pirc Defence', 'e4 d6 d4 Nf6 Nc3 g6'], ['Modern Defence', 'e4 g6'],
+  ['Scandinavian Defence', 'e4 d5'], ['Alekhine Defence', 'e4 Nf6'], ["Queen's Pawn Game", 'd4 d5'], ["Queen's Gambit", 'd4 d5 c4'],
+  ["Queen's Gambit Declined", 'd4 d5 c4 e6'], ["Queen's Gambit Accepted", 'd4 d5 c4 dxc4'], ['Slav Defence', 'd4 d5 c4 c6'],
+  ['London System', 'd4 d5 Bf4'], ['London System', 'd4 Nf6 Bf4'], ['Indian Defence', 'd4 Nf6'], ["King's Indian Defence", 'd4 Nf6 c4 g6 Nc3 Bg7'],
+  ['Nimzo-Indian Defence', 'd4 Nf6 c4 e6 Nc3 Bb4'], ["Queen's Indian Defence", 'd4 Nf6 c4 e6 Nf3 b6'], ['Grünfeld Defence', 'd4 Nf6 c4 g6 Nc3 d5'],
+  ['Catalan Opening', 'd4 Nf6 c4 e6 g3'], ['Benoni Defence', 'd4 Nf6 c4 c5'], ['Dutch Defence', 'd4 f5'], ['English Opening', 'c4'],
+  ['Réti Opening', 'Nf3 d5 c4'], ['Zukertort Opening', 'Nf3']
+];
+let OPENINGS = null;
+function openingOf(sans){
+  OPENINGS = OPENINGS || OPENINGS_MAIN.concat(RARE_OPENINGS.map(o => [o.name, o.line.join(' ')]).filter(([, l]) => !l.includes('*')));
+  const h = sans.map(m => m.replace(/[+#]/g, '')); let best = null;
+  for (const [name, line] of OPENINGS){ const l = line.split(' '); if (l.length <= h.length && l.every((m, i) => m === h[i]) && (!best || l.length > best.len)) best = {name, len: l.length}; }
+  return best;
+}
+// a line of engine moves (UCI) as SAN, from a position
+function uciLineToSan(fen, ucis, max = 6){
+  const g = new Chess(fen), out = [];
+  for (const u of (ucis || []).slice(0, max)){ const m = g.move({from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q'}); if (!m) break; out.push(m.san); }
+  return out;
+}
+const uciToSan = (fen, uci) => uci ? (uciLineToSan(fen, [uci], 1)[0] || null) : null;
+const evalText = (fen, e) => {
+  if (!e) return '';
+  const w = (fen.split(' ')[1] === 'w' ? 1 : -1) * e.score;
+  return Math.abs(w) > 9000 ? `${w > 0 ? '' : '-'}M${10000 - Math.abs(w)}` : `${w >= 0 ? '+' : ''}${(w / 100).toFixed(1)}`;
+};
+// Is this move a sacrifice? (the moved piece can be taken by something cheaper, or for free)
+const SAC_VAL = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
+function isSacrifice(fenAfter, m){
+  if (SAC_VAL[m.piece] < 3) return false;
+  const g = new Chess(fenAfter), takes = g.moves({verbose: true}).filter(x => x.to === m.to && x.captured);
+  return takes.some(x => {
+    if (SAC_VAL[x.piece] < SAC_VAL[m.piece] - (m.captured ? SAC_VAL[m.captured] : 0)) return true;
+    const h = new Chess(fenAfter); h.move(x); return !h.moves({verbose: true}).some(y => y.to === m.to && y.captured);   // undefended
+  });
+}
+// Grade every move from the engine's view of each position (evals[k] = the position before move k+1, side to move's view).
+function gradeMoves(moves, fens, evals){
+  const book = openingOf(moves.map(m => m.san)), grades = [], acc = [], loss = [];
+  moves.forEach((m, k) => {
+    const e0 = evals[k], e1 = evals[k + 1], after = new Chess(fens[k + 1]);
+    if (!e0 || !e1){ grades.push(null); acc.push(null); loss.push(null); return; }
+    const before = clampEval(e0.score), aft = clampEval(-e1.score), drop = Math.max(0, winPct(before) - winPct(aft));
+    acc.push(moveAcc(drop)); loss.push(Math.max(0, Math.min(1000, before - aft)));
+    const played = m.from + m.to + (m.promotion || ''), prev = grades[k - 1];
+    let gr;
+    if (after.in_checkmate()) gr = 'mate';
+    else if (new Chess(fens[k]).moves().length === 1) gr = 'only';
+    else if (book && k < book.len && drop < 8) gr = 'book';
+    else if (e0.best === played || drop <= 1) gr = isSacrifice(fens[k + 1], m) && winPct(aft) >= 45 && drop <= 2 ? 'brill' : 'best';
+    else if (['mistake', 'blunder'].includes(prev) && drop >= 10) gr = 'miss';
+    else gr = drop <= 2 ? 'great' : drop <= 5 ? 'good' : drop <= 10 ? 'inacc' : drop <= 20 ? 'mistake' : 'blunder';
+    grades.push(gr);
+  });
+  // per player: accuracy (Lichess-style: the mean of the harmonic and plain means of move accuracies), average loss, counts
+  const sides = {};
+  for (const c of ['w', 'b']){
+    const ks = moves.map((m, k) => m.color === c ? k : -1).filter(k => k >= 0 && acc[k] != null);
+    const a = ks.map(k => acc[k]), mean = a.reduce((x, y) => x + y, 0) / (a.length || 1), harm = a.length ? a.length / a.reduce((x, y) => x + 1 / Math.max(1, y), 0) : 0;
+    sides[c] = {n: a.length, acc: a.length ? (mean + harm) / 2 : null, acpl: a.length ? Math.round(ks.reduce((x, k) => x + loss[k], 0) / ks.length) : null,
+      count: Object.fromEntries(GRADE_ORDER.map(g => [g, ks.filter(k => grades[k] === g).length]))};
+  }
+  return {grades, acc, sides, opening: book && book.name};
+}
+/* ---- Grading: Rude Fishy looks at every position once (saved as it goes, so a review never starts over), in the
+   background as soon as a game ends. ---- */
+const gradeJobs = new Map();   // game id → running promise
+const sameGame = (a, b) => a && b && a.at === b.at && a.pgn === b.pgn;
+function gradeEntry(entry, keepGoing = () => true){
+  const id = entry.at + '|' + entry.pgn.length;
+  if (gradeJobs.has(id)) return gradeJobs.get(id);
+  const job = (async () => {
+    const c = new Chess(); if (!c.load_pgn(entry.pgn)) return null;
+    const moves = c.history({verbose: true}); while (c.undo()){}
+    const fens = [c.fen()]; for (const m of moves){ c.move(m); fens.push(c.fen()); }
+    const evals = (entry.evals || []).slice(0, fens.length);
+    const look = async (k, ms) => { const g = new Chess(fens[k]); const r = g.game_over() ? {score: g.in_checkmate() ? -10000 : 0, best: null, pv: []} : await sfSearch(fens[k], ms); return r ? {score: r.score, best: r.best || null, pv: (r.pv || []).slice(0, 8)} : null; };
+    const dropAt = k => evals[k] && evals[k + 1] ? winPct(clampEval(evals[k].score)) - winPct(clampEval(-evals[k + 1].score)) : 0;
+    for (let k = evals.length; k < fens.length; k++){
+      if (!keepGoing() && !(rev && sameGame(rev.g, entry))) break;   // a new game started: pick it up next time
+      evals.push(await look(k, 220));
+      // a quick look can misjudge a sharp move: before calling anything a mistake, look again, harder, at both positions
+      if (k > 0 && dropAt(k - 1) > 10){ evals[k - 1] = await look(k - 1, 1000) || evals[k - 1]; evals[k] = await look(k, 1000) || evals[k]; }
+      if (rev && sameGame(rev.g, entry)) revProgress(evals, k + 1, fens.length);
+      if (k % 6 === 5 || k === fens.length - 1){ const log = gameLog(), hit = log.find(x => x.at === entry.at && x.pgn === entry.pgn); if (hit){ hit.evals = evals; saveLog(log); } }
+    }
+    entry.evals = evals;
+    if (rev && sameGame(rev.g, entry)) revProgress(evals, evals.length, fens.length);
+    return evals;
+  })();
+  gradeJobs.set(id, job); job.finally(() => gradeJobs.delete(id));
+  return job;
+}
 let rev = null, revJob = 0;
 function openReview(g){
   if (!g) return;
   const c = new Chess(); if (!c.load_pgn(g.pgn)){ toast("Couldn't read that game"); return; }
   const moves = c.history({verbose: true}); while (c.undo()){}
   const fens = [c.fen()]; for (const m of moves){ c.move(m); fens.push(c.fen()); }
-  rev = {g, moves, fens, i: moves.length, flip: g.me === 'b', evals: g.evals || null, grades: g.grades || null};
+  revJob++;
+  rev = {g, moves, fens, i: moves.length, flip: g.me === 'b', evals: (g.evals || []).slice(), arrows: true, retry: null, sel: null, res: null};
   $('#histTitle').innerHTML = '<small>検討</small>Game review';
   $('#histClose').textContent = '← Games';
-  $('#histBody').innerHTML = `<div class="rv"><div class="rv-left"><div class="rv-boardwrap"><div class="rv-eval" id="rvEval"><i></i></div><div class="rv-board" id="rvBoard"></div></div>
-      <div class="rv-nav"><button class="chip" type="button" data-go="0" aria-label="First move">⏮</button><button class="chip" type="button" data-go="-1" aria-label="Previous move">◀</button><button class="chip" type="button" data-go="1" aria-label="Next move">▶</button><button class="chip" type="button" data-go="end" aria-label="Last move">⏭</button><button class="chip" type="button" data-go="flip">Flip</button></div>
-      <div class="rv-now" id="rvNow"></div></div>
-    <div class="rv-right"><div class="hl-meta" id="rvHead"></div><div class="rv-prog" id="rvProg"></div><div class="rv-sum" id="rvSum" hidden></div><div class="rv-moves" id="rvMoves"></div></div></div>`;
-  $('#rvHead').textContent = `${resultText(g)} · vs ${g.opp} · ${g.reason}`;
+  $('#histBody').innerHTML = `<div class="rv">
+    <div class="rv-left">
+      <div class="rv-boardwrap"><div class="rv-eval" id="rvEval"><i></i><span id="rvEvalN"></span></div><div class="rv-board" id="rvBoard"></div></div>
+      <div class="rv-nav"><button class="chip" type="button" data-go="0" aria-label="First move">⏮</button><button class="chip" type="button" data-go="-1" aria-label="Previous move">◀</button><button class="chip" type="button" data-go="1" aria-label="Next move">▶</button><button class="chip" type="button" data-go="end" aria-label="Last move">⏭</button><button class="chip" type="button" data-go="flip" aria-label="Flip the board">⇅</button><button class="chip" type="button" data-go="arrows" id="rvArrowsBtn" aria-pressed="true">Best move</button></div>
+      <div class="rv-now" id="rvNow"></div>
+    </div>
+    <div class="rv-right">
+      <div class="rv-head" id="rvHead"></div>
+      <div class="rv-prog" id="rvProg"></div>
+      <svg class="rv-graph" id="rvGraph" viewBox="0 0 400 80" preserveAspectRatio="none" role="img" aria-label="Advantage graph: tap to jump to a move"></svg>
+      <div class="rv-sum" id="rvSum"></div>
+      <div class="rv-keys" id="rvKeys"></div>
+      <div class="rv-moves" id="rvMoves"></div>
+      <div class="rv-tools"><button class="chip" type="button" id="rvPgn">Copy annotated PGN</button></div>
+    </div></div>`;
   $('#histBody').querySelector('.rv-nav').onclick = e => {
     const b = e.target.closest('[data-go]'); if (!b) return; const v = b.dataset.go;
     if (v === 'flip'){ rev.flip = !rev.flip; drawReview(); return; }
+    if (v === 'arrows'){ rev.arrows = !rev.arrows; b.setAttribute('aria-pressed', String(rev.arrows)); drawReview(); return; }
     revGo(v === 'end' ? rev.moves.length : v === '0' ? 0 : rev.i + +v);
   };
   $('#rvMoves').onclick = e => { const b = e.target.closest('[data-i]'); if (b) revGo(+b.dataset.i); };
+  $('#rvKeys').onclick = e => { const b = e.target.closest('[data-i]'); if (b) revGo(+b.dataset.i); };
+  $('#rvGraph').onpointerdown = e => { const r = e.currentTarget.getBoundingClientRect(); revGo(Math.round((e.clientX - r.left) / r.width * rev.moves.length)); };
+  $('#rvBoard').onpointerdown = e => { const b = e.target.closest('[data-sq]'); if (b && rev.retry) retryTap(b.dataset.sq); };
+  $('#rvNow').onclick = e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    if (b.dataset.act === 'retry') startRetry(rev.i - 1);
+    if (b.dataset.act === 'answer') endRetry(true);
+    if (b.dataset.act === 'stop') endRetry(false);
+  };
+  $('#rvPgn').onclick = () => { const t = annotatedPgn(); try { navigator.clipboard.writeText(t).then(() => toast('Annotated PGN copied'), () => toast("Couldn't copy")); } catch(e){ toast("Couldn't copy"); } };
   $('#hist').hidden = false;
-  drawReview();
-  if (!rev.grades) gradeGame(rev);
+  recompute(); drawReview();
+  if (rev.evals.length < fens.length){ $('#rvProg').innerHTML = `${powIcon('oracle')}Rude Fishy is judging every move…`; gradeEntry(g); }
 }
-function revGo(i){ if (!rev) return; rev.i = Math.max(0, Math.min(rev.moves.length, i)); A.sfx.select(); drawReview(); }
-// Centipawns for the side to move, with mates squashed so that "still winning" never reads as a blunder.
-const clampEval = s => Math.max(-1500, Math.min(1500, s));
-async function gradeGame(r){
-  const job = ++revJob, n = r.fens.length, evals = [];
-  for (let k = 0; k < n; k++){
-    if (job !== revJob) return;
-    const g = new Chess(r.fens[k]);
-    evals.push(g.game_over() ? {score: g.in_checkmate() ? -10000 : 0, best: null} : await sfSearch(r.fens[k], 160));
-    if (job !== revJob) return;
-    $('#rvProg').innerHTML = `${powIcon('oracle')}Rude Fishy is judging every move… ${k + 1}/${n}`;
+function revProgress(evals, k, n){
+  if (!rev) return;
+  rev.evals = evals.slice();
+  $('#rvProg').innerHTML = k < n ? `${powIcon('oracle')}Rude Fishy is judging every move… ${k}/${n}` : '';
+  recompute(); drawReview();
+}
+// grades and stats from whatever has been evaluated so far
+function recompute(){
+  const r = rev; if (!r) return;
+  r.res = r.evals.length >= 2 ? gradeMoves(r.moves.slice(0, r.evals.length - 1), r.fens, r.evals) : null;
+}
+function revGo(i){ if (!rev) return; if (rev.retry) endRetry(false, true); rev.i = Math.max(0, Math.min(rev.moves.length, i)); A.sfx.select(); drawReview(); }
+// the annotated PGN: the game with !, ?!, ? and ?? from the grades, and the opening's name
+function annotatedPgn(){
+  const r = rev, gr = r.res ? r.res.grades : [];
+  const tags = [`[Event "Kessen Chess"]`, `[Date "${new Date(r.g.at).toISOString().slice(0, 10).replace(/-/g, '.')}"]`,
+    `[White "${r.g.me === 'w' ? 'You' : r.g.me ? r.g.opp : 'White'}"]`, `[Black "${r.g.me === 'b' ? 'You' : r.g.me ? r.g.opp : 'Black'}"]`,
+    `[Result "${r.g.winner === 'w' ? '1-0' : r.g.winner === 'b' ? '0-1' : '1/2-1/2'}"]`].concat(r.res && r.res.opening ? [`[Opening "${r.res.opening}"]`] : []);
+  const body = r.moves.map((m, k) => `${m.color === 'w' ? `${k / 2 + 1}. ` : k === 0 ? '1... ' : ''}${m.san}${GRADE_NAG[gr[k]] || ''}`).join(' ');
+  return tags.join('\n') + '\n\n' + body + ' ' + (r.g.winner === 'w' ? '1-0' : r.g.winner === 'b' ? '0-1' : '1/2-1/2');
+}
+/* ---- Try again: replay the position before one of your mistakes and find something better ---- */
+function startRetry(k){
+  const r = rev; if (!r) return;
+  r.i = k; r.retry = {k, tried: null, msg: 'Your move: find something better.', tries: 0}; r.sel = null; drawReview();
+}
+function endRetry(showAnswer, quiet){
+  const r = rev; if (!r || !r.retry) return;
+  const k = r.retry.k; r.retry = null; r.sel = null;
+  if (showAnswer){ r.i = k; r.arrows = true; const b = $('#rvArrowsBtn'); if (b) b.setAttribute('aria-pressed', 'true'); }
+  if (!quiet) drawReview();
+}
+async function retryTap(sq){
+  const r = rev, t = r.retry, pos = new Chess(r.fens[t.k]), p = pos.get(sq);
+  if (r.sel){
+    const mv = pos.moves({verbose: true}).find(m => m.from === r.sel && m.to === sq);
+    if (mv){
+      r.sel = null; t.tried = mv; pos.move({from: mv.from, to: mv.to, promotion: 'q'}); t.msg = 'Rude Fishy is checking…'; t.tries++; drawReview(); A.sfx.select();
+      const e0 = r.evals[t.k], e = pos.game_over() ? {score: pos.in_checkmate() ? -10000 : 0} : await sfSearch(pos.fen(), 400);
+      if (rev !== r || r.retry !== t) return;
+      const drop = e0 && e ? Math.max(0, winPct(clampEval(e0.score)) - winPct(clampEval(-e.score))) : 99;
+      const played = r.moves[t.k], playedDrop = winPct(clampEval(e0.score)) - winPct(clampEval(-r.evals[t.k + 1].score));
+      if (drop <= 5 || pos.in_checkmate()){ t.msg = `${mv.san}! Much better. Rude Fishy is (slightly) impressed.`; t.done = true; A.sfx.twinkle(); }
+      else if (drop < playedDrop - 3) t.msg = `${mv.san} is better than ${played.san}, but there's something stronger. Try again?`;
+      else t.msg = `${mv.san}? No better than ${played.san}. Try again?`;
+      drawReview(); return;
+    }
   }
-  const grades = r.moves.map((m, k) => {
-    const e0 = evals[k], e1 = evals[k + 1];
-    if (new Chess(r.fens[k + 1]).in_checkmate()) return 'mate';
-    if (new Chess(r.fens[k]).moves().length === 1) return 'only';
-    if (!e0 || !e1) return null;
-    const loss = clampEval(e0.score) - clampEval(-e1.score), played = m.from + m.to + (m.promotion || '');
-    if (k < 8 && loss < 60) return 'book';
-    if (e0.best && e0.best === played) return 'best';
-    return loss <= 15 ? 'great' : loss <= 50 ? 'good' : loss <= 120 ? 'inacc' : loss <= 300 ? 'mistake' : 'blunder';
-  });
-  r.evals = evals.map(e => e ? {score: e.score, best: e.best} : null); r.grades = grades;
-  // keep the grades with the saved game, so the next review opens instantly
-  const log = gameLog(), hit = log.find(x => x.at === r.g.at && x.pgn === r.g.pgn);
-  if (hit){ hit.evals = r.evals; hit.grades = grades; saveLog(log); }
-  $('#rvProg').textContent = '';
-  if (rev === r) drawReview();
-}
-function uciToSan(fen, uci){
-  if (!uci) return null;
-  const m = new Chess(fen).move({from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] || 'q'});
-  return m ? m.san : null;
+  t.tried = null; r.sel = p && p.color === pos.turn() ? sq : null; drawReview();
 }
 function drawReview(){
   const r = rev; if (!r) return;
-  const pos = new Chess(r.fens[r.i]), last = r.moves[r.i - 1], board = $('#rvBoard');
+  const k = r.retry ? r.retry.k : r.i, pos = new Chess(r.fens[k]), last = r.retry ? null : r.moves[r.i - 1], hl = r.retry ? r.retry.tried : last;
+  const res = r.res, grades = res ? res.grades : [], board = $('#rvBoard');
+  // board: squares, coordinates on the edges, the last move, selection and targets in "try again"
+  const targets = r.retry && r.sel ? pos.moves({square: r.sel, verbose: true}).map(m => m.to) : [];
   board.innerHTML = '';
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++){
-    const sq = 'abcdefgh'[r.flip ? 7 - x : x] + (r.flip ? y + 1 : 8 - y), p = pos.get(sq), d = document.createElement('div');
-    d.className = `rv-sq ${(x + y) % 2 ? 'd' : 'l'}${last && (sq === last.from || sq === last.to) ? ' mv' : ''}`;
+    const f = r.flip ? 7 - x : x, rank = r.flip ? y + 1 : 8 - y, sq = 'abcdefgh'[f] + rank, p = pos.get(sq), d = document.createElement('div');
+    d.className = `rv-sq ${(x + y) % 2 ? 'd' : 'l'}${hl && (sq === hl.from || sq === hl.to) ? ' mv' : ''}${sq === r.sel ? ' sel' : ''}${targets.includes(sq) ? ' dot' : ''}`;
+    d.dataset.sq = sq;
+    if (x === 0) d.insertAdjacentHTML('beforeend', `<i class="rk">${rank}</i>`);
+    if (y === 7) d.insertAdjacentHTML('beforeend', `<i class="fl">${'abcdefgh'[f]}</i>`);
     if (p){ const s = document.createElement('span'); s.className = p.color === 'w' ? 'gw' : 'gb'; s.textContent = GLYPH[p.type] + VS; d.appendChild(s); }
     board.appendChild(d);
   }
-  // eval bar: White's share, filling from White's side of the board
-  const e = r.evals && r.evals[r.i], bar = $('#rvEval');
-  bar.classList.toggle('flip', r.flip);
-  if (e){ const w = (r.fens[r.i].split(' ')[1] === 'w' ? 1 : -1) * clampEval(e.score); bar.firstChild.style.height = `${50 + 50 * (2 / (1 + Math.exp(-w / 400)) - 1)}%`; }
-  // what happened on this move
-  const now = $('#rvNow');
-  if (!last) now.innerHTML = '<b>Start</b>Step through with ▶ or the arrow keys.';
-  else {
-    const gr = r.grades && r.grades[r.i - 1], G = gr && GRADES[gr], prev = r.evals && r.evals[r.i - 1];
-    const better = prev && prev.best && ['inacc', 'mistake', 'blunder'].includes(gr) ? uciToSan(r.fens[r.i - 1], prev.best) : null;
-    now.innerHTML = '<b></b><span></span>';
-    now.querySelector('b').textContent = `${Math.ceil(r.i / 2)}${last.color === 'w' ? '.' : '…'} ${last.san}${G ? `  ${G[0]} ${G[1]}` : ''}`;
-    now.querySelector('span').textContent = (G ? `${SIDE(last.color)}: ${G[2]}.` : r.grades ? '' : 'Grading…') + (better ? ` Rude Fishy wanted ${better}.` : '');
+  board.classList.toggle('retry', !!r.retry);
+  // Rude Fishy's best move here, as an arrow
+  const ev = r.evals[k];
+  if (r.arrows && ev && ev.best && !r.retry){
+    const sqXY = s => { const f = s.charCodeAt(0) - 97, rk = +s[1]; const x = r.flip ? 7 - f : f, y = r.flip ? rk - 1 : 8 - rk; return [x * 12.5 + 6.25, y * 12.5 + 6.25]; };
+    const [x1, y1] = sqXY(ev.best.slice(0, 2)), [x2, y2] = sqXY(ev.best.slice(2, 4)), a = Math.atan2(y2 - y1, x2 - x1), L = Math.hypot(x2 - x1, y2 - y1) - 4;
+    board.insertAdjacentHTML('beforeend', `<svg class="rv-arrow" viewBox="0 0 100 100"><g transform="translate(${x1} ${y1}) rotate(${a * 180 / Math.PI})"><path d="M0 -1.6 L${L} -1.6 L${L} -4 L${L + 4} 0 L${L} 4 L${L} 1.6 L0 1.6 Z" fill="rgba(125,255,138,.85)" stroke="#000" stroke-width=".5"/></g></svg>`);
   }
-  // move list, two columns
+  // eval bar and number
+  const bar = $('#rvEval'); bar.classList.toggle('flip', r.flip);
+  if (ev){ const w = (r.fens[k].split(' ')[1] === 'w' ? 1 : -1) * clampEval(ev.score); bar.querySelector('i').style.height = `${winPct(w)}%`; $('#rvEvalN').textContent = evalText(r.fens[k], ev); }
+  else $('#rvEvalN').textContent = '';
+  // what happened on this move (or the try-again prompt)
+  const now = $('#rvNow');
+  if (r.retry){
+    const t = r.retry, me = r.moves[t.k];
+    now.innerHTML = `<b>Try again: ${Math.ceil((t.k + 1) / 2)}${me.color === 'w' ? '.' : '…'} ?</b><span></span><div class="rv-acts">${t.done ? '' : '<button class="chip" type="button" data-act="answer">Show the answer</button>'}<button class="chip" type="button" data-act="stop">Done</button></div>`;
+    now.querySelector('span').textContent = t.msg;
+  } else if (!last) now.innerHTML = '<b>Start</b><span>Step through with ▶ or the arrow keys, or tap the graph.</span>';
+  else {
+    const gk = r.i - 1, gr = grades[gk], G = gr && GRADES[gr], e0 = r.evals[gk], e1 = r.evals[r.i];
+    const bad = ['inacc', 'miss', 'mistake', 'blunder'].includes(gr), best = e0 && e0.best ? uciToSan(r.fens[gk], e0.best) : null;
+    const line = e0 && e0.pv && e0.pv.length ? uciLineToSan(r.fens[gk], e0.pv, 6).join(' ') : '';
+    const wb = e0 && e1 ? Math.round(winPct(clampEval(e0.score))) : null, wa = e0 && e1 ? Math.round(winPct(clampEval(-e1.score))) : null;
+    now.innerHTML = `<b>${Math.ceil(r.i / 2)}${last.color === 'w' ? '.' : '…'} ${last.san} ${gr ? gradeBadge(gr) : ''}</b><span class="what"></span><span class="why"></span><div class="rv-acts"></div>`;
+    now.querySelector('.what').textContent = G ? `${G[1]}${G[1].toLowerCase().includes(G[2]) ? '' : ` (${G[2]})`}` : r.evals.length < r.fens.length ? 'Grading…' : '';
+    now.querySelector('.why').textContent = (wb != null ? `${SIDE(last.color)}'s winning chances ${wb}% → ${wa}%. ` : '') + (bad && best ? `Better was ${best}${line ? `, then ${line.split(' ').slice(1).join(' ')}` : ''}.` : gr === 'best' || gr === 'brill' ? `Rude Fishy agrees.` : '');
+    if (bad && (r.g.me ? last.color === r.g.me : true)) now.querySelector('.rv-acts').innerHTML = '<button class="chip" type="button" data-act="retry">Try again</button>';
+  }
+  // header: result, opponent, opening, accuracy
+  const head = $('#rvHead');
+  head.innerHTML = `<div class="rv-res"></div><div class="rv-open"></div>`;
+  head.querySelector('.rv-res').textContent = `${resultText(r.g)} · vs ${r.g.opp} · ${r.g.reason}`;
+  head.querySelector('.rv-open').textContent = res && res.opening ? `Opening: ${res.opening}` : '';
+  // accuracy cards
+  const sum = $('#rvSum');
+  sum.innerHTML = res ? ['w', 'b'].map(c => {
+    const S = res.sides[c], cnt = GRADE_ORDER.filter(gk => S.count[gk]).map(gk => `<span>${gradeBadge(gk)}×${S.count[gk]}</span>`).join('');
+    return `<div class="rv-card"><div class="t"><span class="${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span> ${SIDE(c)}${r.g.me === c ? ' (you)' : ''}</div><div class="acc">${S.acc == null ? '–' : S.acc.toFixed(1) + '%'}<small>accuracy</small></div><div class="cpl">avg loss ${S.acpl ?? '–'}</div><div class="cnt">${cnt}</div></div>`;
+  }).join('') : '';
+  // key moments: the mistakes, biggest first
+  const keys = $('#rvKeys');
+  const bads = grades.map((gk, i) => ({gk, i})).filter(x => ['blunder', 'mistake', 'miss'].includes(x.gk)).slice(0, 8);
+  keys.innerHTML = bads.length ? '<span class="lab">Key moments</span>' + bads.map(x => { const m = r.moves[x.i]; return `<button class="chip" type="button" data-i="${x.i + 1}">${gradeBadge(x.gk)} ${Math.ceil((x.i + 1) / 2)}${m.color === 'w' ? '.' : '…'}${m.san}</button>`; }).join('') : '';
+  // the advantage graph (White's winning chances), mistakes marked, the current move as a line
+  const svg = $('#rvGraph'), n = r.moves.length || 1;
+  const pts = r.evals.map((e, i) => e ? [i / n * 400, 80 - winPct((r.fens[i].split(' ')[1] === 'w' ? 1 : -1) * clampEval(e.score)) / 100 * 80] : null), line = pts.filter(Boolean);
+  svg.innerHTML = `<rect width="400" height="80" fill="#0c0a17"/><line x1="0" y1="40" x2="400" y2="40" stroke="#3a2f63" stroke-dasharray="4 4"/>` +
+    (line.length > 1 ? `<path d="M0 80 ${line.map(p => `L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')} L${line[line.length - 1][0].toFixed(1)} 80 Z" fill="#fffaf0" opacity=".85"/>` : '') +
+    grades.map((gk, i) => ['inacc', 'mistake', 'blunder', 'miss'].includes(gk) && pts[i + 1] ? `<circle cx="${pts[i + 1][0].toFixed(1)}" cy="${pts[i + 1][1].toFixed(1)}" r="3.2" fill="${GRADES[gk][3]}" stroke="#000" stroke-width="1"/>` : '').join('') +
+    `<line x1="${k / n * 400}" y1="0" x2="${k / n * 400}" y2="80" stroke="#ffc83d" stroke-width="2"/>`;
+  // move list, two columns, each with its badge
   const list = $('#rvMoves'); list.innerHTML = '';
   const startBlack = r.fens[0].split(' ')[1] === 'b', cells = startBlack ? [null, ...r.moves] : r.moves;
-  for (let k = 0; k < cells.length; k += 2){
-    const num = document.createElement('span'); num.className = 'n'; num.textContent = `${k / 2 + 1}.`; list.appendChild(num);
-    for (const j of [k, k + 1]){
-      const m = cells[j], idx = startBlack ? j : j + 1;   // the position index after this move
+  for (let j = 0; j < cells.length; j += 2){
+    const num = document.createElement('span'); num.className = 'n'; num.textContent = `${j / 2 + 1}.`; list.appendChild(num);
+    for (const q of [j, j + 1]){
+      const m = cells[q], idx = startBlack ? q : q + 1;
       if (!m){ list.appendChild(document.createElement('span')); continue; }
-      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = idx; if (idx === r.i) b.className = 'on';
-      const gr = r.grades && r.grades[idx - 1], G = gr && GRADES[gr];
-      b.innerHTML = '<span></span><span></span>'; b.firstChild.textContent = m.san;
-      if (G){ b.lastChild.textContent = G[0]; b.title = `${G[1]} (${G[2]})`; }
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = idx; if (idx === r.i && !r.retry) b.className = 'on';
+      b.innerHTML = `<span></span>${gradeBadge(grades[idx - 1])}`; b.firstChild.textContent = m.san;
       list.appendChild(b);
     }
   }
   const on = list.querySelector('.on');   // scroll only the list (scrollIntoView would also scroll the dialog)
   if (on && (on.offsetTop < list.scrollTop || on.offsetTop + on.offsetHeight > list.scrollTop + list.clientHeight)) list.scrollTop = on.offsetTop - list.clientHeight / 2;
-  // per-side tally
-  const sum = $('#rvSum'); sum.hidden = !r.grades;
-  if (r.grades) sum.innerHTML = ['w', 'b'].map(c => {
-    const mine = r.grades.filter((gr, k) => gr && r.moves[k].color === c);
-    const rows = GRADE_ORDER.filter(k => mine.includes(k)).map(k => `<span title="${GRADES[k][2]}">${GRADES[k][0]} ${GRADES[k][1]} ×${mine.filter(x => x === k).length}</span>`);
-    return `<div><span class="g ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span> <b>${SIDE(c)}${r.g.me === c ? ' (you)' : ''}</b><br>${rows.join('<br>') || 'Nothing to grade'}</div>`;
-  }).join('');
 }
 document.addEventListener('keydown', e => {
   if ($('#hist').hidden) return;
   if (e.key === 'Escape'){ closeHistory(); return; }
-  if (!rev) return;
+  if (!rev || /input|textarea/i.test((e.target.tagName || ''))) return;
   if (e.key === 'ArrowLeft'){ e.preventDefault(); revGo(rev.i - 1); }
   else if (e.key === 'ArrowRight'){ e.preventDefault(); revGo(rev.i + 1); }
   else if (e.key === 'Home'){ e.preventDefault(); revGo(0); }
   else if (e.key === 'End'){ e.preventDefault(); revGo(rev.moves.length); }
+  else if (e.key === 'f'){ rev.flip = !rev.flip; drawReview(); }
 });
 
 /* ---- Resign, draw offers and forfeits: games that end off the board ---- */
@@ -6218,8 +6436,9 @@ function drawStyle(gained){
     const n = styleTotal(col), i = styleRank(n), [min, g, word] = STYLE_RANKS[i], next = STYLE_RANKS[i + 1], lo = Math.max(0, min);
     const pct = next ? Math.max(0, Math.min(100, (n - lo) / (next[0] - lo) * 100)) : 100;
     const was = el.dataset.g;
-    el.className = `style-meter ${pos} s${col}`; el.dataset.g = g;
+    el.className = `style-meter ${pos} s${col}${el.dataset.pop === '1' ? ' pop' : ''}`; el.dataset.g = g;
     el.innerHTML = `<b class="g">${g}</b><span class="mid"><span class="lab"><span class="${col === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span> STYLE</span><span class="word">${word}</span><span class="bar"><i style="width:${pct}%"></i></span></span><span class="n">${n}</span>`;
+    if (gained === col){ el.dataset.pop = '1'; el.classList.add('pop'); clearTimeout(el._pop); el._pop = setTimeout(() => { el.dataset.pop = ''; el.classList.remove('pop'); }, 2200); }
     if (gained === col && !RM){
       el.animate([{transform: 'scale(1.18)'}, {transform: 'scale(1)'}], {duration: 320, easing: 'cubic-bezier(.3,1.6,.6,1)'});
       if (was && was !== g){ el.querySelector('.g').animate([{transform: 'scale(2.4) rotate(-12deg)', opacity: 0}, {transform: 'scale(1) rotate(0)', opacity: 1}], {duration: 380, easing: 'cubic-bezier(.3,1.6,.6,1)'}); A.sfx.ding(); }   // a new rank
