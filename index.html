@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261029202929">
+<meta name="kessen-build" content="20261029203638">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -544,6 +544,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
 .goalbar{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin:6px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));
   padding:10px 14px;background:linear-gradient(90deg,rgba(255,46,77,.16),rgba(255,200,61,.12));border:2px solid var(--gold);box-shadow:4px 4px 0 #000;cursor:pointer}
 .goalbar:hover{border-color:#fff}
+.goalbar[hidden]{display:none}
 .g-head{display:flex;flex-direction:column;gap:2px;min-width:0}
 .g-head b{font-family:var(--display);font-weight:400;font-size:15px;letter-spacing:.04em;color:var(--gold)}
 .g-head span{font-size:13px;font-weight:700}
@@ -3393,6 +3394,7 @@ async function mgSync(id, k){
 }
 
 /* ---- The full-screen frame every minigame is built in ---- */
+let mgLive = null;   // the minigame on screen, so the trailer can cut away from it
 function mgFrame(key, title, jp){
   const seat = mgSeat(), ov = document.createElement('div'), name = `${jp} ${title.toUpperCase()}`;
   ov.className = 'mgx'; ov.id = 'mg'; ov.dataset.seat = seat; ov.dataset.game = key;
@@ -3428,7 +3430,8 @@ function mgFrame(key, title, jp){
     if (main && o.ms) bigT = F.after(o.ms, () => F.big(''));
   };
   if (passing()) mgTurn(F, 'w');
-  F.close = () => { F.closed = true; passTurn = null; F.timers.forEach(clearTimeout); F.offs.forEach(f => f()); cancelAnimationFrame(F.raf); document.removeEventListener('keydown', onKey); ov.remove(); A.music.duck(1); };
+  mgLive = F;
+  F.close = () => { F.closed = true; if (mgLive === F) mgLive = null; passTurn = null; F.timers.forEach(clearTimeout); F.offs.forEach(f => f()); cancelAnimationFrame(F.raf); document.removeEventListener('keydown', onKey); ov.remove(); A.music.duck(1); };
   // Taps: your half on a shared screen, anywhere otherwise. Buttons (READY, the dance pads) handle themselves.
   ov.addEventListener('pointerdown', e => {
     if (e.target.closest('button')) return;
@@ -3481,6 +3484,7 @@ async function mgGate(F, rules, {count = true} = {}){
   return true;
 }
 async function mgEnd(F, winner, why = ''){
+  if (F.closed) return null;   // cut short (the trailer): no result, no power-up
   F.input = null; F.key = null;
   if (winner) for (const c of winner === 'both' ? ['w', 'b'] : [winner]) award(c, 'mg' + F.id, `Minigame Winner (${F.name.replace(/^\S+ /, '')})`, 15);
   const head = winner === 'both' ? 'BOTH WIN!' : winner ? `${mgWho(winner)} WIN${winner === mgMe() ? '' : 'S'}!` : (why || 'NO WINNER');
@@ -6880,13 +6884,16 @@ const DEMOS = {
   '#repetition-demo': ['1. Nf3 Nf6 2. Ng1 Ng8 3. Nf3 Nf6 4. Ng1', {from: 'f6', to: 'g8'}],
   '#seventh-demo': ['rnbqkbnr/pp1ppppp/2P5/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1', {from: 'c6', to: 'c7'}]
 };
-// The trailer: open the page with #trailer and press FIGHT! for a goofy one-and-a-half-minute montage to screen-record.
+// The trailer: open the page with #trailer and press FIGHT! for a goofy two-minute montage to screen-record.
+const OPERA_GAME = '1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7 8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8#';
 async function trailer(){
   trailerOn = true; mode = 'pvp'; seg('modeSeg', 'mode', mode);
+  $('#goalBar').hidden = true;   // a clean frame for screen recording: the closing cards pitch the goals instead
   const card = (main, jp, sub, o = {}) => bigText(main, jp, Object.assign({hold: 1500, size: .75, color: 'var(--gold)', sub}, o));
   const idle = async () => { while (busy) await sleep(200); };
+  const reset = () => { hideModal(); clearEndFx(); newGame(); };
   const scene = async (main, jp, sub, pos, move) => {
-    await idle(); hideModal(); clearEndFx(); newGame();
+    await idle(); reset();
     if (pos.includes('/')) game.load(pos); else game.load_pgn(pos);
     const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null; render(true);
     await card(main, jp, sub);
@@ -6899,22 +6906,55 @@ async function trailer(){
     try { await sleep(400); await commit(move); await idle(); } finally { clearInterval(skipper); }
     await sleep(1200);
   };
+  // a few seconds of a real minigame against the CPU: Ronin plays live, the trailer presses READY, then cuts away
+  const mgClip = async (i, sub, ms = 6500) => {
+    await idle(); mode = 'cpu'; playerColor = 'w'; reset();
+    const g = MINIGAMES[i];
+    A.sfx.fight(); await card(`${g.name.toUpperCase()}!`, g.jp, sub, {hold: 1000, size: .6});
+    g.play().catch(() => {});
+    for (const t0 = Date.now(); Date.now() - t0 < ms; await sleep(120)){ const b = document.querySelector('#mg .mg-btn.go:not(:disabled)'); if (b) b.click(); }
+    if (mgLive) mgLive.close();
+    document.querySelector('#mg')?.remove();
+    mode = 'pvp';
+  };
+  // the review screen on a famous game: step through it while Rude Fishy grades the moves
+  const reviewClip = async () => {
+    await idle(); reset();
+    openReview({at: 0, mode: 'pvp', me: 'w', opp: 'Opera Game, Paris 1858', winner: 'w', reason: 'checkmate', pgn: OPERA_GAME, plies: 33});
+    await sleep(900);
+    const key = k => document.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+    key('Home'); await sleep(600);
+    for (let n = 0; n < 12; n++){ key('ArrowRight'); await sleep(450); }
+    key('End'); await sleep(2600);
+    closeHistory();
+  };
   try {
     A.sfx.fight();
     await card('KESSEN CHESS', '決戦', 'CHESS, BUT EVERY MOVE IS A SEASON FINALE', {hold: 2000, size: .9});
+    await card('100% FREE', '無料', 'NO SUBSCRIPTION · NO FEES · JUST VIBES ;)', {hold: 2200});
+    await card('100% ONLINE', '通信', 'PLAYS IN YOUR BROWSER · CHALLENGE A FRIEND WITH ONE LINK', {hold: 2200, color: 'var(--volt)'});
+    await card('MADE TO FUNDRAISE', '募金', 'FOR SMILE TRAIN & FOODBANK QUEENSLAND', {hold: 2400, color: 'var(--blood)'});
     await scene('CAPTURES?', '撃破', 'THEY GET A WHOLE CUT-IN', '1. e4 d5', {from: 'e4', to: 'd5'});
     await scene('CASTLING', '入城', 'THE KING HIDES. DRAMATICALLY.', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5', {from: 'e1', to: 'g1'});
     await scene('EN PASSANT', '通過', "DON'T GOOGLE IT. JUST WATCH.", '1. e4 a6 2. e5 d5', {from: 'e5', to: 'd6'});
     await scene('PROMOTION', '昇格', 'PAWN → GIANT MECH → …A HORSE??', 'k7/4P3/8/8/8/8/7p/K7 w - - 0 1', {from: 'e7', to: 'e8', promotion: 'n'});
-    await scene('DOUBLE CHECK', '両王手', 'TWICE THE PANIC', 'rn1qk2r/ppp3pp/8/8/8/8/PPPPBPPP/RNBQR1K1 w kq - 0 1', {from: 'e2', to: 'b5'});
+    await idle(); reset();
+    await card('MINIGAMES', '遊戯', 'EVERY FEW MOVES, THE BOARD BECOMES A DUEL', {hold: 1800, color: 'var(--blood)'});
+    await mgClip(0, 'WAIT FOR 斬… THEN DRAW!');
+    await mgClip(1, 'STOP YOUR BLADE IN THE GOLD');
+    await mgClip(2, 'THREAD THE KUNAI THROUGH THE RING');
+    await mgClip(3, 'HENSHIN!! A RHYTHM DANCE-OFF');
     await scene('POWER-UPS', '力', 'INCLUDING A FISH THAT JUDGES YOU', '1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4', 'oracle');
     await scene('CHECKMATE', '詰み', 'THE KING DOES NOT GO QUIETLY', '1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6', {from: 'h5', to: 'f7'});
-    await idle(); hideModal(); clearEndFx(); newGame();
+    await idle(); reset();
+    await card('REVIEW EVERY GAME', '検討', 'RUDE FISHY GRADES EVERY MOVE. BRUTALLY.', {hold: 1800, color: 'var(--volt)'});
+    await reviewClip();
+    await idle(); reset();
     A.sfx.heroic();
-    await card('PLAY FREE', '無料', 'VS CPU · SAME SCREEN · ONLINE WITH A FRIEND', {hold: 2200});
-    await card('MINIGAMES', '遊戯', 'SLAP FIGHTS · MEMORY FLASH · MATE IN ONE', {hold: 1800, color: 'var(--blood)'});
-    await card('KESSEN CHESS', '決戦', (location.host + location.pathname).replace(/\/$/, '').toUpperCase(), {hold: 3200, size: .9});
-  } finally { trailerOn = false; }
+    await card('PLAY ANYONE', '対戦', 'THE CPU · A FRIEND ON THIS SCREEN · ONLINE · QUICK MATCH', {hold: 2200, size: .7});
+    await card('HIT BOTH GOALS', '目標', `$1,000 EACH FOR SMILE TRAIN & FOODBANK QLD → ${GOAL_PRIZE.toUpperCase()}`, {hold: 2600, size: .7, color: 'var(--blood)'});
+    await card('KESSEN CHESS', '決戦', `100% FREE · 100% ONLINE · ${(location.host + location.pathname).replace(/\/(index\.html)?$/, '').toUpperCase()}`, {hold: 3400, size: .9});
+  } finally { trailerOn = false; mode = 'pvp'; $('#goalBar').hidden = false; }
 }
 function demo(pos, move){
   if (move === 'oracle'){ mode = 'pvp'; seg('modeSeg', 'mode', mode); newGame(); game.load_pgn(pos); render(true); powers.w = ['oracle', 'hint']; panel(); return; }
