@@ -92,7 +92,7 @@ three.js, chess.js, PeerJS and qrcode-generator load from [jsDelivr](https://www
 
 - Fonts from Google Fonts (SIL Open Font License): Dela Gothic One, Zen Kaku Gothic New, Noto Sans Symbols 2
 - Magical Dance songs, both CC0 (public domain) from OpenGameArt, in `audio/`: ["Anime-esque Intro-Outro Theme"](https://opengameart.org/content/anime-esque-intro-outro-theme) by CleytonKauffman, and ["kawaii 8bit"](https://opengameart.org/content/kawaii-8bit) by haruta (cut and sped up 1.3×). Each round plays one of them.
-- The en passant voice clip plays through YouTube's official embed: "How to Pronounce En Passant" by Julien Miquel. It's credited on screen and never downloaded.
+- The en passant voice is the developer's own recording (`audio/en-passant.mp3`), pitched down and made a little robotic.
 
 Apart from the Magical Dance songs, the browser generates all music and sound effects live with the Web Audio API. The battle music is an original composition written in code.
 
