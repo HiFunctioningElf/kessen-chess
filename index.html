@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030232018">
+<meta name="kessen-build" content="20261031030428">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -768,6 +768,7 @@ body.cinema .cam-btn{display:none}
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
       <button class="chip" id="fxBtn" aria-pressed="true">Cut-ins</button>
       <button class="dswitch" id="b2dBtn" type="button" role="switch" aria-checked="false" aria-label="2D board" title="Slide to 2D for a flat board. The 3D animations still play for captures, checks and other big moments."><span class="o">3D</span><span class="o">2D</span><span class="knob"></span></button>
+      <button class="chip" id="liteBtn" type="button" aria-pressed="false" title="Lighter graphics for older or slower devices: lower resolution, a frame-rate cap, fewer particles, no clip recording. Shadows and smoothing change after a reload.">Lite</button>
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
@@ -913,7 +914,7 @@ body.cinema .cam-btn{display:none}
       <div class="jar-text"><b id="jarGoal"></b><span class="dnote" id="jarAmt"></span><ul class="goals" id="jarGoals"></ul><div class="over" id="jarOver" hidden></div><a class="dbtn" id="coffeeBtn" target="_blank" rel="noopener">☕ Coffee for the dev's holiday fund ↗</a><span class="dnote" id="splitNote" hidden></span></div>
     </div>
   </section>
-  <p class="dfoot">How the totals are counted: each Kessen fundraiser page's own public counter, plus donations made elsewhere that are listed with a receipt in the <a href="https://github.com/HiFunctioningElf/kessen-chess/blob/main/donations-ledger.json" target="_blank" rel="noopener">public ledger ↗</a>. Nothing is estimated.</p>
+  <p class="dfoot">How the totals are counted: each Kessen fundraiser page's own public counter, plus donations made elsewhere that are listed with a receipt in the <a href="https://kessenchess.com/donations-ledger.json" target="_blank" rel="noopener">public ledger ↗</a>. Nothing is estimated.</p>
   <p class="dfoot">Kessen Chess is not affiliated with or endorsed by these charities. Charity details come from the <a href="https://www.acnc.gov.au/charity/charities" target="_blank" rel="noopener">ACNC Charity Register ↗</a> (Smile Train's from the US IRS records).</p>
 </div></div>
 <div id="modal">
@@ -1220,6 +1221,7 @@ function resize2d(){ const d = devicePixelRatio || 1; W = innerWidth; H = innerH
 addEventListener('resize', resize2d); resize2d();
 function kick(){ if (!running){ running = true; requestAnimationFrame(loop2d); } }
 function burst(x, y, {n = 20, kind = 'spark', colors = ['#fff'], speed = 8, size = 3, life = 40, g = 0, drag = .92} = {}){
+  if (lite) n = Math.ceil(n / 2);
   if (RM) n = Math.ceil(n / 3);
   for (let i = 0; i < n; i++){
     const a = Math.random() * Math.PI * 2, v = speed * (.3 + Math.random() * .9), L = life * (.6 + Math.random() * .6);
@@ -1269,9 +1271,16 @@ let baseFov = FOV0;
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0f0b1e, 18, 34);
 const camera = new THREE.PerspectiveCamera(FOV0, 1, .1, 100);
-const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+/* Lite mode, for older or slower devices: fewer pixels, no anti-aliasing or shadows, a frame-rate cap, half the particles and
+   no background clip recording. 'on' / 'off' is the player's choice; unset means automatic: it switches itself on if the
+   board measures as slow (see perfWatch). Anti-aliasing and shadows can only change when the page loads. */
+var liteSet = null; try { liteSet = localStorage.getItem('kessen-lite'); } catch(e){}
+var lite = liteSet === 'on';
+const renderer = new THREE.WebGLRenderer({antialias: !lite, alpha: true, powerPreference: 'high-performance'});
+const pixelCap = () => lite ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2);
+renderer.setPixelRatio(pixelCap());
+renderer.shadowMap.enabled = !lite; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = false;   // the sun never moves: shadows are redrawn only while something on the board moves
 renderer.domElement.tabIndex = 0; renderer.domElement.setAttribute('aria-label', '3D chess board');
 stageEl.prepend(renderer.domElement);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -1446,6 +1455,7 @@ let camShake = 0, orbit = null;
 function camPunch(amount = 7, ms = 600){ return tween(ms, k => { camera.fov = baseFov - amount * (1 - k) * (1 - k); camera.updateProjectionMatrix(); }); }
 let swinging = null;
 function swingTo(side){
+  setTimeout(() => { panel(); if (board2d) draw2d(); }, 0);   // the side trays and the flat board turn at once (orientation is already set)
   if (RM || orbit || !controls.enabled){ setCamSide(side); return; }
   const t = controls.target, p = camera.position.clone().sub(t), r = Math.hypot(p.x, p.z), y = p.y;
   const a0 = Math.atan2(p.z, p.x), want = side === 'w' ? Math.PI / 2 : -Math.PI / 2;
@@ -1455,7 +1465,7 @@ function swingTo(side){
   return tween(700, k => { if (swinging !== id) return; const a = a0 + da * easeIO(k); camera.position.set(t.x + Math.cos(a) * r, t.y + y, t.z + Math.sin(a) * r); camera.lookAt(t); });
 }
 function setCamSide(side){
-  orbit = null; controls.enabled = true;
+  orbit = null; controls.enabled = true; setTimeout(() => { if (started) panel(); if (board2d) draw2d(); }, 0);
   const z = side === 'w' ? 1 : -1;
   camera.position.set(0, 9.2, 8.6 * z); controls.target.set(0, 0, 0); controls.update();
   labels.forEach(l => { l.rotation.z = side === 'w' ? 0 : Math.PI; });
@@ -1468,31 +1478,67 @@ function fitStage(){
 new ResizeObserver(fitStage).observe(stageEl); fitStage();
 
 const _o = new THREE.Vector3();
+let lastFrame = 0, lastDraw = 0, shadowDirty = 3;   // render() sets shadowDirty so the next frames redraw shadows
+const want3d = () => { const w = document.getElementById('b2d'); return !(board2d && w && !w.hidden && !w.classList.contains('away')); };
 function frameLoop(now){
   requestAnimationFrame(frameLoop);
+  if (document.hidden) return;
+  // Animations run on real time, so they look the same at 60 fps or 25 (they used to move a fixed amount per frame).
+  const dt = lastFrame ? Math.min(100, now - lastFrame) : 16.7; lastFrame = now;
+  const steps = Math.max(1, Math.min(6, Math.round(dt / 16.7)));
   for (const tw of tweens){ const k = Math.min(1, (now - tw.t0) / tw.ms); tw.fn(k); if (k >= 1){ tweens.delete(tw); tw.res(); } }
-  for (let i = shards.length - 1; i >= 0; i--){
-    const m = shards[i], u = m.userData;
-    u.v.y -= .011; m.position.add(u.v);
-    if (m.position.y < .16){ m.position.y = .16; u.v.y *= -.35; u.v.x *= .7; u.v.z *= .7; }
-    m.rotation.x += u.spin.x; m.rotation.y += u.spin.y; m.rotation.z += u.spin.z; u.spin.multiplyScalar(.97);
-    u.life--; m.scale.setScalar(u.s * Math.min(1, u.life / 30));
-    if (u.life <= 0){ scene.remove(m); shards.splice(i, 1); }
+  for (let s = 0; s < steps; s++){
+    for (let i = shards.length - 1; i >= 0; i--){
+      const m = shards[i], u = m.userData;
+      u.v.y -= .011; m.position.add(u.v);
+      if (m.position.y < .16){ m.position.y = .16; u.v.y *= -.35; u.v.x *= .7; u.v.z *= .7; }
+      m.rotation.x += u.spin.x; m.rotation.y += u.spin.y; m.rotation.z += u.spin.z; u.spin.multiplyScalar(.97);
+      u.life--; m.scale.setScalar(u.s * Math.min(1, u.life / 30));
+      if (u.life <= 0){ scene.remove(m); shards.splice(i, 1); }
+    }
+    for (let i = tears.length - 1; i >= 0; i--){
+      const t = tears[i], u = t.userData;
+      u.v.y -= .0016; t.position.add(u.v); u.life--;
+      if (t.position.y < .11 || u.life <= 0){ scene.remove(t); tears.splice(i, 1); }
+    }
+    if (orbit) orbit.a += .0035;
   }
-  for (let i = tears.length - 1; i >= 0; i--){
-    const t = tears[i], u = t.userData;
-    u.v.y -= .0016; t.position.add(u.v); u.life--;
-    if (t.position.y < .11 || u.life <= 0){ scene.remove(t); tears.splice(i, 1); }
-  }
-  if (orbit){ orbit.a += .0035; camera.position.set(orbit.c.x + Math.cos(orbit.a)*orbit.r, orbit.c.y + orbit.h, orbit.c.z + Math.sin(orbit.a)*orbit.r); controls.target.copy(orbit.c); camera.lookAt(orbit.c); }
-  else controls.update();
+  let camMoved = false;
+  if (orbit){ camera.position.set(orbit.c.x + Math.cos(orbit.a)*orbit.r, orbit.c.y + orbit.h, orbit.c.z + Math.sin(orbit.a)*orbit.r); controls.target.copy(orbit.c); camera.lookAt(orbit.c); camMoved = true; }
+  else camMoved = controls.update();
   if (checkRing.visible){ const s = 1 + .15 * Math.sin(now / 110); checkRing.scale.set(s, s, 1); checkRing.material.opacity = .6 + .35 * Math.sin(now / 110); }
   glow.material.opacity = .45 + .15 * Math.sin(now / 700);
+  const moving = busy || tweens.size || shards.length || tears.length || orbit || camShake > .002 || shadowDirty > 0;
+  // The 2D board covers the 3D one: don't draw what nobody can see (clips still get their frames).
+  if (!want3d()){ if (clip.on) clipFrame(); return; }
+  // Nothing moving: a calm 20 fps is plenty for the glow and the check ring (15 in Lite). Lite caps everything at 30.
+  const gap = moving || camMoved ? (lite ? 33 : 0) : (lite ? 66 : 50);
+  if (now - lastDraw < gap - 2) return;
+  lastDraw = now;
+  if (moving) renderer.shadowMap.needsUpdate = true;
+  if (shadowDirty > 0) shadowDirty--;
   _o.set(0, 0, 0);
-  if (camShake > .002 && !RM){ _o.set((Math.random()-.5)*camShake, (Math.random()-.5)*camShake, (Math.random()-.5)*camShake); camShake *= .9; }
+  if (camShake > .002 && !RM){ _o.set((Math.random()-.5)*camShake, (Math.random()-.5)*camShake, (Math.random()-.5)*camShake); camShake *= .9 ** steps; }
   camera.position.add(_o); renderer.render(scene, camera); camera.position.sub(_o);
+  perfWatch(dt, moving || camMoved);
   if (clip.on) clipFrame();   // straight after rendering, while the 3D frame is still there to copy
 }
+// Automatic Lite mode: if the board can't keep up (median under ~35 fps while things move), switch it on once.
+const perfSamples = [];
+function perfWatch(dt, active){
+  if (lite || liteSet === 'off' || !started || !active || dt > 99) return;
+  perfSamples.push(dt); if (perfSamples.length < 150) return;
+  const med = perfSamples.slice().sort((a, b) => a - b)[75]; perfSamples.length = 0;
+  if (med > 28){ setLite(true, true); toast('Switched to Lite mode for smoother play (you can turn it off at the top)'); }
+}
+function setLite(on, auto){
+  lite = !!on; if (!auto){ liteSet = on ? 'on' : 'off'; try { localStorage.setItem('kessen-lite', liteSet); } catch(e){} }
+  else { liteSet = 'on'; try { localStorage.setItem('kessen-lite', 'on'); } catch(e){} }
+  renderer.setPixelRatio(pixelCap()); fitStage(); shadowDirty = 3;
+  const b = document.getElementById('liteBtn'); if (b) b.setAttribute('aria-pressed', String(lite));
+  if (typeof clipWatch === 'function'){ if (lite && clip.on) clipStop(); clipWatch(); }
+}
+
 requestAnimationFrame(frameLoop);
 
 // picking
@@ -2168,6 +2214,7 @@ async function underPromoFx(mv){
 /* ================= BOARD STATE → SCENE + PANEL ================= */
 function kingSq(color, src = game){ const b = src.board(); for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++){ const p = b[r][f]; if (p && p.type === 'k' && p.color === color) return 'abcdefgh'[f] + (8 - r); } }
 function render(force){
+  shadowDirty = 3; lastDraw = 0;   // draw (and re-shadow) the next frames straight away
   for (const sq in marks){
     const m = marks[sq]; m.hl.visible = m.dot.visible = m.ring.visible = false;
     if (lastMove && (sq === lastMove.from || sq === lastMove.to)){ m.hl.visible = true; m.hl.material.color.set(0xffc83d); m.hl.material.opacity = .42; }
@@ -2242,12 +2289,38 @@ function slide2d(mv){
 }
 // right-click cancels premoves, as on the 3D board
 document.getElementById('b2dBoard').addEventListener('contextmenu', e => { e.preventDefault(); if (premoves.length || preSel){ clearPremove(); render(); toast('Premoves cancelled'); } });
+// Tap a piece then a square, or drag the piece there (as on the 3D board).
+let drag2d = null;
 document.getElementById('b2dBoard').addEventListener('pointerdown', e => {
   const q = e.target.closest('[data-sq]'); if (!q || e.button) return;
   e.preventDefault();
-  if (!canMoveNow()){ if (canPremove()){ premoveClick(q.dataset.sq); return; } const why = whyNot(); if (why) toast(why); return; }
-  tapSquare(q.dataset.sq);
+  const sq = q.dataset.sq;
+  if (!canMoveNow()){
+    if (canPremove()){ premoveClick(sq); if (preSel === sq) drag2d = {from: sq, x: e.clientX, y: e.clientY, pre: true}; return; }
+    const why = whyNot(); if (why) toast(why); return;
+  }
+  tapSquare(sq);
+  if (selected === sq) drag2d = {from: sq, x: e.clientX, y: e.clientY, pre: false};
 });
+addEventListener('pointermove', e => {
+  if (!drag2d) return;
+  const dx = e.clientX - drag2d.x, dy = e.clientY - drag2d.y;
+  if (!drag2d.on && Math.hypot(dx, dy) < 6) return;
+  drag2d.on = true;
+  const pc = document.querySelector(`#b2dBoard [data-sq="${drag2d.from}"] > span`);
+  if (pc){ pc.style.position = 'relative'; pc.style.zIndex = 5; pc.style.pointerEvents = 'none'; pc.style.transform = `translate(${dx}px, ${dy}px) translateY(.12em) scale(1.12)`; }
+});
+addEventListener('pointerup', e => {
+  const d = drag2d; drag2d = null; if (!d || !d.on) return;
+  const t = document.elementFromPoint(e.clientX, e.clientY), q = t && t.closest('#b2dBoard [data-sq]');
+  sig2d = '';   // the dragged piece goes back to its square unless the move happens
+  if (q && q.dataset.sq !== d.from){
+    if (d.pre){ if (canPremove()) premoveClick(q.dataset.sq); }
+    else if (canMoveNow()) tapSquare(q.dataset.sq);
+  }
+  draw2d();
+});
+addEventListener('pointercancel', () => { if (drag2d){ drag2d = null; sig2d = ''; draw2d(); } });
 // step aside for 3D moments: a move with a cut-in, a minigame, the ending movie
 setInterval(() => {
   const wrap = document.getElementById('b2d'); if (!wrap || !board2d) return;
@@ -3277,7 +3350,8 @@ function drawClocks(){
   const bot = orientation, top = bot === 'w' ? 'b' : 'w';
   [[top, '#clockTop'], [bot, '#clockBot']].forEach(([c, id]) => {
     const el = $(id), r = remaining(c), live = clock.run === c && !clock.paused;
-    el.innerHTML = `<span class="g ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span><span>${fmtClock(r)}</span>`;
+    const html = `<span class="g ${c === 'w' ? 'gw' : 'gb'}">${GLYPH.k}${VS}</span><span>${fmtClock(r)}</span>`;
+    if (el.__h !== html){ el.__h = html; el.innerHTML = html; }   // runs 10 times a second: only touch the page when the time shown changes
     el.classList.toggle('on', live); el.classList.toggle('low', r < 20000 && clock.run === c && !flagged);
   });
 }
@@ -4926,7 +5000,7 @@ const MINIGAMES = [
   {name: 'Kunai Storm', jp: '苦無', play: () => kunaiStorm()},
   {name: 'Magical Dance', jp: '☆', play: () => magicalDance()}
 ];
-// they take turns: the first minigame of a game is Quick-draw, the second Blade Timing, and so on
+// picked at random, never the same one twice in a row: from the moves played (and, off-line, a per-game salt), so both online screens agree
 var mgSalt = 0;   // a random number per CPU / same-screen game (0 online, where only the moves decide)
 const hashStr = t => { let h = 2166136261; for (let i = 0; i < t.length; i++){ h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 function minigameAt(n){   // the one played at ply n
@@ -5876,7 +5950,7 @@ window.addEventListener('pointermove', e => {
     A.sfx.select(); render();
   }
   const g = pieceAt[drag.from], p = boardPointAt(e);
-  if (g && p) g.position.set(p.x, BASEY + .35, p.z);
+  if (g && p){ g.position.set(p.x, BASEY + .35, p.z); shadowDirty = 2; lastDraw = 0; }   // follow the finger at full frame rate
 });
 window.addEventListener('pointerup', async e => {
   if (!drag) return;
@@ -6899,7 +6973,7 @@ $('#lvlSeg').addEventListener('click', e => {
   } else if (!game.history().length) ratedLevel = level;
 });
 $('#newBtn').onclick = () => { if (!busy){ A.init(); started = true; hideModal(); newGame(); } };
-$('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; swingTo(orientation); };
+$('#flipBtn').onclick = () => { orientation = orientation === 'w' ? 'b' : 'w'; swingTo(orientation); };   // swingTo redraws the 2D board too
 // Same screen: optionally swing the board round after every move so it always faces the player to move.
 let autoFlip = false; try { autoFlip = localStorage.getItem('kessen-autoflip') === 'on'; } catch(e){}
 seg('flipSeg', 'flip', autoFlip ? 'on' : 'off');
@@ -6932,6 +7006,8 @@ $('#b2dBtn').setAttribute('aria-checked', String(board2d));
   $('#b2dBtn').addEventListener('pointercancel', () => { down = null; });
   $('#b2dBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); set2d(!board2d); } else if (e.key === 'ArrowRight') set2d(true); else if (e.key === 'ArrowLeft') set2d(false); }); }
 $('#preBtn').setAttribute('aria-pressed', String(premovesOn));
+$('#liteBtn').setAttribute('aria-pressed', String(lite));
+$('#liteBtn').onclick = () => { setLite(!lite); toast(lite ? 'Lite mode on. Reload to also drop shadows and smoothing' : 'Lite mode off. Reload for full shadows and smoothing'); };
 $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
   premovesOn = v; try { localStorage.setItem('kessen-premoves', v ? 'on' : 'off'); } catch(err){}
   if (!v){ clearPremove(); render(); }
@@ -7611,7 +7687,7 @@ let donTotals = {per: [], sum: null, donors: null};
 // The public receipts ledger (donations-ledger.json in the repository): donations made somewhere other than a
 // Kessen fundraiser page (for example on a charity's own site), added by hand once a receipt has been checked.
 // Each entry is matched to a charity by ABN and is added on top of that charity's live page total.
-const LEDGER_URL = 'donations-ledger.json', LEDGER_PUBLIC = 'https://github.com/HiFunctioningElf/kessen-chess/blob/main/donations-ledger.json';
+const LEDGER_URL = 'donations-ledger.json', LEDGER_PUBLIC = 'https://kessenchess.com/donations-ledger.json';
 async function loadLedger(){
   try {
     const r = await fetch(LEDGER_URL, {cache: 'no-cache'}); if (!r.ok) return [];
@@ -8042,7 +8118,7 @@ const clip = {on: false, cv: null, cx: null, stream: null, recs: [], timer: 0, s
 // MP4 with AAC sound first: it's what Instagram, TikTok and phones' galleries take most happily
 const clipType = () => ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
   .find(t => { try { return MediaRecorder.isTypeSupported(t); } catch(e){ return false; } });
-const clipOk = () => !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && clipType());
+const clipOk = () => !lite && !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && clipType());
 function clipRecorder(){
   const type = clipType(), rec = new MediaRecorder(clip.stream, {mimeType: type, videoBitsPerSecond: CLIP.BPS});
   const r = {rec, t0: Date.now(), chunks: [], type};
