@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030170425">
+<meta name="kessen-build" content="20261030220351">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -70,7 +70,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);overflow:hidden}
 @media (min-width:981px){.stage{width:min(860px,calc(100vw - 340px));height:min(calc((100vw - 340px) * .9),78vh,720px)}}
 .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
-.stage .hint-orbit{position:absolute;left:10px;bottom:8px;font-size:11px;letter-spacing:.08em;color:var(--muted);pointer-events:none;text-transform:uppercase}
+.stage .hint-orbit{position:absolute;left:42px;bottom:10px;font-size:11px;letter-spacing:.08em;color:var(--muted);pointer-events:none;text-transform:uppercase}
 .stage .err{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:var(--muted)}
 
 .panel{display:flex;flex-direction:column;gap:14px;width:100%;max-width:520px;min-width:0}
@@ -564,6 +564,9 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
 .clip-btn{position:absolute;right:4px;top:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font-size:15px;line-height:1;padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75;transition:opacity .15s}
 .clip-btn:hover,.clip-btn:focus-visible{opacity:1}
+.cam-btn{position:absolute;left:4px;bottom:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font:700 17px/1 var(--body);padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75;transition:opacity .15s}
+.cam-btn:hover,.cam-btn:focus-visible{opacity:1}
+body.cinema .cam-btn{display:none}
 .clip-btn:not([hidden]) ~ .clock.top{right:40px}   /* the clock moves over so the two never overlap */
 .clip-btn[hidden]{display:none}
 .clip-btn:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
@@ -712,13 +715,13 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
   </section>
   <main>
     <div class="boardcol">
-    <div class="stage" id="stage"><div id="hangar"></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Clip: save the last few seconds as a video to share" aria-label="Clip: save the last few seconds as a video">🎬</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Clip: save the last few seconds as a video to share" aria-label="Clip: save the last few seconds as a video">🎬</button><button class="cam-btn" id="camBtn" type="button" title="Reset the camera" aria-label="Reset the camera">⟲</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
       <div class="mghud" id="mgHud" hidden></div>
     </div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
         <div class="crest" id="fCrest"></div>
-        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · <span title="Aura (闘気) is your rating: it rises with wins (most against stronger players) and with style (the style meter).">闘気 Aura <b id="fPower"></b></span> · WeLo <b id="fElo"></b></div><div class="fhow">Aura grows with your wins <i>and</i> how stylish you play.</div></div>
+        <div class="fmeta"><div class="fname" id="fName"></div><div class="frank"><span id="fRank"></span> · <span title="Aura (闘気) is your rating: it rises with wins (most against stronger players) and with style (the style meter).">闘気 Aura <b id="fPower"></b></span></div><div class="fhow">Aura grows with your wins <i>and</i> how stylish you play.</div></div>
         <button class="chip" id="fEdit" type="button">Edit</button>
       </section>
       <section class="card powers" id="powersCard" hidden><div class="label">Power-ups</div><div id="powRows"></div></section>
@@ -845,7 +848,7 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
     <div class="m-sub" id="mSub">A 3D board, a cut-in for every capture, an alarm for every check, and a shattering king at checkmate. Play the CPU, a friend on this screen, or a friend online. The battle music and sound effects are synthesized live in your browser.</div>
     <div class="m-name" id="mName" hidden><label class="label" for="mNameIn">Choose your fighter name</label>
       <input id="mNameIn" maxlength="16" placeholder="Nameless Challenger" autocomplete="nickname" aria-describedby="mNameCheck">
-      <div class="pcheck" id="mNameCheck" aria-live="polite">Saved on this device with your WeLo and match history. You can change it any time.</div></div>
+      <div class="pcheck" id="mNameCheck" aria-live="polite">Saved on this device with your Aura and match history. You can change it any time.</div></div>
     <div class="m-actions" id="mActions"><button class="btn primary" id="mGo">FIGHT!</button><button class="btn" id="mMatch">Find an online match</button></div>
   </div>
 </div>
@@ -6242,7 +6245,7 @@ async function drawPlayers(){
     const card = d['p' + c];
     nm.textContent = id ? ((card && card.name) || (ps[id] && ps[id].name) || (id === net.myId ? 'You' : 'Your friend')) : 'Waiting for a player…';
     row.appendChild(nm);
-    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `Aura ${card.power ? card.power.toLocaleString() : '?'} · ${rankOf(card.power || 0)}`; pw.title = `WeLo ${card.welo} · ${beltOf(card.welo)}`; row.appendChild(pw); }
+    if (card){ const pw = document.createElement('span'); pw.className = 'pw'; pw.textContent = `Aura ${card.power ? card.power.toLocaleString() : '?'} · ${rankOf(card.power || 0)}`;  row.appendChild(pw); }
     if (id && id === net.myId){ const y = document.createElement('span'); y.className = 'you'; y.textContent = 'YOU'; row.appendChild(y); }
     else if (card && card.pid && card.pid !== MY_PID){
       const fav = document.createElement('button'); fav.type = 'button'; fav.className = 'fav' + (isFriend(card.pid) ? ' on' : '');
@@ -6503,7 +6506,7 @@ $('#flipSeg').addEventListener('click', e => {
 $('#undoBtn').onclick = () => {
   if (busy || mode === 'online' || flagged || ended || !game.history().length) return;
   game.undo(); if (mode === 'cpu' && game.turn() !== playerColor) game.undo();
-  if (mode === 'cpu' && !practice){ practice = true; toast("Undo used: this game is practice now (no Aura or WeLo)."); }
+  if (mode === 'cpu' && !practice){ practice = true; toast("Undo used: this game is practice now (no Aura)."); }
   const h = game.history({verbose: true}), l = h[h.length - 1]; lastMove = l ? {from: l.from, to: l.to} : null;
   selected = null; legal = []; clearEndFx();
   A.music.intensity(game.in_check() ? 1 : 0); A.music.start(); render(true);
@@ -6583,20 +6586,8 @@ const RANKS = [[0, 'Background Extra'], [300, 'Comic Relief'], [600, 'Side Chara
   [1550, 'Tournament Arc Contender'], [1800, 'Main Character'], [2100, 'Protagonist With a Tragic Backstory'], [2500, 'Final Boss'], [3200, 'Secret Final Form'],
   [4000, 'Plot Armor'], [6000, 'Sequel Bait'], [9001, "IT'S OVER 9000!!"]];
 const rankOf = p => RANKS.filter(([min]) => p >= min).pop()[1];
-/* ---- WeLo: Kessen's own rating (it replaced Elo). Everyone has one: online games rate you against your opponent's WeLo,
-   CPU games against the CPU's fixed WeLo (Rookie 800, Rival 1200, Final Boss 1700) and move it half as much.
-   The first 15 games are placement (big swings), then it settles (smaller still above 1600). Dojo belts mark the way.
-   A game you used Undo in is practice, and an online game you walk out of counts as a loss. ---- */
+// The CPU's fixed ratings (for Aura): Rookie 800, Rival 1200, Final Boss 1700.
 const WELO_CPU = [800, 1200, 1700], CPU_NAMES = ['Rookie', 'Rival', 'Final Boss'];
-const BELTS = [[0, 'White Belt'], [700, 'Yellow Belt'], [850, 'Green Belt'], [1000, 'Blue Belt'], [1150, 'Red Belt'], [1300, 'Black Belt'], [1500, '2nd Dan'], [1700, '3rd Dan'], [1950, 'Sensei'], [2250, 'Grand Sensei']];
-const beltOf = w => BELTS.filter(([min]) => w >= min).pop()[1];
-const weloK = cpu => (profile.weloGames < 15 ? 48 : profile.welo >= 1600 ? 24 : 32) * (cpu ? .5 : 1);
-function weloRate(opp, score, cpu){
-  const mine = profile.welo, expected = 1 / (1 + 10 ** ((Math.max(mine - 400, Math.min(mine + 400, opp)) - mine) / 400));
-  profile.welo = Math.max(100, Math.round(mine + weloK(cpu) * (score - expected)));
-  profile.weloGames++; profile.weloPeak = Math.max(profile.weloPeak || 0, profile.welo);
-  return {before: mine, after: profile.welo, opp, placement: profile.weloGames <= 15 ? profile.weloGames : 0};
-}
 // An online game in progress is noted on this device; if it never finishes (tab closed, Leave mid-game) it's a loss.
 const PENDING_KEY = 'kessen-pending';
 function markPending(){
@@ -6608,12 +6599,12 @@ const clearPending = () => { try { localStorage.removeItem(PENDING_KEY); } catch
 function settleAbandoned(why){
   let p = null; try { p = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch(e){}
   if (!p) return; clearPending();
-  const r = weloRate(Number.isFinite(p.opp) ? p.opp : 1000, 0), a = auraRate(auraFromShow(Number.isFinite(p.aura) ? p.aura : 1000), 0, false, 0);
+  const a = auraRate(auraFromShow(Number.isFinite(p.aura) ? p.aura : 1000), 0, false, 0);
   profile.losses++; profile.onlineGames++; saveProfile();
-  toast(`${why} Aura ${a.before.toLocaleString()} → ${a.after.toLocaleString()} · WeLo ${r.before} → ${r.after}`);
+  toast(`${why} Aura ${a.before.toLocaleString()} → ${a.after.toLocaleString()}`);
 }
 /* ---- Aura (闘気): Kessen's headline rating, and what the leaderboard ranks. It rises with WINS and with STYLE.
-   Underneath is a hidden chess rating R (like WeLo): beating someone stronger than you raises it most, losing to someone
+   Underneath is a hidden chess rating R (Elo-style): beating someone stronger than you raises it most, losing to someone
    weaker drops it most, CPU games count half (Rookie 800, Rival 1200, Final Boss 1700). Style then shapes each change:
    a stylish game makes a gain bigger (up to +50%) and a loss smaller (up to -25%), but it never turns a loss into a gain,
    so losing on purpose with fireworks only ever costs Aura. Simulated over thousands of games: an honest player settles
@@ -6658,7 +6649,7 @@ function drawFighter(){
   $('#fCrest').textContent = GLYPH[profile.crest] + VS; $('#fCrest').style.setProperty('--c', profile.color);
   $('#fName').textContent = fighterName(); $('#fRank').textContent = rankOf(profile.power); $('#fPower').textContent = profile.power.toLocaleString();
   $('#fPower').title = `Aura ${profile.power.toLocaleString()} (peak ${(profile.auraPeak || profile.power).toLocaleString()})${profile.auraGames < 15 ? ` · placement ${profile.auraGames}/15` : ''}`;
-  $('#fElo').textContent = profile.welo; $('#fElo').parentElement.title = `WeLo ${profile.welo} · ${beltOf(profile.welo)} (peak ${profile.weloPeak})${profile.weloGames < 15 ? ` · placement ${profile.weloGames}/15` : ''} · online: ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
+  $('#fName').title = `${profile.wins} win${profile.wins === 1 ? '' : 's'} · ${profile.losses} loss${profile.losses === 1 ? '' : 'es'} · ${profile.draws} draw${profile.draws === 1 ? '' : 's'} · online: ${profile.onlineWins} win${profile.onlineWins === 1 ? '' : 's'} in ${profile.onlineGames} game${profile.onlineGames === 1 ? '' : 's'}`;
 }
 // The name checker: length, characters, reserved names and a rude-word filter (also catching 0→o, 1→i style swaps).
 // Rude names. The leaderboard's server rules (firebase/firestore.rules) apply exactly the same three lists, so a name
@@ -6719,7 +6710,7 @@ $('#fEdit').onclick = () => {
   $('#prof').hidden = false; $('#pName').focus();
 };
 drawFighter();
-if (auraIntro){ saveProfile(); setTimeout(() => toast('Power Level is now Aura (闘気): a real rating from your wins AND your style. It restarts from your WeLo with 15 placement games.'), 2500); }
+if (auraIntro){ saveProfile(); setTimeout(() => toast('Power Level is now Aura (闘気): a real rating from your wins AND your style. It starts with 15 placement games.'), 2500); }
 setTimeout(() => settleAbandoned('Your unfinished online game counted as a loss.'), 1500);
 // Style: every move can earn style for whoever played it (you, your friend, the CPU), shown on each player's style
 // meter during the game. In a rated game (vs CPU or online) your style also shapes your Aura.
@@ -6908,20 +6899,19 @@ function rateGame(){
   if (moves >= 80 && counts) lines.push(['Marathon (80+ moves)', 20]);
   const stylePts = lines.reduce((a, l) => a + l[1], 0), score = out === 'win' ? 1 : out === 'draw' ? .5 : 0;
   profile[out === 'win' ? 'wins' : out === 'loss' ? 'losses' : 'draws']++;
-  // Aura and WeLo: against your online opponent's (as their screen shared it) or the CPU's fixed rating
+  // Aura: against your online opponent's (as their screen shared it) or the CPU's fixed rating
   const theirs = mode === 'online' && net.data && net.data['p' + OTHER(me)];
   const oppAura = mode === 'cpu' ? WELO_CPU[ratedLevel] : auraFromShow(theirs && Number.isFinite(theirs.power) && theirs.power > 0 ? theirs.power : 1000);
   const aura = auraRate(oppAura, score, mode === 'cpu', stylePts);
-  const welo = weloRate(mode === 'cpu' ? WELO_CPU[ratedLevel] : theirs && Number.isFinite(theirs.welo) ? theirs.welo : 1000, score, mode === 'cpu');
   if (mode === 'online'){ profile.onlineGames++; if (out === 'win') profile.onlineWins++; }
   saveProfile();
   const vs = mode === 'cpu' ? `the ${CPU_NAMES[ratedLevel]} CPU` : (theirs && theirs.name) || 'your opponent';
-  return lastRating = {before: aura.before, after: aura.after, aura, welo, lines, stylePts, out, vs, rankUp: rankOf(aura.after) !== rankOf(aura.before) && aura.after > aura.before, over9000: aura.before < 9001 && aura.after >= 9001};
+  return lastRating = {before: aura.before, after: aura.after, aura, lines, stylePts, out, vs, rankUp: rankOf(aura.after) !== rankOf(aura.before) && aura.after > aura.before, over9000: aura.before < 9001 && aura.after >= 9001};
 }
 // The scouter readout on the end screen: lists the bonuses and counts the number up.
 function showScouter(r){
   const el = $('#mScouter'); if (!r){ el.hidden = true; return; }
-  if (r.practice){ el.innerHTML = 'PRACTICE GAME<br>You used Undo, so this one doesn\'t count for Aura or WeLo.'; el.hidden = false; return; }
+  if (r.practice){ el.innerHTML = 'PRACTICE GAME<br>You used Undo, so this one doesn\'t count for Aura.'; el.hidden = false; return; }
   if (r.unrated){ el.innerHTML = `UNRATED<br>${r.unrated}`; el.hidden = false; return; }
   const sign = n => (n >= 0 ? '+' : '') + n.toLocaleString(), a = r.aura, rk = STYLE_RANKS[styleRank(r.stylePts)];
   const esc = t => String(t).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
@@ -6933,7 +6923,7 @@ function showScouter(r){
     r.lines.map(([t, n]) => `<span class="sl">· ${esc(t)}${n ? ` ${sign(n)} style` : ''}</span>`).join('') +
     (a.placement ? `<br>Placement ${a.placement}/15 (bigger swings)` : '') +
     (r.rankUp ? `<br><span class="rk">RANK UP! ${rankOf(r.after).toUpperCase()}</span>` : '') +
-    (r.welo ? `<br>WeLo ${r.welo.before} → <b>${r.welo.after}</b> (${(r.welo.after >= r.welo.before ? '+' : '') + (r.welo.after - r.welo.before)}) · ${beltOf(r.welo.after)}${beltOf(r.welo.after) !== beltOf(r.welo.before) ? (r.welo.after > r.welo.before ? ' · NEW BELT!' : '') : ''}${r.welo.placement ? ` · placement ${r.welo.placement}/15` : ''}` : '');
+    '';
   el.insertAdjacentHTML('beforeend', '<span class="how">Aura = wins (most against stronger players) + style (how stylish you played).</span>');
   el.hidden = false; A.sfx.beep();
   const t0 = performance.now(), n = $('#scN');
@@ -6978,11 +6968,11 @@ const firstVisit = !profile.name && !profile.named;
 if (firstVisit){
   $('#mName').hidden = false;
   $('#mNameIn').oninput = () => { const v = $('#mNameIn').value, r = checkName(v), el = $('#mNameCheck');
-    el.textContent = v.trim() ? r.msg : 'Saved on this device with your WeLo and match history. You can change it any time.'; el.className = 'pcheck' + (v.trim() ? r.ok ? ' ok' : ' bad' : '');
+    el.textContent = v.trim() ? r.msg : 'Saved on this device with your Aura and match history. You can change it any time.'; el.className = 'pcheck' + (v.trim() ? r.ok ? ' ok' : ' bad' : '');
     if (v.trim() && r.ok) nameCheckLive(v, el, null); };
   $('#mNameIn').onkeydown = e => { if (e.key === 'Enter') $('#mGo').click(); };
 }
-// Ask the browser to keep this site's saved data (name, WeLo, match history) instead of clearing it to free space.
+// Ask the browser to keep this site's saved data (name, Aura, match history) instead of clearing it to free space.
 const keepSaves = () => { try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch(e){} };
 function claimName(){
   const box = $('#mName'); if (!box || box.hidden) return true;
@@ -7427,9 +7417,9 @@ loadCharityTotals();   // fills the header chip's total once real numbers are co
    It talks to Firebase over its REST API, with no SDK to load. Each device gets an anonymous Firebase account (no
    email, no personal details). names/{name} reserves a fighter name for one player, owners/{uid} records which name
    that player holds, and players/{uid} is their public leaderboard entry. firebase/firestore.rules keeps it honest:
-   one name per player, nobody can touch anyone else's entry, and a leaderboard WeLo starts at 1000 and can only move
+   one name per player, nobody can touch anyone else's entry, and a leaderboard rating (stored as `welo`, shown as Aura) starts at 1000 and can only move
    by one game's worth (at most 64) at most once a minute. Results are still reported by each player's own browser,
-   so the board is for fun, like WeLo itself. */
+   so the board is for fun. */
 const FIREBASE = {apiKey: 'AIzaSyADkWlp7hDuzVJQlMhHkAoIU82OuIzuNig', projectId: 'kessen-chess'};
 const FB_ON = isSet(FIREBASE.apiKey) && isSet(FIREBASE.projectId);
 const FBH = Object.assign({auth: 'https://identitytoolkit.googleapis.com', token: 'https://securetoken.googleapis.com', db: 'https://firestore.googleapis.com'}, FIREBASE.hosts || {});
@@ -7562,7 +7552,7 @@ async function boardFlush(){
     }
   } finally { boardFlushing = false; }
 }
-// The leaderboard: the top 20 by WeLo (50 on request), and where you stand.
+// The leaderboard: the top 20 by Aura (50 on request), and where you stand.
 // Firebase's free plan counts every entry read (50,000 a day), so the board is read as little as possible: the top 20
 // first, and what was read is kept on this device for 5 minutes (across reloads), so opening it again costs nothing.
 const BOARD_KEY = 'kessen-board-cache', BOARD_TTL = 300000;
@@ -7744,6 +7734,12 @@ async function clipSave(){
 const clipCaption = () => `Caught this in Kessen Chess 😂 Free chess with way too much anime, in your browser: ${location.origin}${location.pathname}`;
 function clipClose(){ $('#clipSheet').hidden = true; try { $('#clipVideo').pause(); } catch(e){} $('#clipBtn').focus(); }
 $('#clipBtn').onclick = clipSave;
+// Reset the camera: glide back to the usual view from your side of the board (not during a cut-in)
+$('#camBtn').onclick = () => {
+  if (busy) return;
+  const z = orientation === 'w' ? 1 : -1;
+  camMove(V3(0, 9.2, 8.6 * z), V3(0, 0, 0), 450).then(() => setCamSide(orientation));
+};
 $('#clipClose').onclick = clipClose;
 $('#clipSheet').addEventListener('click', e => { if (e.target === $('#clipSheet')) clipClose(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#clipSheet').hidden) clipClose(); });
