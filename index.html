@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030231024">
+<meta name="kessen-build" content="20261030231414">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -566,6 +566,8 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .b2d-board .q.dot.pd::after{background:rgba(176,108,255,.85)}
 .b2d-board .q.cap::after{content:'';position:absolute;inset:6%;border-radius:50%;border:4px solid rgba(63,224,255,.85)}
 .b2d-board .q > span{display:block;transform:translateY(.12em)}
+.b2d-board .q > span.ghost{opacity:.6;filter:drop-shadow(0 0 6px #b06cff) drop-shadow(0 0 2px #b06cff)}
+.b2d-board .q > span.left{opacity:.35}
 .b2d-board .q i{position:absolute;font:700 10px/1 var(--body);font-style:normal;opacity:.75;pointer-events:none}
 .b2d-board .q .rk{left:2px;top:2px}.b2d-board .q .fl{right:2px;bottom:2px}
 .b2d-board .q.l i{color:#4a1d3e}.b2d-board .q.d i{color:#d9a3b9}
@@ -2176,6 +2178,8 @@ function draw2d(){
   const el = document.getElementById('b2dBoard'), flip = orientation === 'b';
   const ck = game.in_check() ? kingSq(game.turn()) : null, tgt = new Map(legal.map(m => [m.to, m])), pre = new Set(preLegal.map(m => m.to));
   const preSq = new Set(premoves.flatMap(pm => [pm.from, pm.to]));
+  // with premoves queued, show where your pieces will be: purple ghosts there, the pieces they leave faded
+  const me = myColor(), vg = premoves.length && me ? new Chess(virtualFen()) : null;
   let html = '';
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++){
     const f = flip ? 7 - x : x, r = flip ? y + 1 : 8 - y, sq = 'abcdefgh'[f] + r, p = game.get(sq), lm = tgt.get(sq);
@@ -2186,7 +2190,13 @@ function draw2d(){
     if (sq === ck) cls.push('ck');
     if (sq === selected) cls.push('sel');
     if (lm) cls.push(lm.captured ? 'cap' : 'dot'); else if (pre.has(sq)) cls.push('dot', 'pd');
-    html += `<div class="${cls.join(' ')}" data-sq="${sq}">${x === 0 ? `<i class="rk">${r}</i>` : ''}${y === 7 ? `<i class="fl">${'abcdefgh'[f]}</i>` : ''}${p ? `<span class="${p.color === 'w' ? 'gw' : 'gb'}">${GLYPH[p.type]}${VS}</span>` : ''}</div>`;
+    let pc = p ? `<span class="${p.color === 'w' ? 'gw' : 'gb'}">${GLYPH[p.type]}${VS}</span>` : '';
+    if (vg){
+      const v = vg.get(sq);
+      if (v && v.color === me && !(p && p.color === v.color && p.type === v.type)) pc = `<span class="${v.color === 'w' ? 'gw' : 'gb'} ghost">${GLYPH[v.type]}${VS}</span>`;
+      else if (p && p.color === me && !(v && v.color === me)) pc = `<span class="${p.color === 'w' ? 'gw' : 'gb'} left">${GLYPH[p.type]}${VS}</span>`;
+    }
+    html += `<div class="${cls.join(' ')}" data-sq="${sq}">${x === 0 ? `<i class="rk">${r}</i>` : ''}${y === 7 ? `<i class="fl">${'abcdefgh'[f]}</i>` : ''}${pc}</div>`;
   }
   if (html === sig2d) return;   // nothing changed: leave the board (and any slide in progress) alone
   sig2d = html; el.innerHTML = html;
@@ -2205,6 +2215,8 @@ function slide2d(mv){
   if (mv.flags.includes('k')) go('h' + mv.from[1], 'f' + mv.from[1]);
   if (mv.flags.includes('q')) go('a' + mv.from[1], 'd' + mv.from[1]);
 }
+// right-click cancels premoves, as on the 3D board
+document.getElementById('b2dBoard').addEventListener('contextmenu', e => { e.preventDefault(); if (premoves.length || preSel){ clearPremove(); render(); toast('Premoves cancelled'); } });
 document.getElementById('b2dBoard').addEventListener('pointerdown', e => {
   const q = e.target.closest('[data-sq]'); if (!q || e.button) return;
   e.preventDefault();
