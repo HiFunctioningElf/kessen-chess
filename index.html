@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030230336">
+<meta name="kessen-build" content="20261030230641">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -546,10 +546,16 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .grp-list .row .n{color:var(--muted);width:1.4em;text-align:right}
 .grp-list .row.me b{color:var(--gold)}
 .grp-idle{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
-.b2d{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);transition:opacity .25s;padding:8px}
+.dswitch{position:relative;display:inline-flex;align-items:center;justify-content:space-between;width:78px;height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:700 11px/1 var(--body);letter-spacing:.06em;cursor:pointer;touch-action:none;user-select:none;flex:none}
+.dswitch .knob{position:absolute;top:2px;left:2px;width:36px;height:24px;border-radius:999px;background:var(--gold);box-shadow:0 1px 0 #000;transition:left .18s cubic-bezier(.3,1.4,.6,1)}
+.dswitch .knob::after{content:'3D';position:absolute;inset:0;display:grid;place-items:center;color:var(--ink);font:700 11px/1 var(--body);letter-spacing:.06em}
+.dswitch[aria-checked="true"] .knob{left:38px}
+.dswitch[aria-checked="true"] .knob::after{content:'2D'}
+.dswitch:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+.b2d{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);transition:opacity .25s;container-type:size}
 .b2d.away{opacity:0;pointer-events:none}
-.b2d-board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(100%,calc(100% * 1));aspect-ratio:1;max-height:100%;max-width:100%;height:100%;border:3px solid #000;box-shadow:0 0 0 3px var(--gold),0 12px 40px rgba(0,0,0,.6);user-select:none;touch-action:manipulation}
-.b2d-board .q{position:relative;display:grid;place-items:center;font-family:var(--chess);font-size:min(7.2vw,calc((100vh - 120px) / 12),56px);line-height:1;cursor:pointer;min-width:0;min-height:0;overflow:hidden}
+.b2d-board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:calc(min(100cqw,100cqh) - 44px);height:calc(min(100cqw,100cqh) - 44px);border:3px solid #000;box-shadow:0 0 0 3px var(--gold),0 12px 40px rgba(0,0,0,.6);user-select:none;touch-action:manipulation}
+.b2d-board .q{position:relative;display:grid;place-items:center;font-family:var(--chess);font-size:calc((min(100cqw,100cqh) - 44px) / 8 * .72);line-height:1;cursor:pointer;min-width:0;min-height:0;overflow:hidden}
 .b2d-board .q.l{background:#a86a84}.b2d-board .q.d{background:#4a1d3e}
 .b2d-board .q.mv{box-shadow:inset 0 0 0 100px rgba(255,200,61,.38)}
 .b2d-board .q.sel{box-shadow:inset 0 0 0 100px rgba(63,224,255,.5)}
@@ -736,7 +742,7 @@ body.cinema .cam-btn{display:none}
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
       <button class="chip" id="fxBtn" aria-pressed="true">Cut-ins</button>
-      <button class="chip" id="b2dBtn" aria-pressed="false" title="Play on a flat 2D board. The 3D animations still play for captures, checks and other big moments.">2D</button>
+      <button class="dswitch" id="b2dBtn" type="button" role="switch" aria-checked="false" aria-label="2D board" title="Slide to 2D for a flat board. The 3D animations still play for captures, checks and other big moments."><span class="o">3D</span><span class="o">2D</span><span class="knob"></span></button>
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
@@ -6855,8 +6861,14 @@ const toggle = (btn, fn) => { const v = btn.getAttribute('aria-pressed') !== 'tr
 $('#musicBtn').onclick = e => toggle(e.currentTarget, v => { A.init(); A.music.setOn(v); });
 $('#sfxBtn').onclick = e => toggle(e.currentTarget, v => A.sfx.setOn(v));
 $('#fxBtn').onclick = e => toggle(e.currentTarget, v => { cutins = v; });
-$('#b2dBtn').setAttribute('aria-pressed', String(board2d));
-$('#b2dBtn').onclick = e => toggle(e.currentTarget, v => { board2d = v; try { localStorage.setItem('kessen-2d', v ? 'on' : 'off'); } catch(err){} render(true); });
+// The 3D / 2D switch: tap it, or drag the knob left (3D) or right (2D)
+const set2d = v => { board2d = v; $('#b2dBtn').setAttribute('aria-checked', String(v)); try { localStorage.setItem('kessen-2d', v ? 'on' : 'off'); } catch(err){} render(true); };
+$('#b2dBtn').setAttribute('aria-checked', String(board2d));
+{ let down = null;
+  $('#b2dBtn').addEventListener('pointerdown', e => { down = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); });
+  $('#b2dBtn').addEventListener('pointerup', e => { if (down == null) return; const dx = e.clientX - down; down = null; set2d(Math.abs(dx) > 8 ? dx > 0 : !board2d); });
+  $('#b2dBtn').addEventListener('pointercancel', () => { down = null; });
+  $('#b2dBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); set2d(!board2d); } else if (e.key === 'ArrowRight') set2d(true); else if (e.key === 'ArrowLeft') set2d(false); }); }
 $('#preBtn').setAttribute('aria-pressed', String(premovesOn));
 $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
   premovesOn = v; try { localStorage.setItem('kessen-premoves', v ? 'on' : 'off'); } catch(err){}
