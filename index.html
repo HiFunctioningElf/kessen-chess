@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030230858">
+<meta name="kessen-build" content="20261030231024">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -3340,7 +3340,8 @@ async function commit(input, remote, remoteClock){
       clock.run = null; drawClocks();
     }
     if (mode === 'online' && !remote && net.ref) net.push();
-    show3d = cutins && !!(mv.captured || mv.promotion || /[kqe]/.test(mv.flags) || game.in_check() || game.game_over());
+    // the special movies only: queen taken, en passant, castling, promotion, double check, and the endings
+    show3d = cutins && !!(mv.captured === 'q' || mv.promotion || /[kqe]/.test(mv.flags) || game.game_over() || (game.in_check() && checkers().length > 1));
     if (mv.captured) await captureFx(mv); else await moveFx(mv);
     lastMove = {from: mv.from, to: mv.to}; render();
     if (mv.promotion) await promoFx(mv);
