@@ -9,7 +9,8 @@
 - **CPU**: three levels (Rookie, Rival, Final Boss). The CPU thinks in a background thread.
 - **Same screen**: two players on one device, with optional auto-flip
 - **Online**: click *Create game*, then *Copy invite link* and send it to a friend. If they're in the same room, they can scan the QR code under the code instead. Keep your tab open while you play.
-- **Full screen** (⛶ in the board's top-left corner): the board fills the screen with the pieces each side has lost, whose move it is, the minigame countdown and power-up buttons, and Offer draw / Resign. ✕ Exit or Esc to leave.
+- **Taken pieces** sit in columns beside the board in every view: on the left the pieces the top side has lost, on the right yours, with the material lead (+N).
+- **Full screen** (⛶ in the board's top-left corner): the board fills the screen with whose move it is, the minigame countdown and power-up buttons, and Offer draw / Resign. ✕ Exit or Esc to leave.
 - **2D board** (slide the 3D | 2D switch at the top): play on a flat board instead of the 3D one. Moves, captures and checks stay flat; for the special movies (a queen taken, en passant, castling, promotion, double check, the endings) and minigames it switches to 3D, then comes back.
 - **Group play: winner stays on** 👑: under Online, tap *Start a group* and share the invite link or QR code. Friends join, and the first two in line play an ordinary online game (minigames, power-ups, clocks and Aura all as usual) while everyone else watches it live on a small board. The winner stays on and the next in line challenges them; the loser goes to the back. A draw sends both to the back. Leaving mid-game hands the win to your opponent. The group's host tab must stay open.
 - **Friends**: after an online game, tap ☆ next to your opponent to save them. They appear under *Friends*; tap *Play* and you'll meet in your own private room (whoever taps first waits for the other). Saved on this device.

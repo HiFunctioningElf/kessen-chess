@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030231538">
+<meta name="kessen-build" content="20261030232018">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -70,7 +70,7 @@ main{display:grid;grid-template-columns:auto minmax(260px,320px);gap:28px;justif
   background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);overflow:hidden}
 @media (min-width:981px){.stage{width:min(860px,calc(100vw - 340px));height:min(calc((100vw - 340px) * .9),78vh,720px)}}
 .stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
-.stage .hint-orbit{position:absolute;left:42px;bottom:10px;font-size:11px;letter-spacing:.08em;color:var(--muted);pointer-events:none;text-transform:uppercase}
+.stage .hint-orbit{position:absolute;left:10px;bottom:10px;font-size:11px;letter-spacing:.08em;color:var(--muted);pointer-events:none;text-transform:uppercase}
 .stage .err{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:var(--muted)}
 
 .panel{display:flex;flex-direction:column;gap:14px;width:100%;max-width:520px;min-width:0}
@@ -552,10 +552,13 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .dswitch[aria-checked="true"] .knob{left:38px}
 .dswitch[aria-checked="true"] .knob::after{content:'2D'}
 .dswitch:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
-.b2d{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);transition:opacity .25s;container-type:size}
+.b2d{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);transition:opacity .25s;container-type:size;padding:42px 38px}
 .b2d.away{opacity:0;pointer-events:none}
-.b2d-board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:calc(min(100cqw,100cqh) - 44px);height:calc(min(100cqw,100cqh) - 44px);border:3px solid #000;box-shadow:0 0 0 3px var(--gold),0 12px 40px rgba(0,0,0,.6);user-select:none;touch-action:manipulation}
-.b2d-board .q{position:relative;display:grid;place-items:center;font-family:var(--chess);font-size:calc((min(100cqw,100cqh) - 44px) / 8 * .72);line-height:1;cursor:pointer;min-width:0;min-height:0;overflow:hidden}
+body.b2don .style-meter .n,body.b2don .style-meter .mid{display:none}
+body.b2don .sidetray{font-size:clamp(14px,2vw,22px)}
+@media (max-width:980px){body.b2don:not(.fs) .stage{height:min(calc((100vw - 32px) * 1.16),80vh)}}
+.b2d-board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(100cqw,100cqh);height:min(100cqw,100cqh);border:3px solid #000;box-shadow:0 0 0 3px var(--gold),0 12px 40px rgba(0,0,0,.6);user-select:none;touch-action:manipulation}
+.b2d-board .q{position:relative;display:grid;place-items:center;font-family:var(--chess);font-size:calc(min(100cqw,100cqh) / 8 * .72);line-height:1;cursor:pointer;min-width:0;min-height:0;overflow:hidden}
 .b2d-board .q.l{background:#a86a84}.b2d-board .q.d{background:#4a1d3e}
 .b2d-board .q.mv{box-shadow:inset 0 0 0 100px rgba(255,200,61,.38)}
 .b2d-board .q.sel{box-shadow:inset 0 0 0 100px rgba(63,224,255,.5)}
@@ -571,6 +574,12 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .b2d-board .q i{position:absolute;font:700 10px/1 var(--body);font-style:normal;opacity:.75;pointer-events:none}
 .b2d-board .q .rk{left:2px;top:2px}.b2d-board .q .fl{right:2px;bottom:2px}
 .b2d-board .q.l i{color:#4a1d3e}.b2d-board .q.d i{color:#d9a3b9}
+/* Taken pieces: left of the board the top side's losses, right of the board the bottom side's (yours) */
+.sidetray{position:absolute;top:50%;transform:translateY(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:0;max-height:70%;flex-wrap:wrap-reverse;align-content:center;font-family:var(--chess);font-size:clamp(15px,2.4vw,24px);line-height:1.05;pointer-events:none;padding:5px 3px;border-radius:6px;background:rgba(201,150,170,.88);border:2px solid #000;box-shadow:2px 2px 0 #000}
+.sidetray:empty{display:none}
+.sidetray.stl{left:6px}.sidetray.str{right:6px}
+.evalbar:not([hidden]) ~ .sidetray.stl{left:72px}
+.sidetray .adv{font-family:var(--body);font-size:11px;font-weight:700;color:#1b1328;margin-top:3px}
 .fs-btn{position:absolute;left:4px;top:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font:700 16px/1 var(--body);padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75}
 .fs-btn:hover,.fs-btn:focus-visible{opacity:1}
 body.cinema .fs-btn{display:none}
@@ -581,7 +590,7 @@ body.fs .boardcol{position:fixed;inset:0;z-index:50;background:var(--night,#0f0b
 body.fs .stage{width:100%!important;height:auto!important;flex:1;min-height:0}
 body.fs .fsbar{display:flex;align-items:center;gap:8px;min-height:34px;flex:none}
 body.fs .fsbot{justify-content:space-between}
-body.fs .fstray{flex:1;min-width:0;min-height:28px;font-size:22px}
+body.fs .fsspace{flex:1}
 body.fs .fsturn{font-family:var(--display);font-size:15px;white-space:nowrap}
 body.fs .fsacts{display:flex;gap:6px;flex:none}
 body.fs .fs-btn{display:none}
@@ -616,12 +625,11 @@ body.fs .mghud{justify-content:center}
 #donate,#hist,#board,#clipSheet{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
   padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .dcard{width:min(760px,100%);background:var(--night);border:3px solid var(--gold);box-shadow:0 0 0 6px #000,0 0 0 9px var(--blood),0 30px 80px rgba(0,0,0,.7);padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
-.clip-btn{position:absolute;right:4px;top:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font-size:15px;line-height:1;padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75;transition:opacity .15s}
+.clip-btn{position:absolute;left:72px;top:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font-size:15px;line-height:1;padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75;transition:opacity .15s}
 .clip-btn:hover,.clip-btn:focus-visible{opacity:1}
-.cam-btn{position:absolute;left:4px;bottom:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font:700 17px/1 var(--body);padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75;transition:opacity .15s}
+.cam-btn{position:absolute;left:38px;top:4px;z-index:3;width:30px;height:30px;display:grid;place-items:center;background:rgba(12,10,23,.7);border:1.5px solid var(--gold);color:var(--gold);font:700 17px/1 var(--body);padding:0;box-shadow:1px 1px 0 #000;cursor:pointer;opacity:.75;transition:opacity .15s}
 .cam-btn:hover,.cam-btn:focus-visible{opacity:1}
 body.cinema .cam-btn{display:none}
-.clip-btn:not([hidden]) ~ .clock.top{right:40px}   /* the clock moves over so the two never overlap */
 .clip-btn[hidden]{display:none}
 .clip-btn:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
 .clip-btn.rec::before{content:'';position:absolute;right:2px;top:2px;width:7px;height:7px;border-radius:50%;background:var(--blood);animation:clipdot 1.2s steps(2) infinite}
@@ -770,10 +778,10 @@ body.cinema .cam-btn{display:none}
   </section>
   <main>
     <div class="boardcol">
-      <div class="fsbar fstop" id="fsTop"><div class="tray fstray" id="fsTrayTop"></div><div class="fsturn" id="fsTurn"></div><button class="chip fsexit" id="fsExit" type="button" aria-label="Leave full screen">✕ Exit</button></div>
-    <div class="stage" id="stage"><div id="hangar"></div><div class="b2d" id="b2d" hidden><div class="b2d-board" id="b2dBoard"></div></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Clip: save the last few seconds as a video to share" aria-label="Clip: save the last few seconds as a video">🎬</button><button class="cam-btn" id="camBtn" type="button" title="Reset the camera" aria-label="Reset the camera">⟲</button><button class="fs-btn" id="fsBtn" type="button" title="Full screen" aria-label="Full screen">⛶</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
+      <div class="fsbar fstop" id="fsTop"><div class="fsspace"></div><div class="fsturn" id="fsTurn"></div><button class="chip fsexit" id="fsExit" type="button" aria-label="Leave full screen">✕ Exit</button></div>
+    <div class="stage" id="stage"><div id="hangar"></div><div class="b2d" id="b2d" hidden><div class="b2d-board" id="b2dBoard"></div></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Clip: save the last few seconds as a video to share" aria-label="Clip: save the last few seconds as a video">🎬</button><button class="cam-btn" id="camBtn" type="button" title="Reset the camera" aria-label="Reset the camera">⟲</button><button class="fs-btn" id="fsBtn" type="button" title="Full screen" aria-label="Full screen">⛶</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="sidetray stl" id="sideL" aria-label="Pieces the top side has lost"></div><div class="sidetray str" id="sideR" aria-label="Pieces the bottom side has lost"></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
       <div class="mghud" id="mgHud" hidden></div>
-      <div class="fsbar fsbot" id="fsBot"><div class="tray fstray" id="fsTrayBot"></div><div class="fsacts"><button class="chip" id="fsDraw" type="button">Offer draw</button><button class="chip" id="fsResign" type="button">Resign</button></div></div>
+      <div class="fsbar fsbot" id="fsBot"><div class="fsspace"></div><div class="fsacts"><button class="chip" id="fsDraw" type="button">Offer draw</button><button class="chip" id="fsResign" type="button">Resign</button></div></div>
     </div>
     <aside class="panel">
       <section class="card fighter" id="fighter">
@@ -843,7 +851,7 @@ body.cinema .cam-btn{display:none}
         <div class="actions"><button class="btn primary" id="newBtn">New duel</button><button class="btn" id="undoBtn">Undo</button><button class="btn" id="flipBtn">Flip view</button></div>
         <div class="actions"><button class="btn" id="drawBtn">Offer draw</button><button class="btn" id="resignBtn">Resign</button></div>
       </section>
-      <section class="card">
+      <section class="card" hidden>
         <div class="label">Fallen</div>
         <div class="tray" id="trayW"></div>
         <div class="tray" id="trayB"></div>
@@ -2190,7 +2198,7 @@ var board2d = false; try { board2d = localStorage.getItem('kessen-2d') === 'on';
 let sig2d = '';   // what's on the 2D board now
 function draw2d(){
   const wrap = document.getElementById('b2d'); if (!wrap) return;
-  wrap.hidden = !board2d; if (!board2d) return;
+  wrap.hidden = !board2d; document.body.classList.toggle('b2don', !!board2d); if (!board2d) return;
   const hv = game.history({verbose: true}), lastH = hv[hv.length - 1], lm2 = lastMove || (lastH ? {from: lastH.from, to: lastH.to} : null);   // highlight the latest move at once
   const el = document.getElementById('b2dBoard'), flip = orientation === 'b';
   const ck = game.in_check() ? kingSq(game.turn()) : null, tgt = new Map(legal.map(m => [m.to, m])), pre = new Set(preLegal.map(m => m.to));
@@ -2290,9 +2298,11 @@ function panel(){
     return lost[c].slice().sort((a, b) => PV[b] - PV[a]).map(p => `<span class="${c === 'w' ? 'gw' : 'gb'}">${GLYPH[p]}${VS}</span>`).join('') + (adv > 0 ? `<span class="adv">${c === 'w' ? 'Black' : 'White'} +${adv}</span>` : ''); };
   $('#trayW').innerHTML = tray('w') || '<span class="note">No white losses</span>';
   $('#trayB').innerHTML = tray('b') || '<span class="note">No black losses</span>';
-  // full screen: the top side's lost pieces above the board, yours below, and whose move it is
+  // beside the board (every view): left, the top side's lost pieces; right, the bottom side's
   const top = orientation === 'w' ? 'b' : 'w';
-  $('#fsTrayTop').innerHTML = tray(top) || ''; $('#fsTrayBot').innerHTML = tray(orientation) || '';
+  const lostCol = c => { const adv = Math.round((mat(OTHER(c)) - mat(c)) / 100);
+    return lost[c].slice().sort((a, b) => PV[b] - PV[a]).map(p => `<span class="${c === 'w' ? 'gw' : 'gb'}">${GLYPH[p]}${VS}</span>`).join('') + (adv > 0 && lost[c].length ? `<span class="adv">+${adv}</span>` : ''); };
+  $('#sideL').innerHTML = lostCol(top); $('#sideR').innerHTML = lostCol(orientation);
   $('#fsTurn').textContent = `Move ${$('#moveNo').textContent} · ${$('#statusText').textContent}`;
   const log = $('#log');
   log.innerHTML = hist.map((m, i) => `<li><span class="n">${i % 2 ? '' : (i/2 + 1) + '.'}</span><span class="san">${m.san}</span>${m.captured ? `<span class="atk">${m.flags.includes('e') ? 'En passant!' : m.captured === 'q' ? SP_TITLE[m.piece][0] : ATK[m.piece].en}</span>` : ''}</li>`).join('') || '<li class="note">No moves yet. White opens.</li>';
