@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030221314">
+<meta name="kessen-build" content="20261030221825">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -884,6 +884,36 @@ body.cinema .cam-btn{display:none}
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
+<script>
+/* Start-up watchdog. If the game can't start (3D graphics switched off, a library blocked, an old browser), the page
+   used to stop silently and FIGHT! did nothing. Now the start screen says what went wrong and how to fix it. */
+(function(){
+  var firstError = null;
+  addEventListener('error', function(e){ if (!firstError) firstError = (e && (e.message || (e.target && e.target.src))) || 'unknown error'; }, true);
+  function webgl(){ try { var c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch(e){ return false; } }
+  function help(){
+    var ua = navigator.userAgent, safari = /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|Firefox/.test(ua), firefox = /Firefox/.test(ua), edge = /Edg\//.test(ua);
+    if (typeof THREE === 'undefined' || typeof Chess === 'undefined')
+      return "Part of the game couldn't load. An ad or content blocker may be stopping it, or the connection dropped. Turn off blockers for kessenchess.com and reload the page.";
+    if (!webgl()){
+      var how = safari ? 'In Safari: update macOS / Safari, then reload. (Safari > Settings > Advanced > tick "Show features for web developers", then Develop > Feature Flags: make sure WebGL is on.)'
+        : firefox ? 'In Firefox: Settings > General > Performance: untick "Use recommended performance settings", tick "Use hardware acceleration when available", then restart Firefox.'
+        : edge ? 'In Edge: Settings > System and performance: turn on "Use graphics acceleration when available", then restart Edge.'
+        : 'In Chrome: Settings > System: turn on "Use graphics acceleration when available", then click Relaunch.';
+      return "Kessen Chess needs 3D graphics (WebGL), and your browser has them switched off. " + how;
+    }
+    return "The game hit a problem while starting" + (firstError ? ' (' + String(firstError).slice(0, 120) + ')' : '') + ". Try reloading, or a different browser (Chrome, Edge, Firefox or Safari, kept up to date).";
+  }
+  function check(){
+    if (window.__kessenReady) return;
+    var sub = document.getElementById('mSub'), go = document.getElementById('mGo'), msg = help();
+    if (sub){ sub.textContent = msg; sub.style.color = '#ffc83d'; }
+    if (go){ go.textContent = 'Reload'; go.onclick = function(){ location.reload(); }; }
+    var m = document.getElementById('mMatch'); if (m) m.hidden = true;
+  }
+  addEventListener('load', function(){ setTimeout(check, 1500); });
+})();
+</script>
 <script>
 (() => {
 const $ = s => document.querySelector(s);
@@ -8032,6 +8062,7 @@ document.addEventListener('visibilitychange', keepAwake);
 function buzz(ms){ try { if (navigator.vibrate && matchMedia('(pointer: coarse)').matches) navigator.vibrate(ms); } catch(e){} }
 window.claude?.hot?.snapshot?.(() => ({pgn: game.pgn(), mode, playerColor, level, orientation}));
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+window.__kessenReady = true;   // the start-up watchdog (top of the page) stands down
 })();
 </script>
 
