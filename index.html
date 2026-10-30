@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030230641">
+<meta name="kessen-build" content="20261030230858">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -2168,9 +2168,11 @@ function render(force){
    go through tapSquare(), so everything (premoves, promotion, online) works the same. For moves with a 3D cut-in it
    fades away so the animation plays, then comes back. ---- */
 var board2d = false; try { board2d = localStorage.getItem('kessen-2d') === 'on'; } catch(e){}
+let sig2d = '';   // what's on the 2D board now
 function draw2d(){
   const wrap = document.getElementById('b2d'); if (!wrap) return;
   wrap.hidden = !board2d; if (!board2d) return;
+  const hv = game.history({verbose: true}), lastH = hv[hv.length - 1], lm2 = lastMove || (lastH ? {from: lastH.from, to: lastH.to} : null);   // highlight the latest move at once
   const el = document.getElementById('b2dBoard'), flip = orientation === 'b';
   const ck = game.in_check() ? kingSq(game.turn()) : null, tgt = new Map(legal.map(m => [m.to, m])), pre = new Set(preLegal.map(m => m.to));
   const preSq = new Set(premoves.flatMap(pm => [pm.from, pm.to]));
@@ -2178,7 +2180,7 @@ function draw2d(){
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++){
     const f = flip ? 7 - x : x, r = flip ? y + 1 : 8 - y, sq = 'abcdefgh'[f] + r, p = game.get(sq), lm = tgt.get(sq);
     const cls = ['q', (x + y) % 2 ? 'd' : 'l'];
-    if (lastMove && (sq === lastMove.from || sq === lastMove.to)) cls.push('mv');
+    if (lm2 && (sq === lm2.from || sq === lm2.to)) cls.push('mv');
     if (typeof hintMove !== 'undefined' && hintMove && (sq === hintMove.from || sq === hintMove.to)) cls.push('hint');
     if (sq === preSel || preSq.has(sq)) cls.push('pre');
     if (sq === ck) cls.push('ck');
@@ -2186,7 +2188,22 @@ function draw2d(){
     if (lm) cls.push(lm.captured ? 'cap' : 'dot'); else if (pre.has(sq)) cls.push('dot', 'pd');
     html += `<div class="${cls.join(' ')}" data-sq="${sq}">${x === 0 ? `<i class="rk">${r}</i>` : ''}${y === 7 ? `<i class="fl">${'abcdefgh'[f]}</i>` : ''}${p ? `<span class="${p.color === 'w' ? 'gw' : 'gb'}">${GLYPH[p.type]}${VS}</span>` : ''}</div>`;
   }
-  el.innerHTML = html;
+  if (html === sig2d) return;   // nothing changed: leave the board (and any slide in progress) alone
+  sig2d = html; el.innerHTML = html;
+}
+// slide the moved piece (and the rook, when castling) from its old square to its new one
+function slide2d(mv){
+  draw2d();
+  const el = document.getElementById('b2dBoard'), sqEl = sq => el.querySelector(`[data-sq="${sq}"]`);
+  const go = (from, to) => {
+    const a = sqEl(from), b = sqEl(to), piece = b && b.querySelector('span'); if (!a || !b || !piece) return;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    piece.style.position = 'relative'; piece.style.zIndex = 3;
+    piece.animate([{transform: `translate(${ra.left - rb.left}px, ${ra.top - rb.top}px) translateY(.12em)`}, {transform: 'translate(0, 0) translateY(.12em)'}], {duration: RM ? 0 : 200, easing: 'cubic-bezier(.2,.8,.3,1)'});
+  };
+  go(mv.from, mv.to);
+  if (mv.flags.includes('k')) go('h' + mv.from[1], 'f' + mv.from[1]);
+  if (mv.flags.includes('q')) go('a' + mv.from[1], 'd' + mv.from[1]);
 }
 document.getElementById('b2dBoard').addEventListener('pointerdown', e => {
   const q = e.target.closest('[data-sq]'); if (!q || e.button) return;
@@ -3313,6 +3330,7 @@ async function commit(input, remote, remoteClock){
     if (flagged || ended) return;
     mv = game.move(input);
     if (!mv) return;
+    if (board2d) slide2d(mv);
     noteStyle(mv); hintMove = null;
     if (mv.promotion && cutins) promoHold = mv.to;
     if (tcOn()){
