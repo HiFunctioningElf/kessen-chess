@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261031030428">
+<meta name="kessen-build" content="20261031031109">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -620,6 +620,17 @@ body.fs .mghud{justify-content:center}
 .g-row.met .g-bar i{background:#3ddc84}
 .g-cta{font-family:var(--display);font-size:13px;color:var(--ink);background:var(--gold);border:0;padding:8px 14px;box-shadow:3px 3px 0 #000;white-space:nowrap;cursor:pointer}
 .g-cta:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+@media (max-width:600px){.toggles{gap:4px}.toggles .chip{padding:5px 7px;letter-spacing:.02em;font-size:10.5px}}
+/* phones: title and Donate on one line, the two charities side by side underneath, so the board starts higher */
+@media (max-width:600px){
+  .goalbar{padding:8px 10px;gap:8px 10px}
+  .g-head{flex:1 1 0}
+  .g-head b{font-size:13px}.g-head span{font-size:11px;font-weight:600}
+  .g-cta{order:2;padding:6px 10px;font-size:12px}
+  .g-rows{order:3;flex:1 1 100%;flex-wrap:nowrap;gap:10px}
+  .g-row{flex:1 1 0;grid-template-columns:1fr;grid-template-areas:"name" "amt" "bar";gap:2px;font-size:11px}
+  .g-amt{justify-self:start}
+}
 .donate-chip .amt{color:var(--gold);font-variant-numeric:tabular-nums}
 .donate-chip .amt:empty{display:none}
 #donate,#hist,#board,#clipSheet{position:fixed;inset:0;z-index:65;display:grid;place-items:start center;overflow-y:auto;background:rgba(8,5,18,.72);backdrop-filter:blur(3px);
