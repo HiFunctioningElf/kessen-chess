@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030221825">
+<meta name="kessen-build" content="20261030230336">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -546,6 +546,23 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .grp-list .row .n{color:var(--muted);width:1.4em;text-align:right}
 .grp-list .row.me b{color:var(--gold)}
 .grp-idle{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
+.b2d{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#2a1d4a,#0f0b1e 75%);transition:opacity .25s;padding:8px}
+.b2d.away{opacity:0;pointer-events:none}
+.b2d-board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(100%,calc(100% * 1));aspect-ratio:1;max-height:100%;max-width:100%;height:100%;border:3px solid #000;box-shadow:0 0 0 3px var(--gold),0 12px 40px rgba(0,0,0,.6);user-select:none;touch-action:manipulation}
+.b2d-board .q{position:relative;display:grid;place-items:center;font-family:var(--chess);font-size:min(7.2vw,calc((100vh - 120px) / 12),56px);line-height:1;cursor:pointer;min-width:0;min-height:0;overflow:hidden}
+.b2d-board .q.l{background:#a86a84}.b2d-board .q.d{background:#4a1d3e}
+.b2d-board .q.mv{box-shadow:inset 0 0 0 100px rgba(255,200,61,.38)}
+.b2d-board .q.sel{box-shadow:inset 0 0 0 100px rgba(63,224,255,.5)}
+.b2d-board .q.hint{box-shadow:inset 0 0 0 100px rgba(125,255,138,.5)}
+.b2d-board .q.pre{box-shadow:inset 0 0 0 100px rgba(176,108,255,.5)}
+.b2d-board .q.ck{box-shadow:inset 0 0 0 100px rgba(255,46,77,.6)}
+.b2d-board .q.dot::after{content:'';position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(63,224,255,.8)}
+.b2d-board .q.dot.pd::after{background:rgba(176,108,255,.85)}
+.b2d-board .q.cap::after{content:'';position:absolute;inset:6%;border-radius:50%;border:4px solid rgba(63,224,255,.85)}
+.b2d-board .q > span{display:block;transform:translateY(.12em)}
+.b2d-board .q i{position:absolute;font:700 10px/1 var(--body);font-style:normal;opacity:.75;pointer-events:none}
+.b2d-board .q .rk{left:2px;top:2px}.b2d-board .q .fl{right:2px;bottom:2px}
+.b2d-board .q.l i{color:#4a1d3e}.b2d-board .q.d i{color:#d9a3b9}
 .boardcol{display:flex;flex-direction:column;gap:8px;min-width:0;max-width:100%}
 .mghud{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:30px}
 .mghud[hidden]{display:none}
@@ -719,6 +736,7 @@ body.cinema .cam-btn{display:none}
       <button class="chip" id="musicBtn" aria-pressed="true">Music</button>
       <button class="chip" id="sfxBtn" aria-pressed="true">SFX</button>
       <button class="chip" id="fxBtn" aria-pressed="true">Cut-ins</button>
+      <button class="chip" id="b2dBtn" aria-pressed="false" title="Play on a flat 2D board. The 3D animations still play for captures, checks and other big moments.">2D</button>
       <button class="chip" id="preBtn" aria-pressed="true" title="Queue a move during your opponent's turn (vs CPU and online)">Premoves</button>
     </div>
   </header>
@@ -729,7 +747,7 @@ body.cinema .cam-btn{display:none}
   </section>
   <main>
     <div class="boardcol">
-    <div class="stage" id="stage"><div id="hangar"></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Clip: save the last few seconds as a video to share" aria-label="Clip: save the last few seconds as a video">🎬</button><button class="cam-btn" id="camBtn" type="button" title="Reset the camera" aria-label="Reset the camera">⟲</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
+    <div class="stage" id="stage"><div id="hangar"></div><div class="b2d" id="b2d" hidden><div class="b2d-board" id="b2dBoard"></div></div><button class="clip-btn" id="clipBtn" type="button" hidden title="Clip: save the last few seconds as a video to share" aria-label="Clip: save the last few seconds as a video">🎬</button><button class="cam-btn" id="camBtn" type="button" title="Reset the camera" aria-label="Reset the camera">⟲</button><span class="hint-orbit">Drag to orbit · scroll to zoom</span><div class="evalbar" id="evalBar" hidden><div class="eb-track"><div class="eb-fill" id="ebFill"></div><span class="eb-num" id="ebNum">0.0</span></div><div class="eb-cap"><svg class="fishy" viewBox="0 0 132 92" aria-label="Rude Fishy" role="img"><g fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M26 47 L6 26 Q13 47 6 68 Z" fill="#fff"/><path d="M52 21 Q63 3 82 17" fill="#fff"/><path d="M24 47 C34 15 92 11 114 43 C101 75 38 80 24 47 Z" fill="#fff"/><path d="M58 66 Q66 80 78 69" fill="#fff"/><g stroke-width="2"><path d="M44 38 q7 7 0 15"/><path d="M54 34 q7 8 0 17"/><path d="M64 33 q7 8 0 18"/><path d="M36 44 l6 -3 M36 50 l6 -3 M37 56 l6 -3"/></g><path d="M80 28 Q72 46 80 64"/><path d="M83 50 Q71 58 76 64 Q84 60 87 53" fill="#fff"/><circle cx="96" cy="37" r="9" fill="#fff"/><circle cx="99" cy="39" r="3.4" fill="#000" stroke="none"/><path d="M86 36 Q96 31 106 33" stroke-width="5"/><path d="M86 22 L106 27" stroke-width="4.5"/><path d="M101 56 Q109 58 115 52"/><path d="M101 57 Q104 79 118 66 Q118 56 109 55 Z" fill="#ff5a6e"/><path d="M108 59 L110 69" stroke-width="2.5"/></g><g fill="#000"><circle cx="122" cy="34" r="2.2"/><circle cx="127" cy="27" r="1.6"/></g></svg>Rude Fishy<a href="https://github.com/official-stockfish/Stockfish" target="_blank" rel="noopener" id="ebSrc">Stockfish (GPLv3)</a><span id="ebLeft"></span></div><div class="eb-quip" id="ebQuip"></div></div><div class="choice" id="drawChoice" hidden><b id="choiceTitle"></b><div class="actions"><button class="btn primary" id="shakeBtn">Shake hands</button><button class="btn" id="slapBtn">Slap it away</button></div></div><div class="clock top" id="clockTop" hidden></div><div class="clock bot" id="clockBot" hidden></div><div class="style-meter top" id="styleTop" hidden></div><div class="style-meter bot" id="styleBot" hidden></div></div>
       <div class="mghud" id="mgHud" hidden></div>
     </div>
     <aside class="panel">
@@ -2137,8 +2155,44 @@ function render(force){
   checkRing.visible = !!ck; if (ck){ const p = sqPos(ck); checkRing.position.set(p.x, .104, p.z); }
   // lift selected piece
   for (const sq in pieceAt) pieceAt[sq].position.y = BASEY + (sq === selected ? .18 : 0);
+  draw2d();
   panel();
 }
+/* ---- 2D board: a flat board over the 3D scene for anyone who prefers it. It's drawn from the same game state and taps
+   go through tapSquare(), so everything (premoves, promotion, online) works the same. For moves with a 3D cut-in it
+   fades away so the animation plays, then comes back. ---- */
+var board2d = false; try { board2d = localStorage.getItem('kessen-2d') === 'on'; } catch(e){}
+function draw2d(){
+  const wrap = document.getElementById('b2d'); if (!wrap) return;
+  wrap.hidden = !board2d; if (!board2d) return;
+  const el = document.getElementById('b2dBoard'), flip = orientation === 'b';
+  const ck = game.in_check() ? kingSq(game.turn()) : null, tgt = new Map(legal.map(m => [m.to, m])), pre = new Set(preLegal.map(m => m.to));
+  const preSq = new Set(premoves.flatMap(pm => [pm.from, pm.to]));
+  let html = '';
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++){
+    const f = flip ? 7 - x : x, r = flip ? y + 1 : 8 - y, sq = 'abcdefgh'[f] + r, p = game.get(sq), lm = tgt.get(sq);
+    const cls = ['q', (x + y) % 2 ? 'd' : 'l'];
+    if (lastMove && (sq === lastMove.from || sq === lastMove.to)) cls.push('mv');
+    if (typeof hintMove !== 'undefined' && hintMove && (sq === hintMove.from || sq === hintMove.to)) cls.push('hint');
+    if (sq === preSel || preSq.has(sq)) cls.push('pre');
+    if (sq === ck) cls.push('ck');
+    if (sq === selected) cls.push('sel');
+    if (lm) cls.push(lm.captured ? 'cap' : 'dot'); else if (pre.has(sq)) cls.push('dot', 'pd');
+    html += `<div class="${cls.join(' ')}" data-sq="${sq}">${x === 0 ? `<i class="rk">${r}</i>` : ''}${y === 7 ? `<i class="fl">${'abcdefgh'[f]}</i>` : ''}${p ? `<span class="${p.color === 'w' ? 'gw' : 'gb'}">${GLYPH[p.type]}${VS}</span>` : ''}</div>`;
+  }
+  el.innerHTML = html;
+}
+document.getElementById('b2dBoard').addEventListener('pointerdown', e => {
+  const q = e.target.closest('[data-sq]'); if (!q || e.button) return;
+  e.preventDefault();
+  if (!canMoveNow()){ if (canPremove()){ premoveClick(q.dataset.sq); return; } const why = whyNot(); if (why) toast(why); return; }
+  tapSquare(q.dataset.sq);
+});
+// step aside for 3D moments: a move with a cut-in, a minigame, the ending movie
+setInterval(() => {
+  const wrap = document.getElementById('b2d'); if (!wrap || !board2d) return;
+  wrap.classList.toggle('away', (busy && show3d) || !!document.querySelector('#mg') || (busy && !!camSaved));
+}, 80);
 let preGhosts = [];
 const preGhostMat = new THREE.MeshBasicMaterial({color: 0xb06cff, transparent: true, opacity: .45, depthWrite: false});
 function drawPreGhosts(){
@@ -3245,6 +3299,7 @@ async function timeUp(c, remote){
 }
 
 let busySince = 0;
+var show3d = false;   // the move playing now has a 3D cut-in: the 2D board steps aside for it
 async function commit(input, remote, remoteClock){
   busy = true; busySince = Date.now(); selected = null; legal = []; render();
   let mv = null;
@@ -3261,6 +3316,7 @@ async function commit(input, remote, remoteClock){
       clock.run = null; drawClocks();
     }
     if (mode === 'online' && !remote && net.ref) net.push();
+    show3d = cutins && !!(mv.captured || mv.promotion || /[kqe]/.test(mv.flags) || game.in_check() || game.game_over());
     if (mv.captured) await captureFx(mv); else await moveFx(mv);
     lastMove = {from: mv.from, to: mv.to}; render();
     if (mv.promotion) await promoFx(mv);
@@ -5789,6 +5845,10 @@ renderer.domElement.addEventListener('pointerup', async e => {
   let sq = hits[0];
   const ownAt = s => { const q = s && game.get(s); return !!q && q.color === game.turn(); };
   if (selected && sq !== selected && !ownAt(sq) && !legal.some(m => m.to === sq)){ const t = hits.find(s => legal.some(m => m.to === s)); if (t) sq = t; }
+  tapSquare(sq);
+});
+// A tap on a square (3D board or 2D board): select a piece, or move the selected one there.
+async function tapSquare(sq){
   if (!sq) { selected = null; legal = []; render(); return; }
   const opts = legal.filter(m => m.to === sq);
   if (selected && opts.length){
@@ -5805,7 +5865,7 @@ renderer.domElement.addEventListener('pointerup', async e => {
     selected = null; legal = [];
   }
   render();
-});
+}
 
 /* ================= CPU: iterative-deepening alpha-beta with a capture search, run in a Web Worker ================= */
 // Knows that repeating a position is a draw (so it presses on when winning), centralises its king and drives the enemy
@@ -6795,6 +6855,8 @@ const toggle = (btn, fn) => { const v = btn.getAttribute('aria-pressed') !== 'tr
 $('#musicBtn').onclick = e => toggle(e.currentTarget, v => { A.init(); A.music.setOn(v); });
 $('#sfxBtn').onclick = e => toggle(e.currentTarget, v => A.sfx.setOn(v));
 $('#fxBtn').onclick = e => toggle(e.currentTarget, v => { cutins = v; });
+$('#b2dBtn').setAttribute('aria-pressed', String(board2d));
+$('#b2dBtn').onclick = e => toggle(e.currentTarget, v => { board2d = v; try { localStorage.setItem('kessen-2d', v ? 'on' : 'off'); } catch(err){} render(true); });
 $('#preBtn').setAttribute('aria-pressed', String(premovesOn));
 $('#preBtn').onclick = e => toggle(e.currentTarget, v => {
   premovesOn = v; try { localStorage.setItem('kessen-premoves', v ? 'on' : 'off'); } catch(err){}
