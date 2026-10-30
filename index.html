@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="kessen-build" content="20261030220351">
+<meta name="kessen-build" content="20261030221314">
 <meta name="description" content="3D anime-style chess with capture cut-ins, dramatic check and checkmate, synthesized battle music, and online play with a friend.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%99%9A%3C/text%3E%3C/svg%3E">
 <title>Kessen Chess</title>
@@ -532,6 +532,20 @@ body.cinema .stage,body.cinema .stage{width:100vw!important;height:100vh!importa
 .friends .fr .x:hover{color:var(--blood)}
 .pl .fav{margin-left:auto;background:none;border:1px solid var(--gold);color:var(--gold);font-weight:700;font-size:11px;padding:2px 8px;cursor:pointer}
 .pl .fav.on{background:var(--gold);color:#111}
+.grp{display:flex;flex-direction:column;gap:8px;border:2px solid var(--gold);padding:10px;background:rgba(255,200,61,.06)}
+.grp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grp-head b{font-family:var(--display);font-weight:400;font-size:15px}
+.grp-code{font-size:12px;color:var(--muted)}.grp-code strong{color:var(--gold);letter-spacing:.12em}
+.grp-now{font-size:13px;line-height:1.45}
+.grp-now .vs{font-family:var(--display);font-size:15px}
+.grp-now .last{color:var(--muted);font-size:12px}
+.grp-board{width:100%!important;max-width:300px;align-self:center}
+.grp-cap{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.grp-list{display:flex;flex-direction:column;gap:3px;font-size:13px}
+.grp-list .row{display:flex;gap:8px;align-items:center}
+.grp-list .row .n{color:var(--muted);width:1.4em;text-align:right}
+.grp-list .row.me b{color:var(--gold)}
+.grp-idle{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
 .boardcol{display:flex;flex-direction:column;gap:8px;min-width:0;max-width:100%}
 .mghud{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:30px}
 .mghud[hidden]{display:none}
@@ -754,11 +768,23 @@ body.cinema .cam-btn{display:none}
           </select></div>
         <div class="field" id="onlineField" hidden>
           <span class="label">Online</span>
+          <div class="grp" id="grpBox" hidden>
+            <div class="grp-head"><b>👑 Winner stays on</b><span class="grp-code">Group <strong id="grpCodeOut"></strong></span><button class="chip" id="grpCopy" type="button">Copy invite</button></div>
+            <button class="qr" id="grpQr" type="button" hidden aria-label="QR code of the group invite: tap to make it bigger"><span class="qr-img"></span><small>Friends scan this to join the group</small></button>
+            <div class="grp-now" id="grpNow"></div>
+            <div class="grp-watch" id="grpWatch" hidden><div class="rv-board grp-board" id="grpBoard"></div><div class="grp-cap" id="grpCap"></div></div>
+            <div class="grp-list" id="grpList"></div>
+            <button class="btn" id="grpLeave" type="button">Leave group</button>
+          </div>
           <div id="onIdle" class="field">
             <button class="btn primary" id="createBtn">Create game</button>
             <button class="btn" id="qmBtn" type="button">Quick match</button>
             <div class="note" id="qmNote"></div>
             <div class="friends" id="friends"></div>
+            <div class="grp-idle" id="grpIdle">
+              <button class="btn" id="grpNew" type="button">👑 Start a group: winner stays on</button>
+              <form class="joinrow" id="grpJoinForm"><input id="grpCodeIn" maxlength="6" placeholder="Group code" autocomplete="off" aria-label="Group code"><button class="btn" type="submit" style="flex:none">Join group</button></form>
+            </div>
             <form class="joinrow" id="joinForm"><input id="joinCode" maxlength="6" placeholder="Code" autocomplete="off" aria-label="Game code"><button class="btn" type="submit" style="flex:none">Join</button></form>
           </div>
           <div id="onActive" class="field" hidden>
@@ -6384,6 +6410,228 @@ async function playFriend(f){
 }
 /* ---- Random opponent: join someone already waiting in a matchmaking room, or open one and wait ---- */
 const clientToken = Math.random().toString(36).slice(2, 12);
+/* ================= GROUP PLAY: winner stays on =================
+   One friend's tab hosts the group (a PeerJS room of its own, separate from any game). Everyone joins it with the group
+   code or invite link. The host keeps the queue: the two players at the front play an ordinary online game (so minigames,
+   power-ups, clocks and Aura all work as usual); the winner stays on and the next in line challenges them, the loser goes
+   to the back. A draw sends both to the back. Everyone else watches the game live on a small board: the two players send
+   each move to the host, who passes it on. The host's tab must stay open; if it closes, the group ends. */
+const GRP_PREFIX = PEER_PREFIX + 'grp-';
+const grp = {code: null, host: false, peer: null, conn: null, state: null, live: null, hub: null, busy: false};
+const grpLink = code => location.origin + location.pathname + '#grp' + code;
+const grpName = pid => { const m = grp.state && grp.state.members.find(x => x.pid === pid); return m ? m.name : 'Someone'; };
+// --- the host's side ---
+function hubNew(code){
+  return {code, members: [], queue: [], match: null, champ: null, streak: 0, last: '', n: 0, rules: {tc: $('#tcSel').value, mg: minigamesOn}, conns: new Map()};
+}
+function hubState(h){ return {code: h.code, host: MY_PID, members: h.members, queue: h.queue, match: h.match, champ: h.champ, streak: h.streak, last: h.last, rules: h.rules}; }
+function hubSend(h, m, except){ for (const [pid, c] of h.conns){ if (pid === except) continue; try { c.send(m); } catch(e){} } if (except !== MY_PID) grpOn(m); }
+function hubBroadcast(h){ hubSend(h, {t: 'state', s: hubState(h)}); }
+function hubJoin(h, card){
+  const pid = card.pid; if (!pid) return;
+  const m = {pid, name: card.name || 'Challenger', crest: card.crest, color: card.color, power: card.power};
+  const i = h.members.findIndex(x => x.pid === pid);
+  if (i >= 0) h.members[i] = m; else { h.members.push(m); h.queue.push(pid); }
+  hubNext(h); hubBroadcast(h);
+}
+function hubLeave(h, pid){
+  h.conns.delete(pid);
+  h.members = h.members.filter(x => x.pid !== pid); h.queue = h.queue.filter(x => x !== pid);
+  if (h.match && (h.match.w === pid || h.match.b === pid)){
+    const other = h.match.w === pid ? h.match.b : h.match.w;
+    hubResult(h, h.match.id, other, `${grpName(pid)} left the group`);
+    return;
+  }
+  if (h.champ === pid){ h.champ = null; h.streak = 0; }
+  hubNext(h); hubBroadcast(h);
+}
+// start the next game when the board is free: the champion (if any) against the next in line
+function hubNext(h){
+  if (h.match || h.pausedUntil > Date.now()) return;
+  const present = pid => h.members.some(x => x.pid === pid);
+  h.queue = h.queue.filter(present);
+  if (h.champ && !present(h.champ)){ h.champ = null; h.streak = 0; }
+  let a = h.champ, b;
+  if (a){ b = h.queue.shift(); if (!b) return; }
+  else { if (h.queue.length < 2) return; a = h.queue.shift(); b = h.queue.shift(); }
+  let game = ''; for (let i = 0; i < 6; i++) game += CODE_CH[Math.floor(Math.random() * CODE_CH.length)];
+  // the challenger gets White; in the very first game a coin decides
+  const [w, bl] = h.champ ? [b, a] : (Math.random() < .5 ? [a, b] : [b, a]);
+  h.match = {id: ++h.n, w, b: bl, game, ready: false};
+}
+function hubResult(h, id, winner, why){
+  const m = h.match; if (!m || m.id !== id) return;
+  const loser = winner === m.w ? m.b : winner === m.b ? m.w : null;
+  if (winner){
+    h.streak = h.champ === winner ? h.streak + 1 : 1; h.champ = winner;
+    if (loser && h.members.some(x => x.pid === loser)) h.queue.push(loser);
+    h.last = `${grpName(winner)} beat ${loser ? grpName(loser) : 'their opponent'}${why ? ` (${why})` : ''}${h.streak > 1 ? ` · ${h.streak} wins in a row!` : ''}`;
+  } else {
+    for (const p of [m.w, m.b]) if (h.members.some(x => x.pid === p)) h.queue.push(p);
+    h.champ = null; h.streak = 0; h.last = `${grpName(m.w)} and ${grpName(m.b)} drew: both go to the back of the line`;
+  }
+  h.match = null; h.pausedUntil = Date.now() + 7000;   // a few seconds to see the result before the next game
+  hubBroadcast(h);
+  setTimeout(() => { if (grp.hub === h){ hubNext(h); hubBroadcast(h); } }, 7100);
+}
+function hubOn(h, pid, m){
+  if (!m || typeof m !== 'object') return;
+  if (m.t === 'hi' && m.card && m.card.pid === pid) hubJoin(h, m.card);
+  else if (m.t === 'ready' && h.match && h.match.id === m.id && h.match.w === pid){ h.match.ready = true; hubBroadcast(h); }
+  else if (m.t === 'live' && h.match && h.match.id === m.id && (h.match.w === pid || h.match.b === pid) && typeof m.pgn === 'string' && m.pgn.length < 20000){
+    if (!h.live || h.live.id !== m.id || m.pgn.length >= h.live.pgn.length){ h.live = {id: m.id, pgn: m.pgn}; hubSend(h, {t: 'live', id: m.id, pgn: m.pgn}, pid); }
+  }
+  else if (m.t === 'result' && h.match && h.match.id === m.id && (h.match.w === pid || h.match.b === pid)){
+    const win = m.winner === 'w' ? h.match.w : m.winner === 'b' ? h.match.b : null;
+    hubResult(h, m.id, win, typeof m.why === 'string' ? m.why.slice(0, 40) : '');
+  }
+  else if (m.t === 'bye') hubLeave(h, pid);
+}
+async function grpCreate(){
+  if (!net.ready || net.kind !== 'p2p'){ toast('Group play needs the online connection. Try again in a moment.'); return; }
+  if (grp.code) return;
+  let code = ''; for (let i = 0; i < 6; i++) code += CODE_CH[Math.floor(Math.random() * CODE_CH.length)];
+  let peer;
+  try { peer = await new Promise((res, rej) => { const p = new Peer(GRP_PREFIX + code); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); }); }
+  catch(e){ toast("Couldn't open a group right now. Try again in a moment."); return; }
+  const h = hubNew(code);
+  Object.assign(grp, {code, host: true, peer, hub: h, conn: null});
+  peer.on('connection', conn => {
+    let pid = null;
+    conn.on('data', m => {
+      if (!pid){ if (!(m && m.t === 'hi' && m.card && typeof m.card.pid === 'string')) return; pid = m.card.pid; const old = h.conns.get(pid); if (old && old !== conn){ try { old.close(); } catch(e){} } h.conns.set(pid, conn); }
+      hubOn(h, pid, m);
+    });
+    conn.on('close', () => { if (pid && h.conns.get(pid) === conn) hubLeave(h, pid); });
+  });
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch(e){} });
+  hubJoin(h, myCard());
+  grpShow();
+  toast('Group open! Share the invite so friends can join.');
+}
+// --- everyone's side ---
+async function grpJoin(code){
+  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 6){ toast('Group codes are 6 letters and numbers.'); return; }
+  if (!net.ready || net.kind !== 'p2p'){ toast('Group play needs the online connection. Try again in a moment.'); return; }
+  if (grp.code) grpLeave(true);
+  try {
+    const peer = await new Promise((res, rej) => { const p = new Peer(); p.on('open', () => res(p)); p.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 12000); });
+    const conn = peer.connect(GRP_PREFIX + code, {reliable: true});
+    await new Promise((res, rej) => { conn.on('open', res); peer.on('error', rej); setTimeout(() => rej({type: 'timeout'}), 15000); });
+    Object.assign(grp, {code, host: false, peer, conn, hub: null});
+    conn.on('data', grpOn);
+    conn.on('close', () => { if (grp.conn === conn){ toast('The group closed (its host left).'); grpLeave(true); } });
+    conn.send({t: 'hi', card: myCard()});
+    grpShow();
+  } catch(e){ toast(e && e.type === 'peer-unavailable' ? `No open group with code ${code}. The host's tab must stay open.` : "Couldn't reach the group. Try again."); }
+}
+function grpSend(m){ if (grp.host && grp.hub) hubOn(grp.hub, MY_PID, m); else if (grp.conn){ try { grp.conn.send(m); } catch(e){} } }
+function grpLeave(quiet){
+  if (!grp.code) return;
+  const inGame = grp.state && grp.state.match && net.code === grp.state.match.game;
+  if (grp.host && grp.hub){ hubSend(grp.hub, {t: 'closed'}, MY_PID); }
+  else grpSend({t: 'bye'});
+  setTimeout(() => { try { grp.peer && grp.peer.destroy(); } catch(e){} }, 300);
+  Object.assign(grp, {code: null, host: false, peer: null, conn: null, state: null, live: null, hub: null});
+  if (inGame && net.code) leaveGame();
+  grpShow();
+  if (!quiet) toast('You left the group.');
+}
+function grpOn(m){
+  if (!m || typeof m !== 'object') return;
+  if (m.t === 'state' && m.s){ grp.state = m.s; if (!m.s.match || !grp.live || grp.live.id !== m.s.match.id) grp.live = null; grpPlay(); grpShow(); }
+  else if (m.t === 'live'){ grp.live = {id: m.id, pgn: m.pgn}; grpDrawBoard(); }
+  else if (m.t === 'closed'){ toast('The group closed (its host left).'); grpLeave(true); }
+}
+// when the host puts me on the board, start (White) or join (Black) the game; when my game is over, step off
+async function grpPlay(){
+  const st = grp.state, m = st && st.match;
+  const myGame = m && (m.w === MY_PID || m.b === MY_PID);
+  if (net.code && grp.playing && (!m || m.game !== net.code)){
+    // my group game is finished (or was called off): back to the group view
+    grp.playing = null; if (isOver()) leaveGame(); else if (!m || (m.w !== MY_PID && m.b !== MY_PID)) leaveGame();
+  }
+  if (!myGame || grp.busy || net.code === m.game) return;
+  if (m.b === MY_PID && !m.ready) return;   // Black waits until White's room is open
+  grp.busy = true;
+  try {
+    if (mode !== 'online'){ mode = 'online'; seg('modeSeg', 'mode', mode); panel(); }
+    if (net.code) leaveGame();
+    hideModal();
+    $('#tcSel').value = st.rules.tc; minigamesOn = st.rules.mg !== false;
+    if (m.w === MY_PID){
+      playerColor = 'w'; seg('sideSeg', 'side', 'w');
+      if (await createGame(m.game, true)){ grp.playing = m.id; grpSend({t: 'ready', id: m.id}); }
+    } else {
+      playerColor = 'b'; seg('sideSeg', 'side', 'b');
+      for (let i = 0; i < 4 && net.code !== m.game; i++){ await joinGame(m.game); if (net.code !== m.game) await sleep(2000); }
+      if (net.code === m.game) grp.playing = m.id;
+    }
+    toast(`Your turn! ${grpName(m.w === MY_PID ? m.b : m.w)} is your opponent.`);
+  } finally { grp.busy = false; }
+}
+// the two players report every new position (for the spectators) and the result (for the queue)
+function grpLiveTick(){
+  const m = grp.state && grp.state.match;
+  if (!m || !grp.playing || grp.playing !== m.id || net.code !== m.game) return;
+  const pgn = game.pgn();
+  if (grp.sentPgn !== pgn){ grp.sentPgn = pgn; grpSend({t: 'live', id: m.id, pgn}); }
+  if (isOver() && grp.reported !== m.id){ grp.reported = m.id; grpSend({t: 'result', id: m.id, winner: gameWinner(), why: gameReason()}); }
+}
+setInterval(grpLiveTick, 700);
+// --- the group box: who's on, the live board, the line ---
+function grpDrawBoard(){
+  const wrap = $('#grpWatch'), st = grp.state, m = st && st.match;
+  const watching = m && m.w !== MY_PID && m.b !== MY_PID;
+  wrap.hidden = !watching; if (!watching) return;
+  const g = new Chess(); if (grp.live && grp.live.id === m.id && grp.live.pgn) g.load_pgn(grp.live.pgn);
+  const h = g.history({verbose: true}), last = h[h.length - 1], board = $('#grpBoard'); board.innerHTML = '';
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++){
+    const sq = 'abcdefgh'[x] + (8 - y), p = g.get(sq), d = document.createElement('div');
+    d.className = `rv-sq ${(x + y) % 2 ? 'd' : 'l'}${last && (sq === last.from || sq === last.to) ? ' mv' : ''}`;
+    if (p){ const sp = document.createElement('span'); sp.className = p.color === 'w' ? 'gw' : 'gb'; sp.textContent = GLYPH[p.type] + VS; d.appendChild(sp); }
+    board.appendChild(d);
+  }
+  $('#grpCap').textContent = h.length ? `Move ${Math.ceil(h.length / 2)}${last ? ` · ${last.san}` : ''}${g.game_over() ? ' · game over' : ''}` : (m.ready ? 'The game is starting…' : 'Setting up the board…');
+}
+function grpShow(){
+  const box = $('#grpBox'), idle = $('#grpIdle'); if (!box) return;
+  box.hidden = !grp.code; idle.hidden = !!grp.code;
+  if (!grp.code) return;
+  $('#grpCodeOut').textContent = grp.code;
+  const st = grp.state;
+  const now = $('#grpNow'); now.innerHTML = '';
+  if (st){
+    const m = st.match, line = document.createElement('div');
+    if (m){
+      const tag = pid => `${pid === st.champ ? '👑 ' : ''}${grpName(pid)}${pid === MY_PID ? ' (you)' : ''}`;
+      line.className = 'vs'; line.textContent = `${tag(m.w)} vs ${tag(m.b)}`;
+    } else line.textContent = st.members.length < 2 ? 'Waiting for friends to join…' : 'Next game starting in a moment…';
+    now.appendChild(line);
+    if (st.champ && st.streak) { const c = document.createElement('div'); c.textContent = `👑 Champion: ${grpName(st.champ)} · ${st.streak} win${st.streak === 1 ? '' : 's'} in a row`; now.appendChild(c); }
+    if (st.last){ const l = document.createElement('div'); l.className = 'last'; l.textContent = st.last; now.appendChild(l); }
+    const list = $('#grpList'); list.innerHTML = '<span class="label">Up next</span>';
+    const order = st.queue.filter(p => !m || (p !== m.w && p !== m.b));
+    if (!order.length){ const e = document.createElement('div'); e.className = 'row'; e.textContent = m ? 'Nobody waiting: the winner plays the loser again.' : '—'; list.appendChild(e); }
+    order.forEach((pid, i) => { const r = document.createElement('div'); r.className = 'row' + (pid === MY_PID ? ' me' : ''); r.innerHTML = '<span class="n"></span><b></b>'; r.querySelector('.n').textContent = i + 1; r.querySelector('b').textContent = grpName(pid) + (pid === MY_PID ? ' (you)' : ''); list.appendChild(r); });
+  }
+  grpDrawBoard();
+  const qr = $('#grpQr');
+  if (qr.dataset.code !== grp.code){
+    qr.dataset.code = grp.code; qr.hidden = true;
+    loadQr().then(qrcode => { if (grp.code !== qr.dataset.code) return; const q = qrcode(0, 'M'); q.addData(grpLink(grp.code)); q.make(); qr.querySelector('.qr-img').innerHTML = q.createSvgTag({cellSize: 4, margin: 0, scalable: true}); qr.hidden = false; }).catch(() => {});
+  }
+}
+$('#grpNew').onclick = () => { A.init(); grpCreate(); };
+$('#grpJoinForm').addEventListener('submit', e => { e.preventDefault(); A.init(); grpJoin($('#grpCodeIn').value); });
+$('#grpLeave').onclick = () => grpLeave();
+$('#grpCopy').onclick = () => { const t = grpLink(grp.code || ''); try { navigator.clipboard.writeText(t).then(() => toast('Group invite copied'), () => toast(t)); } catch(e){ toast(t); } };
+$('#grpQr').onclick = e => e.currentTarget.classList.toggle('big');
+addEventListener('pagehide', () => { if (grp.code) grpLeave(true); });
+// an invite link (#grpCODE) joins the group once the online connection is ready
+(() => { const m = /^#grp([A-Z0-9]{6})$/.exec(location.hash || ''); if (!m) return;
+  const t0 = Date.now(), wait = setInterval(() => { if (net.ready){ clearInterval(wait); mode = 'online'; seg('modeSeg', 'mode', mode); panel(); grpJoin(m[1]); } else if (Date.now() - t0 > 20000) clearInterval(wait); }, 300); })();
 // (function declarations, so the panel can use them before this point in the script runs)
 // Quick match only pairs players who picked the same game mode and time control: each pairing has its own rooms,
 // coded Q + K(essen)/C(lassic) + the time control's place in the list + M + slot, e.g. QK04M2.
@@ -6574,6 +6822,7 @@ function showEnd(title, sub, jp){
   const rules = mode === 'online' && net.my ? '<button class="btn" id="mRules">Change rules</button>' : '';
   $('#mActions').innerHTML = `<button class="btn primary" id="mRe">Rematch</button>${rules}<button class="btn" id="mLook">View board</button>${isOver() && gameLog()[0] ? '<button class="btn" id="mReview">Review</button>' : ''}`;
   if ($('#mReview')) $('#mReview').onclick = () => { hideModal(); openReview(gameLog()[0]); };
+  if (grp.code && grp.playing && mode === 'online' && $('#mRe')){ $('#mRe').textContent = 'Back to the group'; $('#mRe').onclick = () => hideModal(); const r = $('#mRules'); if (r) r.remove(); }
   if ($('#mRules')) $('#mRules').onclick = showRules;
   $('#mRe').onclick = () => { hideModal(); if (mode === 'online' && net.code) rematchOnline(); else newGame(); };   // online, newGame() only opens this box again
   $('#mLook').onclick = () => { hideModal(); clearEndFx(); };

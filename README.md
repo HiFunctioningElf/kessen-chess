@@ -9,6 +9,7 @@
 - **CPU**: three levels (Rookie, Rival, Final Boss). The CPU thinks in a background thread.
 - **Same screen**: two players on one device, with optional auto-flip
 - **Online**: click *Create game*, then *Copy invite link* and send it to a friend. If they're in the same room, they can scan the QR code under the code instead. Keep your tab open while you play.
+- **Group play: winner stays on** 👑: under Online, tap *Start a group* and share the invite link or QR code. Friends join, and the first two in line play an ordinary online game (minigames, power-ups, clocks and Aura all as usual) while everyone else watches it live on a small board. The winner stays on and the next in line challenges them; the loser goes to the back. A draw sends both to the back. Leaving mid-game hands the win to your opponent. The group's host tab must stay open.
 - **Friends**: after an online game, tap ☆ next to your opponent to save them. They appear under *Friends*; tap *Play* and you'll meet in your own private room (whoever taps first waits for the other). Saved on this device.
 - **Quick match**: get paired with someone else searching right now who picked the same game mode (Classic or Kessen) and time control. *Find an online match* on the start screen jumps straight in.
 
